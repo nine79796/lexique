@@ -1,0 +1,27 @@
+{
+  "name": "Lexique — Suivi de vocabulaire",
+  "short_name": "Lexique",
+  "description": "Suivez votre vocabulaire personnel, la récurrence des mots et synchronisez avec Anki.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f0d",
+  "theme_color": "#4CAF50",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": []
+}

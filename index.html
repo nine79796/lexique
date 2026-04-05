@@ -2,8 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Lexique</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexique">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -24,6 +33,10 @@
   --anki: #6eb4c8;
   --anki-dim: rgba(110,180,200,0.15);
   --anki-glow: rgba(110,180,200,0.08);
+  --valid: #6ec87a;
+  --valid-dim: rgba(110,200,122,0.15);
+  --invalid: #c86e6e;
+  --invalid-dim: rgba(200,110,110,0.15);
   --radius: 10px;
   --radius-lg: 16px;
 }
@@ -31,10 +44,12 @@
 body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; font-size: 15px; line-height: 1.6; }
 .app { max-width: 720px; margin: 0 auto; padding: 0 1.25rem 4rem; }
 
-.header { padding: 1.75rem 0 0; }
-.header h1 { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; }
-.header h1 span { color: var(--accent); }
-.header p { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.header { padding: 1.75rem 0 0; display: flex; align-items: flex-start; justify-content: space-between; }
+.header-text h1 { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; }
+.header-text h1 span { color: var(--accent); }
+.header-text p { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.offline-badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; background: rgba(200,110,110,0.15); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); display: none; white-space: nowrap; margin-top: 6px; }
+.offline-badge.show { display: inline-flex; align-items: center; gap: 4px; }
 
 .tabs { display: flex; gap: 2px; margin: 1.5rem 0 1.75rem; border-bottom: 0.5px solid var(--border); }
 .tab { padding: 10px 18px; background: none; border: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; position: relative; transition: color 0.15s; white-space: nowrap; }
@@ -65,6 +80,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 .add-row select { min-width: 130px; cursor: pointer; }
 .add-row select option { background: #1a1a17; }
 
+/* Validation spinner / badge */
+.validation-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; min-height: 22px; }
+.val-badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 4px; }
+.val-badge.valid   { background: var(--valid-dim);   color: var(--valid);   border: 0.5px solid rgba(110,200,122,0.3); }
+.val-badge.invalid { background: var(--invalid-dim); color: var(--invalid); border: 0.5px solid rgba(200,110,110,0.3); }
+.val-badge.pending { background: var(--surface2); color: var(--text-dim); border: 0.5px solid var(--border2); }
+.val-spinner { width: 8px; height: 8px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .btn { padding: 10px 18px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--accent-dim); color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s; white-space: nowrap; }
 .btn:hover { background: rgba(200,169,110,0.25); }
 .btn:active { transform: scale(0.97); }
@@ -90,7 +114,6 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 .word-card:hover { border-color: var(--border2); }
 
-/* ── Anki ready (3+ clicks) ── */
 .word-card.anki-ready { border-color: rgba(110,180,200,0.35); background: rgba(110,180,200,0.04); }
 .word-card.anki-ready:hover { border-color: rgba(110,180,200,0.55); }
 .word-card.anki-ready .word-btn { color: var(--anki); }
@@ -98,16 +121,20 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 .word-card.anki-ready .count-badge { background: var(--anki-dim); color: var(--anki); }
 .word-card.anki-ready .date-tag:first-child { color: var(--anki); border-color: rgba(110,180,200,0.25); background: var(--anki-glow); }
 
-/* Anki badge pulsing */
 .anki-badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; background: var(--anki-dim); color: var(--anki); border: 0.5px solid rgba(110,180,200,0.3); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; animation: ankiPulse 2.5s ease infinite; }
 @keyframes ankiPulse { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
-/* Anki done (already added) — greyed out */
 .word-card.anki-done { opacity: 0.4; }
 .word-card.anki-done .word-btn { text-decoration: line-through; color: var(--text-muted); }
 
 .anki-check-btn { font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: var(--radius); border: 0.5px solid rgba(110,180,200,0.3); background: var(--anki-dim); color: var(--anki); cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
 .anki-check-btn:hover { background: rgba(110,180,200,0.28); }
+
+/* Word validity badge on card */
+.word-valid-badge { font-size: 9px; font-weight: 500; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; letter-spacing: 0.03em; }
+.word-valid-badge.valid   { background: var(--valid-dim);   color: var(--valid);   border: 0.5px solid rgba(110,200,122,0.3); }
+.word-valid-badge.invalid { background: var(--invalid-dim); color: var(--invalid); border: 0.5px solid rgba(200,110,110,0.3); }
+.word-valid-badge.pending { background: var(--surface2); color: var(--text-dim); border: 0.5px solid var(--border2); animation: ankiPulse 1.8s ease infinite; }
 
 .word-card-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
 .word-btn { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 500; color: var(--text); background: none; border: none; cursor: pointer; padding: 0; text-align: left; flex: 1; transition: color 0.15s; }
@@ -149,6 +176,14 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 .top-word-bar.is-anki { background: var(--anki); }
 .top-word-count { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: right; }
 
+/* PWA install prompt */
+.install-banner { display: none; position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 16px; gap: 12px; align-items: center; box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 100; width: calc(100% - 2.5rem); max-width: 480px; animation: slideUp 0.3s ease; }
+.install-banner.show { display: flex; }
+@keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+.install-banner p { flex: 1; font-size: 13px; color: var(--text-muted); }
+.install-banner p strong { color: var(--text); display: block; font-size: 14px; }
+.install-banner-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; padding: 0 4px; }
+
 @media (max-width: 480px) {
   .tabs { overflow-x: auto; }
   .tab { padding: 10px 12px; font-size: 12px; }
@@ -160,8 +195,11 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 <div class="app">
 
   <div class="header">
-    <h1>Le<span>xique</span></h1>
-    <p>Suivi de vocabulaire — récurrence & Anki</p>
+    <div class="header-text">
+      <h1>Le<span>xique</span></h1>
+      <p>Suivi de vocabulaire — récurrence &amp; Anki</p>
+    </div>
+    <span class="offline-badge" id="offlineBadge">⚡ Hors ligne</span>
   </div>
 
   <div class="tabs">
@@ -199,10 +237,12 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
     <div class="add-section">
       <div class="add-row">
-        <input type="text" id="wordInput" placeholder="Nouveau mot..." />
+        <input type="text" id="wordInput" placeholder="Nouveau mot..." oninput="onWordInputChange()" />
         <select id="catSelect"></select>
         <button class="btn" onclick="addWord()">Ajouter</button>
       </div>
+      <!-- Real-time validation strip -->
+      <div class="validation-strip" id="validationStrip"></div>
     </div>
 
     <div class="filters" id="filterRow"></div>
@@ -237,7 +277,19 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 
 </div>
+
+<!-- PWA install banner -->
+<div class="install-banner" id="installBanner">
+  <p><strong>Installer Lexique</strong>Accès rapide depuis l'écran d'accueil.</p>
+  <button class="btn btn-sm" id="installBtn">Installer</button>
+  <button class="install-banner-close" onclick="dismissInstall()">×</button>
+</div>
+
 <script>
+// ═══════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════
+
 const PALETTE = [
   {bg:'rgba(200,169,110,0.14)',color:'#c8a96e',border:'rgba(200,169,110,0.25)'},
   {bg:'rgba(110,180,200,0.14)',color:'#6eb4c8',border:'rgba(110,180,200,0.25)'},
@@ -248,9 +300,28 @@ const PALETTE = [
 ];
 const ANKI_THRESHOLD = 3;
 
+// ── Wordnik API ─────────────────────────────────────────────────
+// Inscription gratuite : https://www.wordnik.com/signup
+// Clé disponible dans : https://www.wordnik.com/users/YOUR_USERNAME/api_key
+const WORDNIK_API_KEY = 'VOTRE_CLE_WORDNIK'; // ex: 'a2a73e7b926c924fad7001ca3111acd55af2ffabf50eb4ae5'
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+
 let state = {words:{}, categories:{}};
 let activeFilter = 'all';
 let chartTimeline = null, chartCats = null;
+let deferredInstallPrompt = null;
+
+// Debounce timer for validation
+let validationTimer = null;
+// Cache de validation pour éviter les appels répétés
+const validationCache = {};
+
+// ═══════════════════════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
 
 function load() {
   try {
@@ -261,6 +332,11 @@ function load() {
   } catch(e) { state = {words:{}, categories:{}}; }
 }
 function save() { try { localStorage.setItem('lexique_v4', JSON.stringify(state)); } catch(e) {} }
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════
+
 function ts() { return Date.now(); }
 function fmtFull(t) {
   const d = new Date(t);
@@ -281,7 +357,10 @@ function getCatColor(key) {
 }
 function isAnkiReady(w) { return w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone; }
 
-// Tabs
+// ═══════════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════════
+
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['mots','stats'][i]===name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -293,7 +372,10 @@ function toggleSection(bodyId, iconId) {
   document.getElementById(iconId).classList.toggle('open');
 }
 
-// Categories
+// ═══════════════════════════════════════════════════════════════
+//  CATEGORIES
+// ═══════════════════════════════════════════════════════════════
+
 function addCategory() {
   const inp = document.getElementById('catInput');
   const label = inp.value.trim();
@@ -324,7 +406,10 @@ function renderCatSelect() {
     Object.keys(state.categories).map(k=>`<option value="${k}">${state.categories[k].label}</option>`).join('');
 }
 
-// Filters
+// ═══════════════════════════════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════════════════════════════
+
 function renderFilters() {
   const row = document.getElementById('filterRow');
   let html = `<button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Tous</button>`;
@@ -340,23 +425,111 @@ function renderFilters() {
 }
 function setFilter(f) { activeFilter=f; renderFilters(); render(); }
 
-// Words
-function addWord() {
+// ═══════════════════════════════════════════════════════════════
+//  WORD VALIDATION APIS
+// ═══════════════════════════════════════════════════════════════
+
+// Vérifie le mot via l'API Wordnik
+// Doc : https://developer.wordnik.com/docs
+async function checkWordnik(word) {
+  if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null; // clé non configurée
+  try {
+    const res = await fetch(
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (res.status === 404) return false;
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0;
+  } catch { return null; }
+}
+
+// Lance la vérification et met à jour le bandeau
+async function validateWord(word) {
+  const strip = document.getElementById('validationStrip');
+  if (!word) { strip.innerHTML = ''; return; }
+
+  // Retour du cache si déjà validé
+  if (validationCache[word] !== undefined) {
+    renderValidationStrip(strip, word, validationCache[word]);
+    return;
+  }
+
+  // Pas de connexion → message discret, n'empêche pas l'ajout
+  if (!navigator.onLine) {
+    strip.innerHTML = `<span class="val-badge pending">⚡ Vérification indisponible hors ligne</span>`;
+    return;
+  }
+
+  // Spinner en attente
+  strip.innerHTML = `<span class="val-badge pending"><span class="val-spinner"></span>Wordnik…</span>`;
+
+  const result = await checkWordnik(word);
+  validationCache[word] = result;
+  renderValidationStrip(strip, word, result);
+}
+
+function renderValidationStrip(strip, word, result) {
+  if (result === null) {
+    strip.innerHTML = `<span class="val-badge pending">Wordnik : N/A</span>`;
+  } else {
+    const cls   = result ? 'valid' : 'invalid';
+    const icon  = result ? '✓' : '✗';
+    const label = result ? 'Mot valide' : 'Mot inconnu';
+    strip.innerHTML = `<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
+  }
+
+  // Mettre à jour la validité stockée si le mot existe déjà
+  const key = word.toLowerCase().replace(/\s+/g,'_');
+  if (state.words[key]) {
+    state.words[key].validity = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    save(); render();
+  }
+}
+
+// Debounce : déclenche la validation 600ms après la dernière frappe
+function onWordInputChange() {
+  const word = document.getElementById('wordInput').value.trim();
+  clearTimeout(validationTimer);
+  document.getElementById('validationStrip').innerHTML = '';
+  if (!word || word.length < 2) return;
+  validationTimer = setTimeout(() => validateWord(word), 600);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WORDS
+// ═══════════════════════════════════════════════════════════════
+
+async function addWord() {
   const inp=document.getElementById('wordInput'), sel=document.getElementById('catSelect');
   const label=inp.value.trim(); if (!label) return;
   const key=label.toLowerCase().replace(/\s+/g,'_'), catKey=sel.value||null, now=ts();
   if (!state.words[key]) {
-    state.words[key]={label, createdAt:now, catKey, occurrences:[now], ankiDone:false};
+    state.words[key]={label, createdAt:now, catKey, occurrences:[now], ankiDone:false, validity:'unknown'};
   } else {
     state.words[key].occurrences.push(now);
     if (catKey) state.words[key].catKey=catKey;
   }
   inp.value='';
+  document.getElementById('validationStrip').innerHTML='';
   save(); updateStats(); render();
+
+  // Notification Anki
+  if (isAnkiReady(state.words[key])) notify(label);
+
+  // Lancer la validation en arrière-plan
+  if (navigator.onLine) {
+    await validateWord(label);
+  }
 }
+
 function clickWord(key) {
   if (!state.words[key]) return;
-  state.words[key].occurrences.push(ts());
+  const w = state.words[key];
+  const wasReady = isAnkiReady(w);
+  w.occurrences.push(ts());
+  if (!wasReady && isAnkiReady(w)) notify(w.label);
   save(); updateStats(); render();
 }
 function deleteWord(key) { delete state.words[key]; save(); updateStats(); render(); }
@@ -366,7 +539,10 @@ function markAnkiDone(key) {
   save(); updateStats(); render();
 }
 
-// Stats
+// ═══════════════════════════════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════════════════════════════
+
 function updateStats() {
   const words=Object.values(state.words);
   document.getElementById('statWords').textContent=words.length;
@@ -375,7 +551,10 @@ function updateStats() {
   document.getElementById('statAnki').textContent=words.filter(w=>isAnkiReady(w)).length;
 }
 
-// Render
+// ═══════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════
+
 function render() {
   const list=document.getElementById('wordList');
   const sort=document.getElementById('sortSelect').value;
@@ -414,10 +593,17 @@ function render() {
     const ankiBadge=anki?`<span class="anki-badge">Anki</span>`:'';
     const ankiBtn=anki?`<button class="anki-check-btn" onclick="markAnkiDone('${key}')" title="Marquer comme ajouté à Anki">✓ Ajouté</button>`:'';
     const dates=w.occurrences.map(t=>`<span class="date-tag" title="${fmtFull(t)}">${fmtShort(t)}</span>`).join('');
+
+    // Badge de validité
+    let validBadge = '';
+    if (w.validity === 'valid')   validBadge = `<span class="word-valid-badge valid">✓ Valide</span>`;
+    else if (w.validity === 'invalid') validBadge = `<span class="word-valid-badge invalid">✗ Inconnu</span>`;
+    else if (w.validity === 'pending') validBadge = `<span class="word-valid-badge pending">…</span>`;
+
     return `<div class="word-card${anki?' anki-ready':''}${done?' anki-done':''}">
       <div class="word-card-top">
         <button class="word-btn" onclick="clickWord('${key}')">${w.label}</button>
-        ${badge}${ankiBadge}
+        ${badge}${validBadge}${ankiBadge}
         <span class="count-badge">${w.occurrences.length}×</span>
         ${ankiBtn}
         <button class="btn btn-danger" onclick="deleteWord('${key}')">×</button>
@@ -427,7 +613,10 @@ function render() {
   }).join('');
 }
 
-// Charts
+// ═══════════════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════════════
+
 function renderCharts() { renderTimeline(); renderCatChart(); renderTopWords(); }
 
 function renderTimeline() {
@@ -488,13 +677,81 @@ function renderTopWords() {
     </div>`).join('');
 }
 
-// Keyboard
-document.addEventListener('keydown',e=>{
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+
+function notify(word) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    new Notification('Lexique — Mot prêt pour Anki', {
+      body: `"${word}" a atteint ${ANKI_THRESHOLD} occurrences !`,
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+    });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') notify(word);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PWA — SERVICE WORKER & INSTALL PROMPT
+// ═══════════════════════════════════════════════════════════════
+
+// Enregistrement du Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[SW] enregistré :', reg.scope))
+      .catch(err => console.warn('[SW] échec :', err));
+  });
+}
+
+// Banière d'installation PWA
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  deferredInstallPrompt = null;
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') document.getElementById('installBanner').classList.remove('show');
+  deferredInstallPrompt = null;
+});
+function dismissInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+// Indicateur hors ligne
+function updateOnlineStatus() {
+  document.getElementById('offlineBadge').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
   if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
   if(e.key==='f'||e.key==='F') document.getElementById('searchInput').focus();
 });
-document.getElementById('wordInput').addEventListener('keydown',e=>{if(e.key==='Enter')addWord();});
-document.getElementById('catInput').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
+document.getElementById('wordInput').addEventListener('keydown', e => { if(e.key==='Enter') addWord(); });
+document.getElementById('catInput').addEventListener('keydown',  e => { if(e.key==='Enter') addCategory(); });
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
 
 load();
 renderCatManager(); renderCatSelect(); renderFilters(); updateStats(); render();
