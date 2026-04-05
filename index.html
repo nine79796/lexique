@@ -2024,6 +2024,7 @@ document.getElementById('taskModal').addEventListener('click', e=>{
 
 // ─── 1. CONFIG FIREBASE ──────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
+
   authDomain:        "lexique-999ff.firebaseapp.com",
   projectId:         "lexique-999ff",
   storageBucket:     "lexique-999ff.firebasestorage.app",
@@ -2261,5 +2262,6 @@ function scheduleSyncToCloud(delayMs = 2000) {
 window.addEventListener('online',  () => { console.log('[Sync] En ligne →  sync'); syncLocalToCloud(); });
 window.addEventListener('offline', () => showSyncStatus('offline'));
 </script>
+<script src="script.js"></script>
 </body>
 </html>
