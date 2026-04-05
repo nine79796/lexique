@@ -487,6 +487,12 @@ body {
   .modal { padding: 1.25rem; }
 }
 </style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 </head>
 <body>
 <div class="app">
@@ -2019,12 +2025,389 @@ document.getElementById('taskModal').addEventListener('click', e=>{
 //  INIT
 // ═══════════════════════════════════════════════════════════════
 load();
+initFirebase();
 initTheme();
 autoReportTasks();
 renderCatManager(); renderCatSelect(); renderFilters();
 updateStats(); render();
 renderTaskFilters(); renderTasks(); updateTaskStats();
 checkNotifBanner();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  1. CONFIG FIREBASE — Remplace avec ta vraie config
+// ═══════════════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBY55p8u0kULi87qsuRvkfxyyNrn1eqBYc",
+
+  authDomain: "lexique-999ff.firebaseapp.com",
+
+  projectId: "lexique-999ff",
+
+  storageBucket: "lexique-999ff.firebasestorage.app",
+
+  messagingSenderId: "32359120766",
+
+  appId: "1:32359120766:web:91b8b664b4bbf67a717d2f",
+
+  measurementId: "G-HN70QD0EYT"
+
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  2. INITIALISATION FIREBASE
+// ═══════════════════════════════════════════════════════════════════════════
+let db         = null;   // instance Firestore
+let currentUid = null;   // UID de l'utilisateur (anonyme pour l'instant)
+let syncTimer  = null;   // timer debounce pour la sync cloud
+let isSyncing  = false;  // verrou anti-concurrence
+ 
+function initFirebase() {
+  try {
+    // Utilise firebase compat (scripts CDN classiques)
+    if (typeof firebase === 'undefined') {
+      console.warn('[Firebase] SDK non chargé — sync désactivée');
+      return;
+    }
+ 
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+ 
+    db = firebase.firestore();
+ 
+    // Active la persistence hors-ligne Firestore (IndexedDB natif)
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => console.log('[Firebase] Persistence hors-ligne activée'))
+      .catch(err => {
+        if (err.code === 'failed-precondition') {
+          // Plusieurs onglets ouverts — persistence disponible sur 1 seul onglet
+          console.warn('[Firebase] Persistence désactivée (multi-onglets)');
+        } else if (err.code === 'unimplemented') {
+          console.warn('[Firebase] Persistence non supportée sur ce navigateur');
+        }
+      });
+ 
+    // Authentification anonyme
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        currentUid = user.uid;
+        console.log('[Firebase] Auth UID :', currentUid);
+        // Sync au démarrage dès que l'auth est prête
+        syncCloudToLocal().then(() => {
+          updateStats(); render(); renderTasks(); updateTaskStats();
+        });
+      } else {
+        // Pas encore connecté → auth anonyme
+        firebase.auth().signInAnonymously()
+          .catch(err => console.error('[Firebase] Auth anonyme échouée :', err));
+      }
+    });
+ 
+  } catch (err) {
+    console.error('[Firebase] Initialisation échouée :', err);
+  }
+}
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  3. RÉFÉRENCES FIRESTORE
+// ═══════════════════════════════════════════════════════════════════════════
+ 
+/**
+ * Retourne la référence au document utilisateur dans Firestore.
+ * Structure : users/{uid}
+ * Prêt pour multi-utilisateur : chaque UID a son propre espace.
+ */
+function userRef() {
+  if (!db || !currentUid) return null;
+  return db.collection('users').doc(currentUid);
+}
+ 
+/** Collection words : users/{uid}/words */
+function wordsRef() {
+  const u = userRef();
+  return u ? u.collection('words') : null;
+}
+ 
+/** Collection tasks : users/{uid}/tasks */
+function tasksRef() {
+  const u = userRef();
+  return u ? u.collection('tasks') : null;
+}
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  4. SYNC LOCAL → CLOUD
+//  Envoie l'état complet du localStorage vers Firestore.
+//  Utilise batch writes pour l'atomicité (max 500 ops/batch).
+// ═══════════════════════════════════════════════════════════════════════════
+async function syncLocalToCloud() {
+  if (!db || !currentUid) {
+    console.log('[Sync↑] Pas de connexion Firebase — sync ignorée');
+    return;
+  }
+  if (isSyncing) {
+    console.log('[Sync↑] Sync déjà en cours — ignorée');
+    return;
+  }
+  isSyncing = true;
+ 
+  try {
+    const words = state.words || {};   // objet { wordId: { text, occurrences, … } }
+    const tasks = state.tasks || [];   // tableau de tâches
+ 
+    // ── Sync des mots ──
+    const wRef = wordsRef();
+    if (wRef && Object.keys(words).length > 0) {
+      const wordEntries = Object.entries(words);
+ 
+      // Traitement par lots de 400 (marge sécurité < 500)
+      for (let i = 0; i < wordEntries.length; i += 400) {
+        const batch = db.batch();
+        const chunk = wordEntries.slice(i, i + 400);
+        chunk.forEach(([id, word]) => {
+          const docRef = wRef.doc(id);
+          batch.set(docRef, {
+            text:        word.text        || '',
+            occurrences: word.occurrences || 0,
+            category:    word.category    || '',
+            note:        word.note        || '',
+            ankiDone:    word.ankiDone    || false,
+            addedAt:     word.addedAt     || Date.now(),
+            updatedAt:   Date.now(),
+          }, { merge: true });
+        });
+        await batch.commit();
+      }
+      console.log(`[Sync↑] ${Object.keys(words).length} mots envoyés`);
+    }
+ 
+    // ── Sync des tâches ──
+    const tRef = tasksRef();
+    if (tRef && tasks.length > 0) {
+      for (let i = 0; i < tasks.length; i += 400) {
+        const batch = db.batch();
+        const chunk = tasks.slice(i, i + 400);
+        chunk.forEach(task => {
+          if (!task.id) return;
+          const docRef = tRef.doc(String(task.id));
+          batch.set(docRef, {
+            id:          task.id,
+            title:       task.title       || '',
+            note:        task.note        || '',
+            category:    task.category    || '',
+            dueDate:     task.dueDate     || '',
+            done:        task.done        || false,
+            doneAt:      task.doneAt      || null,
+            recurType:   task.recurType   || 'once',
+            recurDays:   task.recurDays   || [],
+            history:     task.history     || {},
+            reportHistory: task.reportHistory || [],
+            createdAt:   task.createdAt   || Date.now(),
+            updatedAt:   Date.now(),
+          }, { merge: true });
+        });
+        await batch.commit();
+      }
+      console.log(`[Sync↑] ${tasks.length} tâches envoyées`);
+    }
+ 
+    // Mise à jour du timestamp de dernière sync
+    const u = userRef();
+    if (u) {
+      await u.set({ lastSync: Date.now(), appVersion: 'lexique-v1' }, { merge: true });
+    }
+ 
+    console.log('[Sync↑] ✅ Sync locale → cloud terminée');
+ 
+  } catch (err) {
+    console.error('[Sync↑] ❌ Erreur :', err);
+  } finally {
+    isSyncing = false;
+  }
+}
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  5. SYNC CLOUD → LOCAL
+//  Récupère Firestore et fusionne dans le state local.
+//  Stratégie de fusion : cloud gagne si updatedAt cloud > updatedAt local.
+// ═══════════════════════════════════════════════════════════════════════════
+async function syncCloudToLocal() {
+  if (!db || !currentUid) {
+    console.log('[Sync↓] Pas de connexion Firebase — sync ignorée');
+    return;
+  }
+ 
+  try {
+    // ── Mots ──
+    const wRef = wordsRef();
+    if (wRef) {
+      const snapshot = await wRef.get();
+      if (!snapshot.empty) {
+        const localWords = state.words || {};
+        snapshot.forEach(doc => {
+          const cloudWord = doc.data();
+          const localWord = localWords[doc.id];
+ 
+          // Fusion : on garde la version la plus récente
+          if (!localWord || (cloudWord.updatedAt || 0) >= (localWord.updatedAt || 0)) {
+            localWords[doc.id] = {
+              ...localWord,       // préserve les champs locaux non-synchronisés
+              ...cloudWord,       // cloud écrase avec les champs distants
+              id: doc.id,
+            };
+          }
+        });
+        state.words = localWords;
+        console.log(`[Sync↓] ${snapshot.size} mots récupérés`);
+      }
+    }
+ 
+    // ── Tâches ──
+    const tRef = tasksRef();
+    if (tRef) {
+      const snapshot = await tRef.get();
+      if (!snapshot.empty) {
+        const localTasksMap = {};
+        (state.tasks || []).forEach(t => { localTasksMap[t.id] = t; });
+ 
+        snapshot.forEach(doc => {
+          const cloudTask = doc.data();
+          const localTask = localTasksMap[cloudTask.id];
+ 
+          if (!localTask || (cloudTask.updatedAt || 0) >= (localTask.updatedAt || 0)) {
+            localTasksMap[cloudTask.id] = { ...localTask, ...cloudTask };
+          }
+        });
+ 
+        state.tasks = Object.values(localTasksMap);
+        console.log(`[Sync↓] ${snapshot.size} tâches récupérées`);
+      }
+    }
+ 
+    // Sauvegarde dans localStorage après fusion
+    save();
+    console.log('[Sync↓] ✅ Sync cloud → locale terminée');
+ 
+  } catch (err) {
+    // Hors-ligne : Firestore renvoie le cache local automatiquement (persistence activée)
+    if (err.code === 'unavailable') {
+      console.log('[Sync↓] Hors-ligne — données locales utilisées (cache Firestore)');
+    } else {
+      console.error('[Sync↓] ❌ Erreur :', err);
+    }
+  }
+}
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  6. SYNC DIFFÉRÉE (DEBOUNCE)
+//  Appeler scheduleSyncToCloud() après chaque modification locale.
+//  Elle attend 2 secondes d'inactivité avant d'envoyer vers Firestore.
+// ═══════════════════════════════════════════════════════════════════════════
+function scheduleSyncToCloud(delayMs = 2000) {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    if (navigator.onLine) {
+      syncLocalToCloud();
+    } else {
+      console.log('[Sync] Hors-ligne — sync différée au retour réseau');
+    }
+  }, delayMs);
+}
+ 
+// Sync dès le retour en ligne
+window.addEventListener('online', () => {
+  console.log('[Sync] Retour en ligne — sync déclenchée');
+  syncLocalToCloud();
+});
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  7. PATCH DES FONCTIONS EXISTANTES
+//
+//  Ajoute scheduleSyncToCloud() aux fonctions qui modifient les données.
+//  IMPORTANT : ces patches s'appliquent APRÈS la définition des fonctions
+//  originales dans ton index.html.
+// ═══════════════════════════════════════════════════════════════════════════
+ 
+// Sauvegarde la référence originale de save()
+const _originalSave = typeof save === 'function' ? save : null;
+ 
+/**
+ * Override de save() : déclenche une sync cloud en plus de la sauvegarde locale.
+ * Remplace ou complète la fonction save() existante.
+ */
+function saveWithSync() {
+  if (_originalSave) _originalSave();
+  scheduleSyncToCloud();
+}
+ 
+// ── Patch des événements de modification ─────────────────────────────────
+// Si ton code appelle save() directement après chaque modification,
+// tu peux simplement remplacer `save` par `saveWithSync` dans les fonctions
+// qui modifient les données. Exemple :
+//
+//   Avant : function addWord() { … state.words[id] = word; save(); render(); }
+//   Après : function addWord() { … state.words[id] = word; saveWithSync(); render(); }
+//
+// Ou utilise l'approche événementielle ci-dessous pour ne pas toucher au code :
+ 
+// Observer les appels à save via un proxy sur localStorage
+const _origSetItem = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function(key, value) {
+  _origSetItem(key, value);
+  // Déclenche la sync uniquement pour nos vraies clés
+  if (key === 'lexique_theme' || key === 'lexique_v6') {
+    scheduleSyncToCloud();
+  }
+};
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  8. BADGE DE SYNC dans l'UI (optionnel)
+//  Ajoute un petit indicateur visuel de l'état de sync.
+//  À placer dans le HTML : <span id="syncBadge" class="sync-badge"></span>
+// ═══════════════════════════════════════════════════════════════════════════
+function showSyncStatus(status) {
+  // status: 'syncing' | 'synced' | 'offline' | 'error'
+  const badge = document.getElementById('syncBadge');
+  if (!badge) return;
+ 
+  const icons = {
+    syncing: '↻',
+    synced:  '✓',
+    offline: '⊘',
+    error:   '⚠',
+  };
+  const colors = {
+    syncing: 'var(--accent)',
+    synced:  'var(--valid)',
+    offline: 'var(--text-dim)',
+    error:   'var(--danger)',
+  };
+ 
+  badge.textContent = icons[status] || '';
+  badge.style.color = colors[status] || '';
+  badge.title = {
+    syncing: 'Synchronisation en cours…',
+    synced:  'Données synchronisées',
+    offline: 'Hors ligne',
+    error:   'Erreur de synchronisation',
+  }[status] || '';
+}
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+//  9. POINT D'ENTRÉE — Initialisation Firebase
+//  Appelé après le load() existant dans INIT.
+// ═══════════════════════════════════════════════════════════════════════════
+// Dans la section INIT de ton index.html, ajoute simplement :
+//   initFirebase();
+// après le load() existant.
+ 
+// Auto-init si le DOM est déjà chargé (sécurité)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFirebase);
+} else {
+  // Léger délai pour laisser les fonctions existantes (load, render…) s'initialiser
+  setTimeout(initFirebase, 100);
+}
 </script>
 </body>
 </html>
