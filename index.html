@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lexique</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50" id="themeColorMeta">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexique">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════
+   CSS VARIABLES — DARK / LIGHT
+══════════════════════════════════════════════ */
+:root {
+  --bg: #0f0f0d;
+  --surface: #1a1a17;
+  --surface2: #222220;
+  --surface3: #2a2a27;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ede6;
+  --text-muted: #888880;
+  --text-dim: #555550;
+  --accent: #c8a96e;
+  --accent-dim: rgba(200,169,110,0.15);
+  --accent-glow: rgba(200,169,110,0.08);
+  --danger: #c86e6e;
+  --danger-dim: rgba(200,110,110,0.12);
+  --anki: #6eb4c8;
+  --anki-dim: rgba(110,180,200,0.15);
+  --anki-glow: rgba(110,180,200,0.08);
+  --valid: #6ec87a;
+  --valid-dim: rgba(110,200,122,0.15);
+  --invalid: #c86e6e;
+  --invalid-dim: rgba(200,110,110,0.15);
+  --task-done: #6ec87a;
+  --task-done-dim: rgba(110,200,122,0.12);
+  --task-late: #e8a050;
+  --task-late-dim: rgba(232,160,80,0.12);
+  --recur: #b46ec8;
+  --recur-dim: rgba(180,110,200,0.14);
+  --recur-border: rgba(180,110,200,0.28);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.45);
+}
+body.light {
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --surface3: #e8e4da;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.13);
+  --text: #1a1a15;
+  --text-muted: #666660;
+  --text-dim: #999990;
+  --accent: #9a7740;
+  --accent-dim: rgba(154,119,64,0.12);
+  --accent-glow: rgba(154,119,64,0.06);
+  --danger: #b54040;
+  --danger-dim: rgba(181,64,64,0.10);
+  --anki: #2a7fa0;
+  --anki-dim: rgba(42,127,160,0.12);
+  --anki-glow: rgba(42,127,160,0.06);
+  --valid: #2a8040;
+  --valid-dim: rgba(42,128,64,0.12);
+  --invalid: #b54040;
+  --invalid-dim: rgba(181,64,64,0.12);
+  --task-done: #2a8040;
+  --task-done-dim: rgba(42,128,64,0.10);
+  --task-late: #a05010;
+  --task-late-dim: rgba(160,80,16,0.10);
+  --recur: #8040a0;
+  --recur-dim: rgba(128,64,160,0.11);
+  --recur-border: rgba(128,64,160,0.24);
+  --shadow: 0 2px 12px rgba(0,0,0,0.10);
+}
+
+/* ── Reset & Base ──────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background 0.25s, color 0.25s;
+}
+.app { max-width: 720px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+/* ── Header ─────────────────────────────────── */
+.header { padding: 1.75rem 0 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.header-left { display: flex; flex-direction: column; gap: 4px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 4px; }
+.header-text h1 { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; }
+.header-text h1 span { color: var(--accent); }
+.header-text p { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.offline-badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; background: rgba(200,110,110,0.15); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); display: none; white-space: nowrap; }
+.offline-badge.show { display: inline-flex; align-items: center; gap: 4px; }
+.theme-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Tabs ────────────────────────────────────── */
+.tabs { display: flex; gap: 0; margin: 1.5rem 0 1.75rem; border-bottom: 0.5px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 10px 15px; background: none; border: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; position: relative; transition: color 0.15s; white-space: nowrap; flex-shrink: 0; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1.5px; background: var(--accent); border-radius: 2px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeSlide 0.18s ease; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── Stats row ───────────────────────────────── */
+.stats-row { display: flex; gap: 1.5rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 500; color: var(--accent); line-height: 1; }
+.stat-val.anki-val { color: var(--anki); }
+.stat-val.task-val { color: var(--task-done); }
+.stat-val.late-val { color: var(--task-late); }
+.stat-val.recur-val { color: var(--recur); }
+.stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Form elements ───────────────────────────── */
+.search-wrap { position: relative; margin-bottom: 1rem; }
+.search-wrap input { width: 100%; background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 14px 10px 36px; outline: none; transition: border-color 0.15s; }
+.search-wrap input:focus { border-color: var(--accent); }
+.search-wrap input::placeholder { color: var(--text-dim); }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 14px; pointer-events: none; }
+.add-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-row input, .add-row select,
+.form-input, .form-select, .form-textarea {
+  background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius);
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 14px; outline: none;
+  transition: border-color 0.15s;
+}
+.add-row input { flex: 1; min-width: 140px; }
+.add-row input::placeholder, .form-input::placeholder, .form-textarea::placeholder { color: var(--text-dim); }
+.add-row input:focus, .add-row select:focus,
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.add-row select { min-width: 130px; cursor: pointer; }
+.add-row select option, .form-select option { background: var(--surface); }
+.form-input { width: 100%; margin-bottom: 8px; }
+.form-select { width: 100%; margin-bottom: 8px; cursor: pointer; }
+.form-textarea { width: 100%; min-height: 60px; resize: vertical; margin-bottom: 8px; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.form-row .form-input, .form-row .form-select { flex: 1; min-width: 130px; margin-bottom: 0; }
+.form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 5px; display: block; }
+
+/* Validation */
+.validation-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; min-height: 22px; }
+.val-badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 4px; }
+.val-badge.valid   { background: var(--valid-dim);   color: var(--valid);   border: 0.5px solid rgba(110,200,122,0.3); }
+.val-badge.invalid { background: var(--invalid-dim); color: var(--invalid); border: 0.5px solid rgba(200,110,110,0.3); }
+.val-badge.pending { background: var(--surface2); color: var(--text-dim); border: 0.5px solid var(--border2); }
+.val-spinner { width: 8px; height: 8px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Buttons ─────────────────────────────────── */
+.btn { padding: 10px 18px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--accent-dim); color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s; white-space: nowrap; }
+.btn:hover { background: rgba(200,169,110,0.25); }
+.btn:active { transform: scale(0.97); }
+.btn-sm { padding: 7px 12px; font-size: 12px; }
+.btn-danger { background: var(--danger-dim); color: var(--danger); border-color: rgba(200,110,110,0.2); padding: 6px 10px; font-size: 12px; }
+.btn-danger:hover { background: rgba(200,110,110,0.22); }
+.btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-full { width: 100%; text-align: center; display: block; }
+.btn-recur { background: var(--recur-dim); color: var(--recur); border-color: var(--recur-border); }
+.btn-recur:hover { background: rgba(180,110,200,0.25); }
+
+/* ── Filters ─────────────────────────────────── */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.filter-btn { padding: 5px 13px; border-radius: 20px; border: 0.5px solid var(--border2); background: transparent; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.filter-btn.anki-filter.active { background: var(--anki-dim); border-color: var(--anki); color: var(--anki); }
+.filter-btn.recur-filter.active { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); }
+.sort-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+.sort-label { font-size: 12px; color: var(--text-dim); }
+.sort-select { background: transparent; border: 0.5px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif; padding: 4px 10px; cursor: pointer; outline: none; }
+.sort-select option { background: var(--surface); }
+
+/* ── Word cards ──────────────────────────────── */
+.word-list { display: flex; flex-direction: column; gap: 8px; }
+.word-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.2s; animation: fadeIn 0.18s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.word-card:hover { border-color: var(--border2); }
+.word-card.anki-ready { border-color: rgba(110,180,200,0.35); background: rgba(110,180,200,0.04); }
+.word-card.anki-done { opacity: 0.4; }
+.word-card.anki-done .word-btn { text-decoration: line-through; color: var(--text-muted); }
+.word-card.max-reached .count-badge { background: var(--danger-dim); color: var(--danger); }
+.anki-badge { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; background: var(--anki-dim); color: var(--anki); border: 0.5px solid rgba(110,180,200,0.3); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; animation: ankiPulse 2.5s ease infinite; }
+@keyframes ankiPulse { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
+.anki-check-btn { font-size: 11px; padding: 5px 10px; border-radius: var(--radius); border: 0.5px solid rgba(110,180,200,0.3); background: var(--anki-dim); color: var(--anki); cursor: pointer; flex-shrink: 0; transition: background 0.15s; }
+.anki-check-btn:hover { background: rgba(110,180,200,0.28); }
+.word-valid-badge { font-size: 9px; font-weight: 500; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+.word-valid-badge.valid   { background: var(--valid-dim);   color: var(--valid);   border: 0.5px solid rgba(110,200,122,0.3); }
+.word-valid-badge.invalid { background: var(--invalid-dim); color: var(--invalid); border: 0.5px solid rgba(200,110,110,0.3); }
+.word-card-top { display: flex; align-items: center; gap: 8px; padding: 12px 14px; flex-wrap: wrap; }
+.word-btn { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 500; color: var(--text); background: none; border: none; cursor: pointer; padding: 0; text-align: left; flex: 1; transition: color 0.15s; min-width: 80px; }
+.word-btn:hover { color: var(--accent); }
+.word-btn:disabled { cursor: default; opacity: 0.5; }
+.cat-badge { font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
+.count-badge { font-size: 11px; font-weight: 500; color: var(--accent); background: var(--accent-dim); padding: 3px 10px; border-radius: 20px; flex-shrink: 0; min-width: 38px; text-align: center; }
+.word-dates { padding: 0 14px 12px; display: flex; flex-wrap: wrap; gap: 5px; }
+.date-tag { font-size: 11px; color: var(--text-muted); background: var(--surface2); border: 0.5px solid var(--border); border-radius: 5px; padding: 3px 9px; }
+.date-tag:first-child { color: var(--accent); border-color: rgba(200,169,110,0.25); background: var(--accent-glow); }
+
+/* ── Section helpers ─────────────────────────── */
+.section-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.toggle-btn { background: none; border: none; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 0; }
+.toggle-btn:hover { color: var(--accent); }
+.toggle-icon { transition: transform 0.2s; display: inline-block; }
+.toggle-icon.open { transform: rotate(90deg); }
+.collapsible { display: none; margin-top: 10px; }
+.collapsible.open { display: block; }
+.cat-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.cat-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 0.5px solid transparent; }
+.cat-chip-del { background: none; border: none; cursor: pointer; color: inherit; opacity: 0.5; font-size: 14px; line-height: 1; padding: 0; }
+.cat-chip-del:hover { opacity: 1; }
+.cat-row { display: flex; gap: 8px; }
+.cat-input { flex: 1; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 12px; outline: none; }
+.cat-input:focus { border-color: var(--accent); }
+.cat-input::placeholder { color: var(--text-dim); }
+.section-divider { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-dim); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text-dim); font-size: 13px; }
+.empty-icon { font-family: 'Playfair Display', serif; font-size: 2rem; display: block; margin-bottom: 0.5rem; opacity: 0.25; }
+
+/* ══════════════════════════════════════════════
+   TASK CARDS
+══════════════════════════════════════════════ */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: fadeIn 0.18s ease;
+}
+.task-card:hover { box-shadow: var(--shadow); }
+.task-card.task-done { opacity: 0.45; }
+.task-card.task-done .task-title { text-decoration: line-through; color: var(--text-muted); }
+.task-card.task-late:not(.task-recur) { border-color: rgba(232,160,80,0.45); }
+.task-card.task-recur { border-color: var(--recur-border); }
+.task-card.task-recur.task-late { border-color: rgba(232,160,80,0.5); background: var(--task-late-dim); }
+
+/* Recur stripe on left side */
+.task-card.task-recur::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 100%;
+  background: var(--recur);
+  position: absolute;
+  left: 0; top: 0;
+  border-radius: 3px 0 0 3px;
+}
+.task-card { position: relative; }
+
+.task-card-top { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px 10px 14px; }
+.task-card.task-recur .task-card-top { padding-left: 18px; }
+
+.task-checkbox {
+  width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2);
+  background: var(--surface2); cursor: pointer; flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.task-checkbox:hover { border-color: var(--task-done); }
+.task-checkbox.checked { background: var(--task-done); border-color: var(--task-done); }
+.task-checkbox.checked::after { content: '✓'; font-size: 11px; font-weight: 700; color: white; }
+
+.task-info { flex: 1; min-width: 0; }
+.task-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 500; color: var(--text); line-height: 1.3; }
+.task-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+
+.task-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; align-items: center; }
+.task-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.task-badge.cat-b  { border: 0.5px solid transparent; }
+.task-badge.date-b { background: var(--surface2); color: var(--text-muted); border: 0.5px solid var(--border); }
+.task-badge.late-b { background: var(--task-late-dim); color: var(--task-late); border: 0.5px solid rgba(232,160,80,0.3); }
+.task-badge.report-b { background: var(--danger-dim); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); }
+.task-badge.done-b  { background: var(--task-done-dim); color: var(--task-done); border: 0.5px solid rgba(110,200,122,0.3); }
+.task-badge.recur-b { background: var(--recur-dim); color: var(--recur); border: 0.5px solid var(--recur-border); }
+.task-badge.deadline-b { background: rgba(200,110,110,0.12); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); }
+.task-badge.streak-b { background: rgba(200,169,110,0.15); color: var(--accent); border: 0.5px solid rgba(200,169,110,0.3); }
+
+.task-actions { display: flex; gap: 5px; align-items: flex-start; flex-shrink: 0; }
+.task-expand-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--text-dim); cursor: pointer;
+  border-radius: var(--radius); padding: 5px 8px; font-size: 12px; transition: all 0.15s;
+}
+.task-expand-btn:hover { border-color: var(--border2); color: var(--text-muted); }
+
+/* Recur history panel */
+.task-history {
+  border-top: 0.5px solid var(--border);
+  padding: 10px 14px 12px;
+  display: none;
+}
+.task-history.open { display: block; }
+.task-history-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 8px; }
+.history-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+.history-dot {
+  width: 28px; height: 28px; border-radius: 6px; font-size: 10px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; cursor: default;
+  border: 0.5px solid transparent;
+}
+.history-dot.hd-done    { background: var(--task-done-dim); color: var(--task-done); border-color: rgba(110,200,122,0.3); }
+.history-dot.hd-missed  { background: var(--danger-dim); color: var(--danger); border-color: rgba(200,110,110,0.25); }
+.history-dot.hd-pending { background: var(--surface2); color: var(--text-dim); border-color: var(--border); }
+.history-dot.hd-skip    { background: transparent; color: var(--text-dim); border-color: var(--border); opacity: 0.4; }
+
+/* ══════════════════════════════════════════════
+   DAY-PICKER (recurring days selector)
+══════════════════════════════════════════════ */
+.day-picker { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.day-pill {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border2);
+  background: var(--surface2); color: var(--text-muted); font-size: 11px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; user-select: none; font-family: 'DM Sans', sans-serif;
+}
+.day-pill:hover { border-color: var(--recur); color: var(--recur); }
+.day-pill.selected { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); }
+
+/* ══════════════════════════════════════════════
+   MODAL (task form)
+══════════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 200; align-items: center; justify-content: center; padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 520px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { from { opacity:0; transform: scale(0.94); } to { opacity:1; transform: none; } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.modal-section { margin-bottom: 1rem; }
+.modal-footer { display: flex; gap: 8px; margin-top: 1.25rem; }
+.modal-footer .btn { flex: 1; }
+
+/* Recurrence type toggle */
+.recur-type-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.recur-type-btn {
+  flex: 1; padding: 8px 6px; border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: transparent; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.recur-type-btn:hover { border-color: var(--recur); color: var(--recur); }
+.recur-type-btn.active { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); font-weight: 500; }
+
+/* Conditional form panels */
+.recur-panel { display: none; }
+.recur-panel.active { display: block; }
+
+/* ══════════════════════════════════════════════
+   REVIEW TAB
+══════════════════════════════════════════════ */
+.review-header { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.review-date { font-size: 13px; font-weight: 500; color: var(--accent); font-family: 'Playfair Display', serif; letter-spacing: 0; text-transform: none; }
+.review-table { display: flex; flex-direction: column; gap: 5px; }
+.review-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--radius);
+  background: var(--surface); border: 0.5px solid var(--border);
+  transition: border-color 0.15s;
+}
+.review-row.late-row  { border-color: rgba(232,160,80,0.35); background: var(--task-late-dim); }
+.review-row.recur-row { border-left: 3px solid var(--recur); padding-left: 11px; }
+.review-type { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; width: 36px; flex-shrink: 0; }
+.review-type.type-word  { color: var(--accent); }
+.review-type.type-task  { color: var(--task-done); }
+.review-type.type-recur { color: var(--recur); }
+.review-label { flex: 1; font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--text); }
+.review-label.no-anki { color: var(--anki); }
+.review-badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.review-add-btn {
+  background: var(--accent-dim); border: 0.5px solid rgba(200,169,110,0.25); color: var(--accent);
+  font-size: 11px; padding: 4px 10px; border-radius: var(--radius); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-weight: 500; transition: background 0.15s; white-space: nowrap;
+}
+.review-add-btn:hover { background: rgba(200,169,110,0.28); }
+.review-add-btn:disabled { opacity: 0.35; cursor: default; }
+.review-check {
+  width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2);
+  background: var(--surface2); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.review-check:hover { border-color: var(--task-done); }
+.review-check.checked { background: var(--task-done); border-color: var(--task-done); }
+.review-check.checked::after { content: '✓'; font-size: 10px; font-weight: 700; color: white; }
+
+/* ══════════════════════════════════════════════
+   CHARTS & STATS
+══════════════════════════════════════════════ */
+.chart-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.chart-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 1rem; }
+.chart-wrap { position: relative; height: 220px; }
+.top-words { display: flex; flex-direction: column; gap: 8px; }
+.top-word-row { display: flex; align-items: center; gap: 10px; }
+.top-word-label { font-family: 'Playfair Display', serif; font-size: 0.95rem; min-width: 110px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-word-label.is-anki { color: var(--anki); }
+.top-word-bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.top-word-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+.top-word-bar.is-anki { background: var(--anki); }
+.top-word-count { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: right; }
+
+/* Consistency heatmap */
+.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+.heatmap-grid { display: flex; gap: 3px; }
+.heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+.heatmap-day {
+  width: 13px; height: 13px; border-radius: 2.5px;
+  background: var(--surface2); cursor: default; transition: background 0.1s;
+  position: relative;
+}
+.heatmap-day[data-v="0"] { background: var(--surface2); }
+.heatmap-day[data-v="1"] { background: rgba(180,110,200,0.28); }
+.heatmap-day[data-v="2"] { background: rgba(180,110,200,0.50); }
+.heatmap-day[data-v="3"] { background: rgba(180,110,200,0.75); }
+.heatmap-day[data-v="4"] { background: rgba(180,110,200,1); }
+.heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+.heatmap-legend-label { font-size: 10px; color: var(--text-dim); }
+.heatmap-legend-boxes { display: flex; gap: 2px; }
+.heatmap-legend-box { width: 13px; height: 13px; border-radius: 2px; }
+
+/* Anki progress bar */
+.anki-progress-bar-wrap { height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; margin: 6px 0 4px; }
+.anki-progress-bar { height: 100%; background: var(--anki); border-radius: 4px; transition: width 0.5s ease; }
+.anki-progress-labels { display: flex; justify-content: space-between; }
+.anki-progress-label { font-size: 11px; color: var(--text-muted); }
+
+/* Recur consistency table */
+.recur-stats-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.recur-stats-table th { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; padding: 4px 8px; text-align: left; border-bottom: 0.5px solid var(--border); }
+.recur-stats-table td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); color: var(--text-muted); }
+.recur-stats-table td:first-child { color: var(--text); font-family: 'Playfair Display', serif; font-size: 0.9rem; }
+.recur-stats-table .pct-good  { color: var(--task-done); font-weight: 500; }
+.recur-stats-table .pct-mid   { color: var(--accent); font-weight: 500; }
+.recur-stats-table .pct-low   { color: var(--task-late); font-weight: 500; }
+
+/* Streak bar inline */
+.streak-bar { display: flex; gap: 2px; align-items: center; }
+.streak-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ── Notification & install banners ─────────── */
+.notif-banner {
+  display: none; background: var(--anki-dim); border: 0.5px solid rgba(110,180,200,0.25);
+  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 1rem;
+  font-size: 13px; color: var(--anki); align-items: center; gap: 10px;
+}
+.notif-banner.show { display: flex; }
+.notif-banner p { flex: 1; }
+.install-banner { display: none; position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 16px; gap: 12px; align-items: center; box-shadow: var(--shadow); z-index: 100; width: calc(100% - 2.5rem); max-width: 480px; animation: slideUp 0.3s ease; }
+.install-banner.show { display: flex; }
+@keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+.install-banner p { flex: 1; font-size: 13px; color: var(--text-muted); }
+.install-banner p strong { color: var(--text); display: block; font-size: 14px; }
+.install-banner-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; padding: 0 4px; }
+
+@media (max-width: 480px) {
+  .tabs { gap: 0; }
+  .tab { padding: 10px 10px; font-size: 12px; }
+  .stats-row { gap: 1rem; }
+  .word-card-top { gap: 6px; }
+  .modal { padding: 1.25rem; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-text">
+        <h1>Le<span>xique</span></h1>
+        <p>Vocabulaire · Tâches récurrentes · Révision</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Sombre</button>
+      <span class="offline-badge" id="offlineBadge">⚡ Hors ligne</span>
+    </div>
+  </div>
+
+  <!-- Notification banner -->
+  <div class="notif-banner" id="notifBanner">
+    <p>🔔 Activer les notifications pour les rappels Anki et tâches.</p>
+    <button class="btn btn-sm" onclick="requestNotifPermission()">Activer</button>
+    <button style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px" onclick="document.getElementById('notifBanner').classList.remove('show')">×</button>
+  </div>
+
+  <!-- ── TABS ── -->
+  <div class="tabs">
+    <button class="tab active"  onclick="switchTab('mots')">Mots</button>
+    <button class="tab"         onclick="switchTab('revision')">Révision</button>
+    <button class="tab"         onclick="switchTab('taches')">Tâches</button>
+    <button class="tab"         onclick="switchTab('stats')">Statistiques</button>
+  </div>
+
+  <!-- ══════════ TAB MOTS ══════════ -->
+  <div class="tab-content active" id="tab-mots">
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="statWords">0</span><span class="stat-label">Mots</span></div>
+      <div class="stat"><span class="stat-val" id="statOcc">0</span><span class="stat-label">Occurrences</span></div>
+      <div class="stat"><span class="stat-val" id="statCats">0</span><span class="stat-label">Catégories</span></div>
+      <div class="stat"><span class="stat-val anki-val" id="statAnki">0</span><span class="stat-label">À mettre sur Anki</span></div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Rechercher un mot..." oninput="render()" />
+    </div>
+    <div class="section-card">
+      <button class="toggle-btn" onclick="toggleSection('catBody','catIcon')">
+        <span class="toggle-icon" id="catIcon">▶</span> Gérer les catégories
+      </button>
+      <div class="collapsible" id="catBody">
+        <div class="cat-list" id="catChipList"></div>
+        <div class="cat-row">
+          <input class="cat-input" type="text" id="catInput" placeholder="Nouvelle catégorie..." />
+          <button class="btn btn-sm" onclick="addCategory()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="add-section">
+      <div class="add-row">
+        <input type="text" id="wordInput" placeholder="Nouveau mot..." oninput="onWordInputChange()" />
+        <select id="catSelect"></select>
+        <button class="btn" onclick="addWord()">Ajouter</button>
+      </div>
+      <div class="validation-strip" id="validationStrip"></div>
+    </div>
+    <div class="filters" id="filterRow"></div>
+    <div class="sort-row">
+      <span class="sort-label">Trier par</span>
+      <select class="sort-select" id="sortSelect" onchange="render()">
+        <option value="freq">Fréquence</option>
+        <option value="alpha">Alphabétique</option>
+        <option value="recent">Plus récent</option>
+        <option value="oldest">Plus ancien</option>
+      </select>
+    </div>
+    <div class="word-list" id="wordList"></div>
+  </div>
+
+  <!-- ══════════ TAB RÉVISION ══════════ -->
+  <div class="tab-content" id="tab-revision">
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="revStatWords">0</span><span class="stat-label">Mots du jour</span></div>
+      <div class="stat"><span class="stat-val task-val" id="revStatTasks">0</span><span class="stat-label">Tâches du jour</span></div>
+      <div class="stat"><span class="stat-val recur-val" id="revStatRecur">0</span><span class="stat-label">Récurrentes</span></div>
+      <div class="stat"><span class="stat-val late-val" id="revStatLate">0</span><span class="stat-label">En retard</span></div>
+    </div>
+    <div id="reviewContent"></div>
+  </div>
+
+  <!-- ══════════ TAB TÂCHES ══════════ -->
+  <div class="tab-content" id="tab-taches">
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val task-val" id="taskStatDone">0</span><span class="stat-label">Terminées aujourd'hui</span></div>
+      <div class="stat"><span class="stat-val late-val" id="taskStatLate">0</span><span class="stat-label">En retard</span></div>
+      <div class="stat"><span class="stat-val recur-val" id="taskStatRecur">0</span><span class="stat-label">Récurrentes actives</span></div>
+      <div class="stat"><span class="stat-val" id="taskStatPct">0%</span><span class="stat-label">Taux complétion</span></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="openTaskModal(null)">+ Tâche simple</button>
+      <button class="btn btn-sm btn-recur" onclick="openTaskModal(null,'recur')">↻ Tâche récurrente</button>
+    </div>
+
+    <div class="filters" id="taskFilterRow"></div>
+    <div class="task-list" id="taskList"></div>
+  </div>
+
+  <!-- ══════════ TAB STATS ══════════ -->
+  <div class="tab-content" id="tab-stats">
+    <div class="chart-card">
+      <h3>Occurrences de mots — 30 derniers jours</h3>
+      <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Consistance des tâches récurrentes — 12 semaines</h3>
+      <div class="heatmap-scroll" id="recurHeatmap"></div>
+      <div class="heatmap-legend">
+        <span class="heatmap-legend-label">Moins</span>
+        <div class="heatmap-legend-boxes">
+          <div class="heatmap-legend-box" style="background:var(--surface2)"></div>
+          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.28)"></div>
+          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.50)"></div>
+          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.75)"></div>
+          <div class="heatmap-legend-box" style="background:rgba(180,110,200,1)"></div>
+        </div>
+        <span class="heatmap-legend-label">Plus</span>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Tâches récurrentes — consistance par tâche</h3>
+      <div id="recurConsistTable"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Tâches complétées vs reportées — 30 jours</h3>
+      <div class="chart-wrap"><canvas id="chartTasksBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Mots sur Anki vs. en attente</h3>
+      <div id="ankiProgress"></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartAnkiPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Répartition par catégorie</h3>
+      <div class="chart-wrap" style="height:190px"><canvas id="chartCats"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Top 10 mots les plus fréquents</h3>
+      <div class="top-words" id="topWords"></div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<!-- ══════════ TASK MODAL ══════════ -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Nouvelle tâche</span>
+      <button class="modal-close" onclick="closeTaskModal()">×</button>
+    </div>
+
+    <!-- Basic info -->
+    <div class="modal-section">
+      <label class="form-label">Titre *</label>
+      <input class="form-input" type="text" id="mTaskTitle" placeholder="Titre de la tâche..." />
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="mTaskDesc" placeholder="Description (optionnel)..."></textarea>
+      <label class="form-label">Catégorie</label>
+      <select class="form-select" id="mTaskCat">
+        <option value="">— Catégorie —</option>
+        <option value="perso">Personnel</option>
+        <option value="pro">Professionnel</option>
+        <option value="etude">Étude</option>
+        <option value="sport">Sport / Santé</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+
+    <!-- Recurrence type -->
+    <div class="modal-section">
+      <label class="form-label">Type de tâche</label>
+      <div class="recur-type-row">
+        <button class="recur-type-btn active" id="rtype-once"    onclick="setRecurType('once')">Une seule fois</button>
+        <button class="recur-type-btn"         id="rtype-daily"   onclick="setRecurType('daily')">Quotidienne</button>
+        <button class="recur-type-btn"         id="rtype-weekly"  onclick="setRecurType('weekly')">Jours choisis</button>
+        <button class="recur-type-btn"         id="rtype-interval" onclick="setRecurType('interval')">Toutes les N jours</button>
+      </div>
+    </div>
+
+    <!-- Panel: once -->
+    <div class="recur-panel active" id="panel-once">
+      <div class="modal-section">
+        <label class="form-label">Date prévue</label>
+        <input class="form-input" type="date" id="mTaskDate" style="margin-bottom:0" />
+      </div>
+    </div>
+
+    <!-- Panel: daily -->
+    <div class="recur-panel" id="panel-daily">
+      <div class="modal-section">
+        <label class="form-label">Date de début</label>
+        <div class="form-row">
+          <input class="form-input" type="date" id="mDailyStart" />
+          <input class="form-input" type="date" id="mDailyEnd" placeholder="Date de fin (optionnel)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: weekly (day picker) -->
+    <div class="recur-panel" id="panel-weekly">
+      <div class="modal-section">
+        <label class="form-label">Jours de répétition</label>
+        <div class="day-picker" id="dayPicker">
+          <div class="day-pill" data-day="1" onclick="toggleDay(1)">Lun</div>
+          <div class="day-pill" data-day="2" onclick="toggleDay(2)">Mar</div>
+          <div class="day-pill" data-day="3" onclick="toggleDay(3)">Mer</div>
+          <div class="day-pill" data-day="4" onclick="toggleDay(4)">Jeu</div>
+          <div class="day-pill" data-day="5" onclick="toggleDay(5)">Ven</div>
+          <div class="day-pill" data-day="6" onclick="toggleDay(6)">Sam</div>
+          <div class="day-pill" data-day="0" onclick="toggleDay(0)">Dim</div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1">
+            <label class="form-label">Date de début</label>
+            <input class="form-input" type="date" id="mWeeklyStart" style="margin-bottom:0" />
+          </div>
+          <div style="flex:1">
+            <label class="form-label">Date de fin (optionnel)</label>
+            <input class="form-input" type="date" id="mWeeklyEnd" style="margin-bottom:0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: interval -->
+    <div class="recur-panel" id="panel-interval">
+      <div class="modal-section">
+        <div class="form-row">
+          <div style="flex:1">
+            <label class="form-label">Répéter tous les</label>
+            <input class="form-input" type="number" id="mInterval" min="1" max="60" value="2" style="margin-bottom:0" />
+          </div>
+          <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:1px">
+            <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;padding:10px 0 10px 4px">jours</span>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div style="flex:1">
+            <label class="form-label">Date de début</label>
+            <input class="form-input" type="date" id="mIntervalStart" style="margin-bottom:0" />
+          </div>
+          <div style="flex:1">
+            <label class="form-label">Date de fin (optionnel)</label>
+            <input class="form-input" type="date" id="mIntervalEnd" style="margin-bottom:0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deadline (for recurring tasks) -->
+    <div class="modal-section" id="deadlineSection" style="display:none">
+      <label class="form-label">Deadline globale (optionnel)</label>
+      <input class="form-input" type="date" id="mDeadline" style="margin-bottom:0" />
+      <p style="font-size:11px;color:var(--text-dim);margin-top:4px">La tâche récurrente s'arrêtera automatiquement à cette date.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeTaskModal()">Annuler</button>
+      <button class="btn btn-sm" id="modalSaveBtn" onclick="saveTaskFromModal()">Créer la tâche</button>
+    </div>
+  </div>
+</div>
+
+<!-- PWA install banner -->
+<div class="install-banner" id="installBanner">
+  <p><strong>Installer Lexique</strong>Accès rapide depuis l'écran d'accueil.</p>
+  <button class="btn btn-sm" id="installBtn">Installer</button>
+  <button class="install-banner-close" onclick="dismissInstall()">×</button>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════
+const PALETTE = [
+  {bg:'rgba(200,169,110,0.14)',color:'#c8a96e',border:'rgba(200,169,110,0.25)'},
+  {bg:'rgba(110,180,200,0.14)',color:'#6eb4c8',border:'rgba(110,180,200,0.25)'},
+  {bg:'rgba(140,200,110,0.14)',color:'#8cc86e',border:'rgba(140,200,110,0.25)'},
+  {bg:'rgba(180,110,200,0.14)',color:'#b46ec8',border:'rgba(180,110,200,0.25)'},
+  {bg:'rgba(200,110,130,0.14)',color:'#c86e82',border:'rgba(200,110,130,0.25)'},
+  {bg:'rgba(100,160,220,0.14)',color:'#64a0dc',border:'rgba(100,160,220,0.25)'},
+];
+const ANKI_THRESHOLD = 3;
+const MAX_CLICKS     = 3;
+const WORDNIK_API_KEY = 'VOTRE_CLE_WORDNIK';
+
+const TASK_CAT_LABELS  = {perso:'Personnel',pro:'Pro',etude:'Étude',sport:'Sport',autre:'Autre',''  :'—'};
+const TASK_CAT_COLORS  = {
+  perso:{bg:'rgba(110,180,200,0.14)',color:'#6eb4c8',border:'rgba(110,180,200,0.25)'},
+  pro  :{bg:'rgba(200,169,110,0.14)',color:'#c8a96e',border:'rgba(200,169,110,0.25)'},
+  etude:{bg:'rgba(140,200,110,0.14)',color:'#8cc86e',border:'rgba(140,200,110,0.25)'},
+  sport:{bg:'rgba(200,110,130,0.14)',color:'#c86e82',border:'rgba(200,110,130,0.25)'},
+  autre:{bg:'rgba(180,110,200,0.14)',color:'#b46ec8',border:'rgba(180,110,200,0.25)'},
+};
+const DAY_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let state = { words:{}, categories:{}, tasks:[] };
+let activeFilter     = 'all';
+let activeTaskFilter = 'all';
+let modalEditId      = null;
+let modalRecurType   = 'once';
+let selectedDays     = new Set();
+
+// chart refs
+let chartTimeline = null, chartCats = null, chartAnkiPie = null, chartTasksBar = null;
+let deferredInstallPrompt = null;
+let validationTimer = null;
+const validationCache = {};
+
+// ═══════════════════════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
+function load() {
+  try {
+    const raw = localStorage.getItem('lexique_v6');
+    if (raw) state = JSON.parse(raw);
+  } catch(e) {}
+  if (!state.words)      state.words      = {};
+  if (!state.categories) state.categories = {};
+  if (!state.tasks)      state.tasks      = [];
+  migrate();
+}
+function save() {
+  try { localStorage.setItem('lexique_v6', JSON.stringify(state)); } catch(e) {}
+}
+function migrate() {
+  // from v4/v5
+  ['lexique_v5','lexique_v4'].forEach(key => {
+    try {
+      const old = localStorage.getItem(key);
+      if (old && !localStorage.getItem(key+'_migrated')) {
+        const p = JSON.parse(old);
+        if (p.words)      Object.assign(state.words,      p.words);
+        if (p.categories) Object.assign(state.categories, p.categories);
+        if (p.tasks)      state.tasks.push(...p.tasks.filter(t => !state.tasks.find(x=>x.id===t.id)));
+        localStorage.setItem(key+'_migrated','1');
+      }
+    } catch(e) {}
+  });
+  Object.values(state.words).forEach(w => {
+    if (!w.validity)  w.validity  = 'unknown';
+    if (!w.ankiDone)  w.ankiDone  = false;
+  });
+  state.tasks.forEach(t => {
+    if (!t.id) t.id = 'task_' + Math.random().toString(36).slice(2);
+    if (!t.recurType)     t.recurType = 'once';
+    if (!t.reportHistory) t.reportHistory = [];
+    if (!t.reportCount)   t.reportCount   = 0;
+    if (!t.history)       t.history       = {}; // date → 'done'|'missed'|'skipped'
+  });
+  save();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DATE UTILS
+// ═══════════════════════════════════════════════════════════════
+function ts()        { return Date.now(); }
+function todayStr()  { return fmtDay(Date.now()); }
+function fmtDay(t) {
+  const d = new Date(t);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtShort(t) {
+  const d = new Date(t);
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function fmtFull(t) {
+  const d = new Date(t);
+  return fmtShort(t)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr+'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return fmtDay(d.getTime());
+}
+function daysBetween(a, b) {
+  return Math.round((new Date(b+'T12:00:00') - new Date(a+'T12:00:00')) / 86400000);
+}
+function getDowFromStr(dateStr) { // 0=Sunday … 6=Saturday
+  return new Date(dateStr+'T12:00:00').getDay();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RECURRENCE ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Returns true if a recurring task should appear on `dateStr`.
+ */
+function isTaskActiveOnDate(task, dateStr) {
+  if (task.recurType === 'once') {
+    return task.dueDate === dateStr;
+  }
+  const start = task.recurStart || task.dueDate || dateStr;
+  const end   = task.recurEnd   || task.deadline || null;
+  const dl    = task.deadline   || null;
+
+  if (dateStr < start) return false;
+  if (end  && dateStr > end)  return false;
+  if (dl   && dateStr > dl)   return false;
+
+  if (task.recurType === 'daily') return true;
+
+  if (task.recurType === 'weekly') {
+    const dow = getDowFromStr(dateStr);
+    return (task.recurDays || []).includes(dow);
+  }
+  if (task.recurType === 'interval') {
+    const interval = task.recurInterval || 1;
+    const diff = daysBetween(start, dateStr);
+    return diff >= 0 && diff % interval === 0;
+  }
+  return false;
+}
+
+/**
+ * Returns the "occurrence entry" for a recurring task on a given date.
+ * occurrences are stored in task.history = { 'YYYY-MM-DD': 'done'|'missed' }
+ */
+function getTaskOccurrence(task, dateStr) {
+  if (!task.history) task.history = {};
+  return task.history[dateStr] || null;
+}
+
+/**
+ * Get all dates this task should have appeared (past, up to today).
+ * Used for missed-detection and stats.
+ */
+function getPastDueDates(task, upTo) {
+  const today = upTo || todayStr();
+  if (task.recurType === 'once') return [task.dueDate].filter(d => d <= today);
+
+  const start = task.recurStart || task.dueDate || today;
+  const results = [];
+  let cursor = start;
+  let guard = 0;
+
+  while (cursor <= today && guard < 400) {
+    if (isTaskActiveOnDate(task, cursor)) results.push(cursor);
+    cursor = addDays(cursor, 1);
+    guard++;
+  }
+  return results;
+}
+
+/**
+ * Run auto-report logic:
+ * - For non-recurring tasks: if past due and not done → report to today
+ * - For recurring tasks: mark past occurrences without a history entry as 'missed'
+ */
+function autoReportTasks() {
+  const today = todayStr();
+  let changed = false;
+
+  state.tasks.forEach(task => {
+    if (task.recurType === 'once') {
+      if (!task.done && task.dueDate < today) {
+        task.reportHistory = task.reportHistory || [];
+        task.reportHistory.push(task.dueDate);
+        task.reportCount = (task.reportCount || 0) + 1;
+        task.dueDate = today;
+        changed = true;
+      }
+    } else {
+      // Mark past due dates as missed if no entry exists
+      const past = getPastDueDates(task, addDays(today, -1)); // up to yesterday
+      past.forEach(d => {
+        if (!task.history[d]) {
+          task.history[d] = 'missed';
+          task.reportCount = (task.reportCount || 0) + 1;
+          changed = true;
+        }
+      });
+    }
+  });
+  if (changed) { save(); scheduleTaskNotifs(); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════════════════════════
+function initTheme() {
+  const saved = localStorage.getItem('lexique_theme') || 'dark';
+  applyTheme(saved);
+}
+function applyTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+  document.getElementById('themeBtn').textContent = theme === 'light' ? '🌙 Sombre' : '☀️ Clair';
+  localStorage.setItem('lexique_theme', theme);
+}
+function toggleTheme() {
+  applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  const tabs = ['mots','revision','taches','stats'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'stats')    renderCharts();
+  if (name === 'revision') renderRevision();
+  if (name === 'taches')   { autoReportTasks(); renderTasks(); updateTaskStats(); }
+}
+function toggleSection(bodyId, iconId) {
+  document.getElementById(bodyId).classList.toggle('open');
+  document.getElementById(iconId).classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CATEGORIES (words)
+// ═══════════════════════════════════════════════════════════════
+function slug(s) { return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,''); }
+function getCatColor(key) {
+  const cat = state.categories[key];
+  return cat ? PALETTE[cat.colorIdx % PALETTE.length] : null;
+}
+function addCategory() {
+  const inp = document.getElementById('catInput');
+  const label = inp.value.trim(); if (!label) return;
+  const key = slug(label) || 'cat'+ts();
+  if (!state.categories[key]) state.categories[key] = {label, colorIdx: Object.keys(state.categories).length};
+  inp.value = '';
+  save(); renderCatManager(); renderCatSelect(); renderFilters(); updateStats();
+}
+function deleteCategory(key) {
+  delete state.categories[key];
+  Object.values(state.words).forEach(w => { if (w.catKey===key) w.catKey=null; });
+  if (activeFilter===key) activeFilter='all';
+  save(); renderCatManager(); renderCatSelect(); renderFilters(); render();
+}
+function renderCatManager() {
+  const list = document.getElementById('catChipList');
+  const keys = Object.keys(state.categories);
+  if (!keys.length) { list.innerHTML='<span style="font-size:12px;color:var(--text-dim)">Aucune catégorie.</span>'; return; }
+  list.innerHTML = keys.map(key => {
+    const c=state.categories[key], col=getCatColor(key);
+    return `<div class="cat-chip" style="background:${col.bg};color:${col.color};border-color:${col.border}">
+      ${c.label}<button class="cat-chip-del" onclick="deleteCategory('${key}')">×</button></div>`;
+  }).join('');
+}
+function renderCatSelect() {
+  document.getElementById('catSelect').innerHTML = '<option value="">— catégorie —</option>' +
+    Object.keys(state.categories).map(k=>`<option value="${k}">${state.categories[k].label}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FILTERS (words)
+// ═══════════════════════════════════════════════════════════════
+function renderFilters() {
+  const row = document.getElementById('filterRow');
+  let html = `<button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Tous</button>`;
+  Object.keys(state.categories).forEach(key => {
+    const c=state.categories[key], col=getCatColor(key), isA=activeFilter===key;
+    html += `<button class="filter-btn ${isA?'active':''}" onclick="setFilter('${key}')"
+      style="${isA?`background:${col.bg};border-color:${col.color};color:${col.color}`:''}">
+      ${c.label}</button>`;
+  });
+  html += `<button class="filter-btn ${activeFilter==='none'?'active':''}" onclick="setFilter('none')">Sans catégorie</button>`;
+  html += `<button class="filter-btn anki-filter ${activeFilter==='anki'?'active':''}" onclick="setFilter('anki')">Anki prêts</button>`;
+  row.innerHTML = html;
+}
+function setFilter(f) { activeFilter=f; renderFilters(); render(); }
+
+// ═══════════════════════════════════════════════════════════════
+//  WORD VALIDATION
+// ═══════════════════════════════════════════════════════════════
+async function checkWordnik(word) {
+  if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
+  try {
+    const res = await fetch(
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (res.status === 404) return false;
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0;
+  } catch { return null; }
+}
+async function validateWord(word) {
+  const strip = document.getElementById('validationStrip');
+  if (!word) { strip.innerHTML = ''; return; }
+  if (validationCache[word] !== undefined) { renderValidationStrip(strip, word, validationCache[word]); return; }
+  if (!navigator.onLine) { strip.innerHTML=`<span class="val-badge pending">⚡ Hors ligne</span>`; return; }
+  strip.innerHTML=`<span class="val-badge pending"><span class="val-spinner"></span>Wordnik…</span>`;
+  const result = await checkWordnik(word);
+  validationCache[word] = result;
+  renderValidationStrip(strip, word, result);
+}
+function renderValidationStrip(strip, word, result) {
+  if (result===null) { strip.innerHTML=`<span class="val-badge pending">Wordnik : N/A</span>`; }
+  else {
+    const cls=result?'valid':'invalid', icon=result?'✓':'✗', label=result?'Valide':'Inconnu';
+    strip.innerHTML=`<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
+  }
+  const key=word.toLowerCase().replace(/\s+/g,'_');
+  if (state.words[key]) { state.words[key].validity=result===true?'valid':result===false?'invalid':'unknown'; save(); render(); }
+}
+function onWordInputChange() {
+  const word=document.getElementById('wordInput').value.trim();
+  clearTimeout(validationTimer);
+  document.getElementById('validationStrip').innerHTML='';
+  if (!word||word.length<2) return;
+  validationTimer=setTimeout(()=>validateWord(word),600);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WORDS
+// ═══════════════════════════════════════════════════════════════
+function isAnkiReady(w) { return w.occurrences.length>=ANKI_THRESHOLD && !w.ankiDone; }
+function isMaxReached(w) { return w.occurrences.length>=MAX_CLICKS; }
+
+async function addWord() {
+  const inp=document.getElementById('wordInput'), sel=document.getElementById('catSelect');
+  const label=inp.value.trim(); if (!label) return;
+  const key=label.toLowerCase().replace(/\s+/g,'_'), catKey=sel.value||null, now=ts();
+  if (!state.words[key]) {
+    state.words[key]={label,createdAt:now,catKey,occurrences:[now],ankiDone:false,validity:'unknown'};
+  } else {
+    if (isMaxReached(state.words[key])) { notify('max',label); inp.value=''; return; }
+    state.words[key].occurrences.push(now);
+    if (catKey) state.words[key].catKey=catKey;
+  }
+  inp.value=''; document.getElementById('validationStrip').innerHTML='';
+  save(); updateStats(); render();
+  if (state.words[key].occurrences.length===ANKI_THRESHOLD) notify('anki',label);
+  if (navigator.onLine) await validateWord(label);
+}
+function clickWord(key) {
+  if (!state.words[key]) return;
+  const w=state.words[key];
+  if (isMaxReached(w)) { notify('max',w.label); return; }
+  const prev=w.occurrences.length;
+  w.occurrences.push(ts());
+  if (prev+1===ANKI_THRESHOLD) notify('anki',w.label);
+  save(); updateStats(); render();
+}
+function deleteWord(key) { delete state.words[key]; save(); updateStats(); render(); }
+function markAnkiDone(key) { if (state.words[key]) { state.words[key].ankiDone=true; save(); updateStats(); render(); } }
+
+// ═══════════════════════════════════════════════════════════════
+//  TASK MODAL
+// ═══════════════════════════════════════════════════════════════
+function openTaskModal(editId, defaultType) {
+  modalEditId = editId;
+  const today = todayStr();
+  document.getElementById('modalTitle').textContent = editId ? 'Modifier la tâche' : 'Nouvelle tâche';
+  document.getElementById('modalSaveBtn').textContent = editId ? 'Enregistrer' : 'Créer la tâche';
+
+  if (editId) {
+    const t = state.tasks.find(x=>x.id===editId);
+    if (!t) return;
+    document.getElementById('mTaskTitle').value = t.title || '';
+    document.getElementById('mTaskDesc').value  = t.desc  || '';
+    document.getElementById('mTaskCat').value   = t.cat   || '';
+    document.getElementById('mTaskDate').value  = t.dueDate || today;
+    document.getElementById('mDailyStart').value = t.recurStart || today;
+    document.getElementById('mDailyEnd').value   = t.recurEnd   || '';
+    document.getElementById('mWeeklyStart').value= t.recurStart || today;
+    document.getElementById('mWeeklyEnd').value  = t.recurEnd   || '';
+    document.getElementById('mIntervalStart').value= t.recurStart || today;
+    document.getElementById('mIntervalEnd').value  = t.recurEnd   || '';
+    document.getElementById('mInterval').value   = t.recurInterval || 2;
+    document.getElementById('mDeadline').value   = t.deadline || '';
+    selectedDays = new Set(t.recurDays || []);
+    setRecurType(t.recurType || 'once');
+  } else {
+    document.getElementById('mTaskTitle').value = '';
+    document.getElementById('mTaskDesc').value  = '';
+    document.getElementById('mTaskCat').value   = '';
+    document.getElementById('mTaskDate').value  = today;
+    document.getElementById('mDailyStart').value  = today;
+    document.getElementById('mDailyEnd').value    = '';
+    document.getElementById('mWeeklyStart').value = today;
+    document.getElementById('mWeeklyEnd').value   = '';
+    document.getElementById('mIntervalStart').value = today;
+    document.getElementById('mIntervalEnd').value   = '';
+    document.getElementById('mInterval').value   = 2;
+    document.getElementById('mDeadline').value   = '';
+    selectedDays = new Set();
+    setRecurType(defaultType || 'once');
+  }
+  renderDayPicker();
+  document.getElementById('taskModal').classList.add('open');
+  document.getElementById('mTaskTitle').focus();
+}
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('open');
+  modalEditId = null;
+}
+function setRecurType(type) {
+  modalRecurType = type;
+  ['once','daily','weekly','interval'].forEach(t => {
+    document.getElementById('rtype-'+t).classList.toggle('active', t===type);
+    document.getElementById('panel-'+t).classList.toggle('active', t===type);
+  });
+  document.getElementById('deadlineSection').style.display = type !== 'once' ? 'block' : 'none';
+}
+function toggleDay(d) {
+  if (selectedDays.has(d)) selectedDays.delete(d);
+  else selectedDays.add(d);
+  renderDayPicker();
+}
+function renderDayPicker() {
+  document.querySelectorAll('.day-pill').forEach(el => {
+    const d = parseInt(el.dataset.day);
+    el.classList.toggle('selected', selectedDays.has(d));
+  });
+}
+function saveTaskFromModal() {
+  const title = document.getElementById('mTaskTitle').value.trim();
+  if (!title) { document.getElementById('mTaskTitle').focus(); return; }
+
+  const desc     = document.getElementById('mTaskDesc').value.trim();
+  const cat      = document.getElementById('mTaskCat').value;
+  const deadline = document.getElementById('mDeadline').value || null;
+  const type     = modalRecurType;
+  const today    = todayStr();
+
+  let task;
+  if (modalEditId) {
+    task = state.tasks.find(x=>x.id===modalEditId);
+    if (!task) return;
+  } else {
+    task = {
+      id: 'task_'+ts(), done:false, doneAt:null,
+      reportCount:0, reportHistory:[], history:{},
+      createdAt: ts()
+    };
+    state.tasks.push(task);
+  }
+
+  task.title    = title;
+  task.desc     = desc;
+  task.cat      = cat;
+  task.deadline = deadline;
+  task.recurType = type;
+
+  if (type === 'once') {
+    task.dueDate   = document.getElementById('mTaskDate').value || today;
+    task.recurDays = [];
+    task.recurStart= task.dueDate;
+    task.recurEnd  = null;
+    task.recurInterval = null;
+  } else if (type === 'daily') {
+    task.recurStart = document.getElementById('mDailyStart').value || today;
+    task.recurEnd   = document.getElementById('mDailyEnd').value   || null;
+    task.dueDate    = task.recurStart;
+    task.recurDays  = [0,1,2,3,4,5,6];
+    task.recurInterval = null;
+  } else if (type === 'weekly') {
+    task.recurDays  = [...selectedDays];
+    task.recurStart = document.getElementById('mWeeklyStart').value || today;
+    task.recurEnd   = document.getElementById('mWeeklyEnd').value   || null;
+    task.dueDate    = task.recurStart;
+    task.recurInterval = null;
+  } else if (type === 'interval') {
+    task.recurInterval = parseInt(document.getElementById('mInterval').value) || 2;
+    task.recurStart    = document.getElementById('mIntervalStart').value || today;
+    task.recurEnd      = document.getElementById('mIntervalEnd').value   || null;
+    task.dueDate       = task.recurStart;
+    task.recurDays     = [];
+  }
+
+  save();
+  closeTaskModal();
+  autoReportTasks();
+  renderTasks();
+  updateTaskStats();
+  scheduleTaskNotifs();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TASK DONE TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleTaskDone(id, dateStr) {
+  const task = state.tasks.find(t=>t.id===id);
+  if (!task) return;
+  const d = dateStr || todayStr();
+
+  if (task.recurType === 'once') {
+    task.done  = !task.done;
+    task.doneAt = task.done ? ts() : null;
+  } else {
+    const current = task.history[d] || null;
+    task.history[d] = current === 'done' ? null : 'done';
+    if (task.history[d] === null) delete task.history[d];
+  }
+  save(); renderTasks(); updateTaskStats();
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t=>t.id!==id);
+  save(); renderTasks(); updateTaskStats();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TASK STATS
+// ═══════════════════════════════════════════════════════════════
+function updateTaskStats() {
+  const today = todayStr();
+  const doneTodayCount = state.tasks.filter(t => {
+    if (t.recurType === 'once') return t.done && t.doneAt && fmtDay(t.doneAt)===today;
+    return t.history[today] === 'done';
+  }).length;
+  const lateCount = state.tasks.filter(t => {
+    if (t.recurType === 'once') return !t.done && t.dueDate < today;
+    return isTaskActiveOnDate(t, today) && t.history[today] !== 'done';
+  }).length;
+  const recurActive = state.tasks.filter(t => t.recurType !== 'once' && (!t.recurEnd || t.recurEnd >= today) && (!t.deadline || t.deadline >= today)).length;
+  const allDue  = state.tasks.reduce((a,t) => a + getPastDueDates(t).length, 0);
+  const allDone = state.tasks.reduce((a,t) => {
+    if (t.recurType==='once') return a + (t.done?1:0);
+    return a + Object.values(t.history).filter(v=>v==='done').length;
+  },0);
+  const pct = allDue > 0 ? Math.round(allDone/allDue*100) : 0;
+
+  document.getElementById('taskStatDone').textContent  = doneTodayCount;
+  document.getElementById('taskStatLate').textContent  = lateCount;
+  document.getElementById('taskStatRecur').textContent = recurActive;
+  document.getElementById('taskStatPct').textContent   = pct + '%';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER TASKS
+// ═══════════════════════════════════════════════════════════════
+function renderTaskFilters() {
+  const row = document.getElementById('taskFilterRow');
+  const opts = [
+    {f:'all',l:'Toutes'},
+    {f:'today',l:'Aujourd\'hui'},
+    {f:'recur',l:'↻ Récurrentes'},
+    {f:'late',l:'En retard'},
+    {f:'done',l:'Terminées'},
+    {f:'perso',l:'Personnel'},
+    {f:'pro',l:'Pro'},
+    {f:'etude',l:'Étude'},
+    {f:'sport',l:'Sport'},
+  ];
+  row.innerHTML = opts.map(({f,l}) =>
+    `<button class="filter-btn ${activeTaskFilter===f?'active':''} ${f==='recur'?'recur-filter':''}" onclick="setTaskFilter('${f}')">${l}</button>`
+  ).join('');
+}
+function setTaskFilter(f) { activeTaskFilter=f; renderTaskFilters(); renderTasks(); }
+
+function renderTasks() {
+  renderTaskFilters();
+  const today = todayStr();
+  const list  = document.getElementById('taskList');
+
+  // Build a flat list of "task instances" for display
+  let items = buildTaskItems(today);
+
+  // Filter
+  items = items.filter(item => {
+    const t = item.task;
+    if (activeTaskFilter==='all')   return true;
+    if (activeTaskFilter==='today') return item.date===today && !item.done;
+    if (activeTaskFilter==='recur') return t.recurType!=='once';
+    if (activeTaskFilter==='late')  return item.isLate;
+    if (activeTaskFilter==='done')  return item.done;
+    return t.cat===activeTaskFilter;
+  });
+
+  // Sort: late first, then by date, done at end
+  items.sort((a,b) => {
+    if (a.done!==b.done) return a.done?1:-1;
+    if (a.isLate!==b.isLate) return a.isLate?-1:1;
+    return a.date.localeCompare(b.date);
+  });
+
+  if (!items.length) {
+    list.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>Aucune tâche à afficher.</div>`;
+    return;
+  }
+  list.innerHTML = items.map(item => renderTaskCard(item, today)).join('');
+}
+
+/**
+ * Build display items for today + recent past (up to 7 days back for recurring)
+ */
+function buildTaskItems(today) {
+  const items = [];
+  const lookback = 7;
+  state.tasks.forEach(task => {
+    if (task.recurType === 'once') {
+      items.push({
+        task, id: task.id,
+        date: task.dueDate,
+        done: task.done,
+        isLate: !task.done && task.dueDate < today,
+        occurrence: null,
+      });
+    } else {
+      // Show today + up to lookback days that are not done (missed)
+      for (let i=-lookback; i<=0; i++) {
+        const d = addDays(today, i);
+        if (!isTaskActiveOnDate(task, d)) continue;
+        const occ = task.history[d] || null;
+        const done = occ === 'done';
+        const missed = occ === 'missed' || (!done && d < today);
+        if (i < 0 && done) continue; // don't clutter with old done items
+        items.push({
+          task, id: task.id+'_'+d,
+          date: d,
+          done,
+          isLate: !done && d <= today,
+          occurrence: occ,
+        });
+      }
+    }
+  });
+  return items;
+}
+
+function renderTaskCard(item, today) {
+  const { task, date, done, isLate } = item;
+  const isRecur = task.recurType !== 'once';
+  const isToday = date === today;
+  const col = TASK_CAT_COLORS[task.cat] || TASK_CAT_COLORS['autre'];
+  const catLabel = TASK_CAT_LABELS[task.cat] || '';
+
+  const catBadge = task.cat ? `<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>` : '';
+  const dateBadge = `<span class="task-badge ${isLate?'late-b':'date-b'}">${isToday&&isLate?'⚠ En retard':isLate?'⚠ '+date:isToday?'Aujourd\'hui':'📅 '+date}</span>`;
+  const recurBadge = isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : '';
+  const reportBadge = (task.reportCount||0)>0 ? `<span class="task-badge report-b">↩ ${task.reportCount}</span>` : '';
+  const deadlineBadge = task.deadline && !done ? `<span class="task-badge deadline-b">Deadline ${task.deadline}</span>` : '';
+  const doneBadge = done ? `<span class="task-badge done-b">✓</span>` : '';
+
+  // Streak badge for recurring
+  let streakBadge = '';
+  if (isRecur) {
+    const streak = getStreak(task, date);
+    if (streak > 1) streakBadge = `<span class="task-badge streak-b">🔥 ×${streak}</span>`;
+  }
+
+  const checkId = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
+  const checkState = done ? ' checked' : '';
+
+  // History mini-strip for recurring
+  let historyHtml = '';
+  if (isRecur) {
+    const past = getPastDueDates(task, today).slice(-14);
+    const dots = past.map(d => {
+      const v = task.history[d];
+      const cls = v==='done'?'hd-done': v==='missed'?'hd-missed':'hd-pending';
+      const dd = d.slice(8);
+      return `<div class="history-dot ${cls}" title="${d}">${dd}</div>`;
+    }).join('');
+    if (dots) historyHtml = `
+      <div class="task-history" id="hist_${item.id}">
+        <div class="task-history-title">14 dernières occurrences</div>
+        <div class="history-grid">${dots}</div>
+      </div>`;
+  }
+
+  const expandBtn = isRecur ? `<button class="task-expand-btn" onclick="toggleTaskHistory('hist_${item.id}')" title="Voir l'historique">▾</button>` : '';
+
+  return `<div class="task-card${done?' task-done':''}${isLate&&!done?' task-late':''}${isRecur?' task-recur':''}">
+    <div class="task-card-top">
+      <div class="task-checkbox${checkState}" onclick="${checkId}"></div>
+      <div class="task-info">
+        <div class="task-title">${task.title}</div>
+        ${task.desc ? `<div class="task-desc">${task.desc}</div>` : ''}
+        <div class="task-meta">${catBadge}${dateBadge}${recurBadge}${reportBadge}${deadlineBadge}${streakBadge}${doneBadge}</div>
+      </div>
+      <div class="task-actions">
+        ${expandBtn}
+        <button class="task-expand-btn" onclick="openTaskModal('${task.id}')" title="Modifier">✎</button>
+        <button class="btn btn-danger" onclick="deleteTask('${task.id}')">×</button>
+      </div>
+    </div>
+    ${historyHtml}
+  </div>`;
+}
+
+function toggleTaskHistory(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function recurTypeLabel(task) {
+  if (task.recurType==='daily') return '↻ Quotidien';
+  if (task.recurType==='weekly') {
+    const names = (task.recurDays||[]).sort().map(d=>DAY_NAMES[d]);
+    return '↻ '+names.join('/');
+  }
+  if (task.recurType==='interval') return `↻ /${task.recurInterval}j`;
+  return '';
+}
+
+/**
+ * Compute current streak (consecutive done days ending at `upTo`)
+ */
+function getStreak(task, upTo) {
+  let streak = 0;
+  let cursor = upTo;
+  let guard  = 0;
+  while (guard < 365) {
+    if (!isTaskActiveOnDate(task, cursor)) { cursor = addDays(cursor,-1); guard++; continue; }
+    if (task.history[cursor] === 'done') { streak++; cursor = addDays(cursor,-1); guard++; }
+    else break;
+  }
+  return streak;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RÉVISION QUOTIDIENNE
+// ═══════════════════════════════════════════════════════════════
+function renderRevision() {
+  autoReportTasks();
+  const today = todayStr();
+  const container = document.getElementById('reviewContent');
+
+  const todayWords = Object.entries(state.words).filter(([,w]) =>
+    w.occurrences.some(t => fmtDay(t)===today)
+  );
+  const todayItems = buildTaskItems(today).filter(item =>
+    item.date===today && !item.done
+  );
+  const lateItems = todayItems.filter(i=>i.isLate);
+  const recurItems = todayItems.filter(i=>i.task.recurType!=='once');
+
+  document.getElementById('revStatWords').textContent  = todayWords.length;
+  document.getElementById('revStatTasks').textContent  = todayItems.filter(i=>i.task.recurType==='once').length;
+  document.getElementById('revStatRecur').textContent  = recurItems.length;
+  document.getElementById('revStatLate').textContent   = lateItems.length;
+
+  if (!todayWords.length && !todayItems.length) {
+    container.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>Rien à réviser aujourd'hui !</div>`;
+    return;
+  }
+
+  const dateDisp = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  let html = `<div class="review-header"><span>Tableau du jour</span><span class="review-date">${dateDisp}</span></div>`;
+
+  // TÂCHES
+  if (todayItems.length) {
+    html += `<div class="section-divider" style="margin-bottom:8px">Tâches à faire</div><div class="review-table">`;
+    todayItems.forEach(item => {
+      const t = item.task;
+      const isRecur = t.recurType !== 'once';
+      const col = TASK_CAT_COLORS[t.cat] || TASK_CAT_COLORS['autre'];
+      const catLabel = TASK_CAT_LABELS[t.cat] || '';
+      const checkFn = isRecur
+        ? `toggleRevTask('${t.id}','${today}')`
+        : `toggleRevTask('${t.id}')`;
+      html += `<div class="review-row${item.isLate?' late-row':''}${isRecur?' recur-row':''}">
+        <span class="review-type ${isRecur?'type-recur':'type-task'}">${isRecur?'↻ RÉCUR':'TÂCHE'}</span>
+        <span class="review-label">${t.title}</span>
+        <div class="review-badges">
+          ${t.cat?`<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>`:''}
+          ${item.isLate?`<span class="task-badge late-b">⚠ Retard</span>`:''}
+          ${isRecur?`<span class="task-badge recur-b">${recurTypeLabel(t)}</span>`:''}
+          ${t.deadline?`<span class="task-badge deadline-b">📅 ${t.deadline}</span>`:''}
+        </div>
+        <div class="review-check" onclick="${checkFn}"></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // MOTS
+  if (todayWords.length) {
+    html += `<div class="section-divider" style="margin:14px 0 8px">Mots du jour</div><div class="review-table">`;
+    todayWords.forEach(([key,w]) => {
+      const maxed = isMaxReached(w);
+      const noAnki = !w.ankiDone && !isAnkiReady(w);
+      const col = w.catKey ? getCatColor(w.catKey) : null;
+      const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : '';
+      const validBadge = w.validity==='valid'?`<span class="val-badge valid" style="font-size:9px">✓</span>`
+        :w.validity==='invalid'?`<span class="val-badge invalid" style="font-size:9px">✗</span>`:'';
+      html += `<div class="review-row word-row">
+        <span class="review-type type-word">MOT</span>
+        <span class="review-label${noAnki?' no-anki':''}">${w.label}</span>
+        <div class="review-badges">
+          ${col?`<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>`:''}
+          <span class="count-badge" style="font-size:10px;padding:2px 8px">${w.occurrences.length}×</span>
+          ${isAnkiReady(w)?`<span class="anki-badge" style="font-size:9px">Anki</span>`:''}
+          ${validBadge}
+        </div>
+        <button class="review-add-btn" onclick="clickWordFromRevision('${key}')" ${maxed?'disabled':''}>
+          ${maxed?'Max':'+ clic'}
+        </button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleRevTask(id, dateStr) {
+  toggleTaskDone(id, dateStr);
+  renderRevision();
+}
+function clickWordFromRevision(key) { clickWord(key); renderRevision(); }
+
+// ═══════════════════════════════════════════════════════════════
+//  WORD STATS
+// ═══════════════════════════════════════════════════════════════
+function updateStats() {
+  const words=Object.values(state.words);
+  document.getElementById('statWords').textContent=words.length;
+  document.getElementById('statOcc').textContent  =words.reduce((a,w)=>a+w.occurrences.length,0);
+  document.getElementById('statCats').textContent =Object.keys(state.categories).length;
+  document.getElementById('statAnki').textContent =words.filter(w=>isAnkiReady(w)).length;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER WORDS
+// ═══════════════════════════════════════════════════════════════
+function render() {
+  const list   = document.getElementById('wordList');
+  const sort   = document.getElementById('sortSelect').value;
+  const search = (document.getElementById('searchInput').value||'').trim().toLowerCase();
+  let keys = Object.keys(state.words).filter(key => {
+    const w=state.words[key];
+    if (search && !w.label.toLowerCase().includes(search)) return false;
+    if (activeFilter==='all')  return true;
+    if (activeFilter==='none') return !w.catKey;
+    if (activeFilter==='anki') return isAnkiReady(w);
+    return w.catKey===activeFilter;
+  });
+  keys.sort((a,b)=>{
+    const wa=state.words[a], wb=state.words[b];
+    if (sort==='freq')   return wb.occurrences.length-wa.occurrences.length;
+    if (sort==='alpha')  return wa.label.localeCompare(wb.label);
+    if (sort==='recent') return (wb.occurrences[wb.occurrences.length-1]||0)-(wa.occurrences[wa.occurrences.length-1]||0);
+    if (sort==='oldest') return wa.createdAt-wb.createdAt;
+    return 0;
+  });
+  if (!keys.length) {
+    const msg=search?`Aucun résultat pour "${search}"`:activeFilter==='anki'?'Aucun mot Anki prêt.':'Aucun mot encore.';
+    list.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>${msg}</div>`; return;
+  }
+  list.innerHTML=keys.map(key=>{
+    const w=state.words[key];
+    const anki=isAnkiReady(w), done=w.ankiDone, maxed=isMaxReached(w);
+    const col=w.catKey?getCatColor(w.catKey):null;
+    const catLabel=w.catKey&&state.categories[w.catKey]?state.categories[w.catKey].label:null;
+    const badge=catLabel&&col?`<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>`:'';
+    const ankiBadge=anki?`<span class="anki-badge">Anki</span>`:'';
+    const ankiBtn=anki?`<button class="anki-check-btn" onclick="markAnkiDone('${key}')">✓ Ajouté</button>`:'';
+    const maxBadge=maxed&&!done?`<span class="val-badge invalid" style="font-size:9px">Max ×3</span>`:'';
+    const dates=w.occurrences.map(t=>`<span class="date-tag" title="${fmtFull(t)}">${fmtShort(t)}</span>`).join('');
+    let validBadge='';
+    if (w.validity==='valid')   validBadge=`<span class="word-valid-badge valid">✓</span>`;
+    else if (w.validity==='invalid') validBadge=`<span class="word-valid-badge invalid">✗</span>`;
+    return `<div class="word-card${anki?' anki-ready':''}${done?' anki-done':''}${maxed&&!done?' max-reached':''}">
+      <div class="word-card-top">
+        <button class="word-btn" onclick="clickWord('${key}')" ${maxed?'disabled':''}>${w.label}</button>
+        ${badge}${validBadge}${maxBadge}${ankiBadge}
+        <span class="count-badge">${w.occurrences.length}×</span>
+        ${ankiBtn}
+        <button class="btn btn-danger" onclick="deleteWord('${key}')">×</button>
+      </div>
+      <div class="word-dates">${dates}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════════════
+function renderCharts() {
+  renderTimeline(); renderCatChart(); renderTopWords();
+  renderRecurHeatmap(); renderRecurConsistTable();
+  renderTasksBarChart(); renderAnkiPie();
+}
+function chartColors() {
+  const light = document.body.classList.contains('light');
+  return {
+    text: light ? '#666660' : '#555550',
+    grid: light ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)',
+    bg:   light ? '#ffffff' : '#1a1a17',
+  };
+}
+
+function renderTimeline() {
+  const days=30, labels=[], data=[], now=new Date();
+  const {text,grid} = chartColors();
+  for (let i=days-1;i>=0;i--) {
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    const key=fmtDay(d.getTime());
+    labels.push(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'));
+    let cnt=0;
+    Object.values(state.words).forEach(w=>w.occurrences.forEach(t=>{if(fmtDay(t)===key)cnt++;}));
+    data.push(cnt);
+  }
+  const ctx=document.getElementById('chartTimeline').getContext('2d');
+  if (chartTimeline) chartTimeline.destroy();
+  chartTimeline=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:'rgba(200,169,110,0.5)',borderColor:'#c8a96e',borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:text,font:{size:10},maxTicksLimit:10},grid:{color:grid}},
+               y:{ticks:{color:text,font:{size:10},stepSize:1},grid:{color:grid}}}}});
+}
+
+function renderCatChart() {
+  const catKeys=Object.keys(state.categories), labels=[], data=[], colors=[];
+  const {text,bg} = chartColors();
+  catKeys.forEach(key=>{
+    const col=getCatColor(key);
+    labels.push(state.categories[key].label);
+    data.push(Object.values(state.words).filter(w=>w.catKey===key).length);
+    colors.push(col.color);
+  });
+  const uncat=Object.values(state.words).filter(w=>!w.catKey).length;
+  if (uncat>0){labels.push('Sans catégorie');data.push(uncat);colors.push('#555550');}
+  const ctx=document.getElementById('chartCats').getContext('2d');
+  if (chartCats) chartCats.destroy();
+  if (!data.length||data.every(d=>d===0)){return;}
+  chartCats=new Chart(ctx,{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:bg,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:text,font:{size:12},padding:14}}}}});
+}
+
+function renderTopWords() {
+  const container=document.getElementById('topWords');
+  const sorted=Object.values(state.words).sort((a,b)=>b.occurrences.length-a.occurrences.length).slice(0,10);
+  if (!sorted.length){container.innerHTML='<span style="font-size:13px;color:var(--text-dim)">Aucun mot encore.</span>';return;}
+  const max=sorted[0].occurrences.length;
+  container.innerHTML=sorted.map(w=>`
+    <div class="top-word-row">
+      <span class="top-word-label${isAnkiReady(w)?' is-anki':''}">${w.label}</span>
+      <div class="top-word-bar-wrap"><div class="top-word-bar${isAnkiReady(w)?' is-anki':''}" style="width:${Math.round(w.occurrences.length/max*100)}%"></div></div>
+      <span class="top-word-count">${w.occurrences.length}</span>
+    </div>`).join('');
+}
+
+function renderRecurHeatmap() {
+  const weeks = 12;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const totalDays = weeks * 7;
+  const startDate = new Date(today); startDate.setDate(startDate.getDate() - totalDays + 1);
+
+  // Count completed recurring task occurrences per day
+  const doneCounts = {};
+  state.tasks.forEach(t => {
+    if (t.recurType==='once') return;
+    Object.entries(t.history||{}).forEach(([d,v]) => {
+      if (v==='done') doneCounts[d] = (doneCounts[d]||0) + 1;
+    });
+  });
+
+  const weekCols = [];
+  for (let w=0;w<weeks;w++) {
+    const col=[];
+    for (let d=0;d<7;d++) {
+      const date=new Date(startDate); date.setDate(date.getDate()+w*7+d);
+      const key=fmtDay(date.getTime());
+      const count=doneCounts[key]||0;
+      col.push({key,count,v:Math.min(count,4),label:date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})});
+    }
+    weekCols.push(col);
+  }
+  const container=document.getElementById('recurHeatmap');
+  let html='<div class="heatmap-grid">';
+  weekCols.forEach(col=>{
+    html+='<div class="heatmap-week">';
+    col.forEach(day=>{ html+=`<div class="heatmap-day" data-v="${day.v}" title="${day.label} : ${day.count} tâche${day.count>1?'s':''}"></div>`; });
+    html+='</div>';
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function renderRecurConsistTable() {
+  const container = document.getElementById('recurConsistTable');
+  const recurring = state.tasks.filter(t=>t.recurType!=='once');
+  if (!recurring.length) {
+    container.innerHTML='<p style="font-size:13px;color:var(--text-dim)">Aucune tâche récurrente.</p>'; return;
+  }
+  const today = todayStr();
+  const rows = recurring.map(t => {
+    const past  = getPastDueDates(t, today);
+    const total = past.length;
+    const done  = past.filter(d=>t.history[d]==='done').length;
+    const missed= past.filter(d=>t.history[d]==='missed'||(t.history[d]!=='done'&&d<today)).length;
+    const pct   = total>0 ? Math.round(done/total*100) : 0;
+    const streak = getStreak(t, today);
+    const pctClass = pct>=80?'pct-good':pct>=50?'pct-mid':'pct-low';
+    return {t, total, done, missed, pct, pctClass, streak};
+  });
+  rows.sort((a,b)=>b.pct-a.pct);
+
+  let html=`<table class="recur-stats-table"><thead><tr>
+    <th>Tâche</th><th>Type</th><th>Complétées</th><th>Manquées</th><th>%</th><th>Série</th>
+  </tr></thead><tbody>`;
+  rows.forEach(({t,total,done,missed,pct,pctClass,streak})=>{
+    html+=`<tr>
+      <td>${t.title}</td>
+      <td><span class="task-badge recur-b">${recurTypeLabel(t)}</span></td>
+      <td>${done}/${total}</td>
+      <td>${missed}</td>
+      <td class="${pctClass}">${pct}%</td>
+      <td>${streak>0?`🔥 ×${streak}`:'-'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  container.innerHTML=html;
+}
+
+function renderTasksBarChart() {
+  const days=30, labels=[], doneData=[], reportData=[], now=new Date();
+  const {text,grid} = chartColors();
+  for (let i=days-1;i>=0;i--) {
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    const key=fmtDay(d.getTime());
+    labels.push(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'));
+    let done=0, reps=0;
+    state.tasks.forEach(t=>{
+      if (t.recurType==='once') {
+        if (t.done && fmtDay(t.doneAt||0)===key) done++;
+        if ((t.reportHistory||[]).includes(key)) reps++;
+      } else {
+        if (t.history[key]==='done') done++;
+        if (t.history[key]==='missed') reps++;
+      }
+    });
+    doneData.push(done); reportData.push(reps);
+  }
+  const ctx=document.getElementById('chartTasksBar').getContext('2d');
+  if (chartTasksBar) chartTasksBar.destroy();
+  chartTasksBar=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:[
+      {label:'Terminées',data:doneData,backgroundColor:'rgba(110,200,122,0.55)',borderColor:'#6ec87a',borderWidth:1,borderRadius:2},
+      {label:'Manquées',data:reportData,backgroundColor:'rgba(232,160,80,0.5)',borderColor:'#e8a050',borderWidth:1,borderRadius:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:text,font:{size:11},padding:12}}},
+      scales:{x:{ticks:{color:text,font:{size:10},maxTicksLimit:10},grid:{color:grid},stacked:true},
+               y:{ticks:{color:text,font:{size:10},stepSize:1},grid:{color:grid},stacked:true}}}});
+}
+
+function renderAnkiPie() {
+  const words=Object.values(state.words), total=words.length;
+  const onAnki=words.filter(w=>w.ankiDone).length;
+  const ready =words.filter(w=>isAnkiReady(w)).length;
+  const notYet=total-onAnki-ready;
+  const pct=total>0?Math.round(onAnki/total*100):0;
+  const {text,bg} = chartColors();
+
+  document.getElementById('ankiProgress').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--text-muted)">${onAnki} / ${total} mots sur Anki</span>
+      <span style="font-size:13px;font-weight:500;color:var(--anki)">${pct}%</span>
+    </div>
+    <div class="anki-progress-bar-wrap"><div class="anki-progress-bar" style="width:${pct}%"></div></div>
+    <div class="anki-progress-labels">
+      <span class="anki-progress-label" style="color:var(--anki)">✓ Anki : ${onAnki}</span>
+      <span class="anki-progress-label" style="color:var(--accent)">Prêts : ${ready}</span>
+      <span class="anki-progress-label">Pas encore : ${notYet}</span>
+    </div>`;
+
+  const ctx=document.getElementById('chartAnkiPie').getContext('2d');
+  if (chartAnkiPie) chartAnkiPie.destroy();
+  if (!total) return;
+  chartAnkiPie=new Chart(ctx,{type:'doughnut',
+    data:{labels:['Sur Anki','Prêts','Pas encore'],
+      datasets:[{data:[onAnki,ready,Math.max(notYet,0)],
+        backgroundColor:['#6eb4c8','rgba(200,169,110,0.7)','rgba(85,85,80,0.5)'],borderColor:bg,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:text,font:{size:11},padding:12}}}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+function notify(type, payload) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const map = {
+    anki:       ['Lexique — Mot prêt pour Anki',    `"${payload}" a atteint 3 occurrences !`],
+    max:        ['Lexique — Maximum atteint',        `"${payload}" : 3 clics déjà. Ajoutez-le sur Anki !`],
+    tasks_today:['Lexique — Tâches du jour',         `${payload} tâche${payload>1?'s':''} à faire aujourd'hui.`],
+    tasks_late: ['Lexique — Tâches manquées',        `${payload} occurrence${payload>1?'s':''}  non complétée${payload>1?'s':''}.`],
+    recur_due:  ['Lexique — Rappel récurrent',       `Tâche "${payload}" à faire aujourd'hui.`],
+  };
+  const [title, body] = map[type] || ['Lexique', String(payload)];
+  new Notification(title, { body, icon:'icon-192.png', badge:'icon-192.png' });
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  const p = await Notification.requestPermission();
+  if (p==='granted') { document.getElementById('notifBanner').classList.remove('show'); scheduleTaskNotifs(); }
+}
+
+function scheduleTaskNotifs() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = todayStr();
+  const due = state.tasks.filter(t => isTaskActiveOnDate(t,today) && getTaskOccurrence(t,today)!=='done' && !t.done);
+  const late = state.tasks.reduce((a,t)=>{
+    if (t.recurType!=='once') {
+      const cnt = Object.entries(t.history||{}).filter(([d,v])=>d<today&&v==='missed').length;
+      return a+cnt;
+    }
+    return a + (!t.done&&t.dueDate<today?1:0);
+  },0);
+  if (due.length>0) notify('tasks_today', due.length);
+  if (late>0) notify('tasks_late', late);
+}
+
+function checkNotifBanner() {
+  if ('Notification' in window && Notification.permission==='default')
+    document.getElementById('notifBanner').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PWA
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  PWA — Service Worker avec mise à jour automatique
+//  Remplace le bloc "PWA" existant dans index.html
+// ═══════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('[SW] Enregistré :', registration.scope);
+
+      // ── Détection d'une nouvelle version disponible ──────────────
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        console.log('[SW] Nouvelle version en cours d\'installation…');
+
+        newWorker.addEventListener('statechange', () => {
+          console.log('[SW] État :', newWorker.state);
+
+          // Le nouveau SW est installé ET un ancien SW contrôle déjà la page
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[SW] Mise à jour prête — activation forcée');
+            // Demande au nouveau SW de prendre le relais immédiatement
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+
+      // ── Rechargement automatique quand le SW change de contrôleur ──
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return; // Évite les boucles infinies
+        refreshing = true;
+        console.log('[SW] Nouveau contrôleur actif — rechargement de la page');
+        window.location.reload();
+      });
+
+      // ── Message du SW : nouvelle version confirmée ───────────────
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          console.log(`[SW] ✅ Lexique mis à jour — version cache : ${event.data.version}`);
+          // Optionnel : afficher un toast non-intrusif
+          // showUpdateToast(event.data.version);
+        }
+      });
+
+      // ── Vérification de mise à jour toutes les 60 secondes ───────
+      // Utile si l'app reste ouverte longtemps sans rechargement
+      setInterval(() => {
+        registration.update().catch(() => {}); // Silencieux si hors-ligne
+      }, 60 * 1000);
+
+    } catch (err) {
+      console.warn('[SW] Erreur d\'enregistrement :', err);
+    }
+  });
+}
+
+// ── Bannière d'installation PWA (inchangé) ────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  deferredInstallPrompt = null;
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') document.getElementById('installBanner').classList.remove('show');
+  deferredInstallPrompt = null;
+});
+function dismissInstall() { document.getElementById('installBanner').classList.remove('show'); }
+
+// ── Statut réseau (inchangé) ──────────────────────────────────────────────
+function updateOnlineStatus() {
+  document.getElementById('offlineBadge').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeTaskModal();
+  if (e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA') return;
+  if (e.key==='f'||e.key==='F') document.getElementById('searchInput').focus();
+});
+document.getElementById('wordInput').addEventListener('keydown', e=>{if(e.key==='Enter')addWord();});
+document.getElementById('catInput').addEventListener('keydown',  e=>{if(e.key==='Enter')addCategory();});
+document.getElementById('mTaskTitle').addEventListener('keydown',e=>{if(e.key==='Enter')saveTaskFromModal();});
+// Close modal on overlay click
+document.getElementById('taskModal').addEventListener('click', e=>{
+  if (e.target===document.getElementById('taskModal')) closeTaskModal();
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+load();
+initTheme();
+autoReportTasks();
+renderCatManager(); renderCatSelect(); renderFilters();
+updateStats(); render();
+renderTaskFilters(); renderTasks(); updateTaskStats();
+checkNotifBanner();
+</script>
+</body>
+</html>
