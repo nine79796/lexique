@@ -487,6 +487,15 @@ body {
   .modal { padding: 1.25rem; }
 }
 </style>
+<<<<<<< HEAD
+=======
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+>>>>>>> f1747685c50bf2da70caa63d3d0ad8a04aaa2ff3
 </head>
 <body>
 <div class="app">
@@ -502,6 +511,10 @@ body {
     <div class="header-right">
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Sombre</button>
       <span class="offline-badge" id="offlineBadge">⚡ Hors ligne</span>
+<<<<<<< HEAD
+=======
+      <span id="syncBadge" style="font-size:13px;margin-left:6px;transition:color .2s;"></span>
+>>>>>>> f1747685c50bf2da70caa63d3d0ad8a04aaa2ff3
     </div>
   </div>
 
@@ -2015,6 +2028,7 @@ document.getElementById('taskModal').addEventListener('click', e=>{
   if (e.target===document.getElementById('taskModal')) closeTaskModal();
 });
 
+<<<<<<< HEAD
 // ═══════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════
@@ -2026,5 +2040,248 @@ updateStats(); render();
 renderTaskFilters(); renderTasks(); updateTaskStats();
 checkNotifBanner();
 </script>
+=======
+// ─── 1. CONFIG FIREBASE ──────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+
+  authDomain:        "lexique-999ff.firebaseapp.com",
+  projectId:         "lexique-999ff",
+  storageBucket:     "lexique-999ff.firebasestorage.app",
+  messagingSenderId: "32359120766",
+  appId:             "1:32359120766:web:91b8b664b4bbf67a717d2f",
+};
+ 
+// Clés localStorage surveillées par le proxy
+const LS_KEYS = ['lexique_v6', 'lexique_theme'];
+ 
+ 
+// ─── 2. ÉTAT INTERNE ─────────────────────────────────────────────────────────
+let db         = null;   // instance Firestore (initialisée UNE SEULE FOIS)
+let currentUid = null;   // UID utilisateur courant
+let syncTimer  = null;   // handle setTimeout debounce
+let isSyncing  = false;  // verrou anti-concurrence
+let fbReady    = false;  // true uniquement après auth + persistence OK
+ 
+ 
+// ─── 3. RÉFÉRENCES FIRESTORE ─────────────────────────────────────────────────
+function userRef() {
+  if (!db || !currentUid) return null;
+  return db.collection('users').doc(currentUid);
+}
+function wordsRef() {
+  const u = userRef();
+  return u ? u.collection('words') : null;
+}
+function tasksRef() {
+  const u = userRef();
+  return u ? u.collection('tasks') : null;
+}
+ 
+ 
+// ─── 4. BADGE DE SYNCHRONISATION ─────────────────────────────────────────────
+function showSyncStatus(status) {
+  const badge = document.getElementById('syncBadge');
+  if (!badge) return;
+  const map = {
+    syncing: { icon: '↻', color: 'var(--accent)',    title: 'Synchronisation…'          },
+    synced:  { icon: '✓', color: 'var(--valid)',     title: 'Données synchronisées'     },
+    offline: { icon: '⊘', color: 'var(--text-dim)', title: 'Hors ligne'                },
+    error:   { icon: '⚠', color: 'var(--danger)',   title: 'Erreur de synchronisation' },
+  };
+  const c = map[status] || { icon: '', color: '', title: '' };
+  badge.textContent = c.icon;
+  badge.style.color = c.color;
+  badge.title       = c.title;
+}
+ 
+ 
+// ─── 5. ACCÈS AU LOCALSTORAGE (hors proxy pour éviter les boucles) ───────────
+// La référence native est capturée ICI, avant que le proxy ne la remplace.
+const _lsSet = localStorage.setItem.bind(localStorage);
+const _lsGet = localStorage.getItem.bind(localStorage);
+ 
+function readLocalState() {
+  try {
+    const raw = _lsGet('lexique_v6');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    console.warn('[Sync] Impossible de lire lexique_v6');
+    return {};
+  }
+}
+ 
+function writeLocalState(appState) {
+  // Utilise la référence native pour ne PAS déclencher le proxy → pas de boucle
+  _lsSet('lexique_v6', JSON.stringify(appState));
+}
+ 
+ 
+// ─── 6. PROXY LOCALSTORAGE ───────────────────────────────────────────────────
+// Intercepte les setItem() sur les clés Lexique et déclenche la sync différée.
+// Le proxy est installé une seule fois, après la capture de _lsSet/_lsGet.
+(function installLocalStorageProxy() {
+  const native = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function (key, value) {
+    native(key, value);
+    if (LS_KEYS.includes(key)) scheduleSyncToCloud();
+  };
+})();
+ 
+ 
+// ─── 7. SYNC LOCAL → CLOUD ───────────────────────────────────────────────────
+async function syncLocalToCloud() {
+  if (!fbReady || !db || !currentUid) { console.log('[Sync↑] Pas prêt'); return; }
+  if (isSyncing) { console.log('[Sync↑] Déjà en cours'); return; }
+ 
+  isSyncing = true;
+  showSyncStatus('syncing');
+ 
+  try {
+    const state = readLocalState();
+    const words = state.words || {};
+    const tasks = Array.isArray(state.tasks) ? state.tasks : [];
+    const now   = Date.now();
+ 
+    // — Mots (batches de 400 max) —
+    const wRef = wordsRef();
+    if (wRef) {
+      const entries = Object.entries(words);
+      for (let i = 0; i < entries.length; i += 400) {
+        const batch = db.batch();
+        entries.slice(i, i + 400).forEach(([id, w]) => {
+          batch.set(wRef.doc(String(id)), {
+            text:        w.text        ?? '',
+            occurrences: w.occurrences ?? 0,
+            category:    w.category    ?? '',
+            note:        w.note        ?? '',
+            ankiDone:    w.ankiDone    ?? false,
+            addedAt:     w.addedAt     ?? now,
+            updatedAt:   w.updatedAt   ?? now,
+          }, { merge: true });
+        });
+        await batch.commit();
+      }
+      console.log(`[Sync↑] ${Object.keys(words).length} mots`);
+    }
+ 
+    // — Tâches —
+    const tRef = tasksRef();
+    if (tRef && tasks.length > 0) {
+      for (let i = 0; i < tasks.length; i += 400) {
+        const batch = db.batch();
+        tasks.slice(i, i + 400).forEach(t => {
+          if (!t.id) return;
+          batch.set(tRef.doc(String(t.id)), {
+            id:            t.id,
+            title:         t.title         ?? '',
+            note:          t.note          ?? '',
+            category:      t.category      ?? '',
+            dueDate:       t.dueDate       ?? '',
+            done:          t.done          ?? false,
+            doneAt:        t.doneAt        ?? null,
+            recurType:     t.recurType     ?? 'once',
+            recurDays:     t.recurDays     ?? [],
+            history:       t.history       ?? {},
+            reportHistory: t.reportHistory ?? [],
+            createdAt:     t.createdAt     ?? now,
+            updatedAt:     t.updatedAt     ?? now,
+          }, { merge: true });
+        });
+        await batch.commit();
+      }
+      console.log(`[Sync↑] ${tasks.length} tâches`);
+    }
+ 
+    // — Métadonnées —
+    const u = userRef();
+    if (u) await u.set({ lastSync: now, appVersion: 'lexique-v6' }, { merge: true });
+ 
+    showSyncStatus('synced');
+    console.log('[Sync↑] ✅ Local → Cloud OK');
+ 
+  } catch (err) {
+    console.error('[Sync↑] ❌', err);
+    showSyncStatus('error');
+  } finally {
+    isSyncing = false;
+  }
+}
+ 
+ 
+// ─── 8. SYNC CLOUD → LOCAL ───────────────────────────────────────────────────
+async function syncCloudToLocal() {
+  if (!fbReady || !db || !currentUid) { console.log('[Sync↓] Pas prêt'); return; }
+ 
+  showSyncStatus('syncing');
+ 
+  try {
+    const appState   = readLocalState();
+    const localWords = appState.words || {};
+    const localTasks = {};
+    (Array.isArray(appState.tasks) ? appState.tasks : [])
+      .forEach(t => { if (t.id) localTasks[String(t.id)] = t; });
+ 
+    // — Mots —
+    const wRef = wordsRef();
+    if (wRef) {
+      const snap = await wRef.get();
+      snap.forEach(doc => {
+        const cloud = doc.data();
+        const local = localWords[doc.id];
+        if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+          localWords[doc.id] = { ...local, ...cloud, id: doc.id };
+        }
+      });
+      console.log(`[Sync↓] ${snap.size} mots reçus`);
+    }
+ 
+    // — Tâches —
+    const tRef = tasksRef();
+    if (tRef) {
+      const snap = await tRef.get();
+      snap.forEach(doc => {
+        const cloud = doc.data();
+        const local = localTasks[String(cloud.id)];
+        if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+          localTasks[String(cloud.id)] = { ...local, ...cloud };
+        }
+      });
+      console.log(`[Sync↓] ${snap.size} tâches reçues`);
+    }
+ 
+    // — Écriture locale fusionnée (hors proxy) —
+    appState.words = localWords;
+    appState.tasks = Object.values(localTasks);
+    writeLocalState(appState);
+ 
+    showSyncStatus('synced');
+    console.log('[Sync↓] ✅ Cloud → Local OK');
+ 
+  } catch (err) {
+    if (err.code === 'unavailable') {
+      showSyncStatus('offline');
+      console.log('[Sync↓] Hors ligne — cache Firestore utilisé');
+    } else {
+      console.error('[Sync↓] ❌', err);
+      showSyncStatus('error');
+    }
+  }
+}
+ 
+ 
+// ─── 9. DEBOUNCE + ÉVÉNEMENTS RÉSEAU ─────────────────────────────────────────
+function scheduleSyncToCloud(delayMs = 2000) {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    if (navigator.onLine) syncLocalToCloud();
+    else { showSyncStatus('offline'); console.log('[Sync] Hors ligne — différé'); }
+  }, delayMs);
+}
+ 
+window.addEventListener('online',  () => { console.log('[Sync] En ligne →  sync'); syncLocalToCloud(); });
+window.addEventListener('offline', () => showSyncStatus('offline'));
+</script>
+<script src="script.js"></script>
+>>>>>>> f1747685c50bf2da70caa63d3d0ad8a04aaa2ff3
 </body>
 </html>
