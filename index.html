@@ -271,298 +271,164 @@ body {
 ══════════════════════════════════════════════ */
 .task-list { display: flex; flex-direction: column; gap: 8px; }
 .task-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  animation: fadeIn 0.18s ease;
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; animation: fadeIn 0.18s ease;
 }
-.task-card:hover { box-shadow: var(--shadow); }
-.task-card.task-done { opacity: 0.45; }
-.task-card.task-done .task-title { text-decoration: line-through; color: var(--text-muted); }
-.task-card.task-late:not(.task-recur) { border-color: rgba(232,160,80,0.45); }
+.task-card.task-done { opacity: 0.55; }
+.task-card.task-late { border-color: rgba(232,160,80,0.3); background: var(--task-late-dim); }
 .task-card.task-recur { border-color: var(--recur-border); }
-.task-card.task-recur.task-late { border-color: rgba(232,160,80,0.5); background: var(--task-late-dim); }
-.task-card.task-recur::before {
-  content: '';
-  display: block;
-  width: 3px;
-  height: 100%;
-  background: var(--recur);
-  position: absolute;
-  left: 0; top: 0;
-  border-radius: 3px 0 0 3px;
-}
-.task-card { position: relative; }
-.task-card-top { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px 10px 14px; }
-.task-card.task-recur .task-card-top { padding-left: 18px; }
-.task-checkbox {
-  width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2);
-  background: var(--surface2); cursor: pointer; flex-shrink: 0; margin-top: 2px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-}
-.task-checkbox:hover { border-color: var(--task-done); }
+.task-card-top { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+.task-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border2); flex-shrink: 0; cursor: pointer; transition: all 0.15s; margin-top: 2px; }
+.task-checkbox:hover { border-color: var(--accent); }
 .task-checkbox.checked { background: var(--task-done); border-color: var(--task-done); }
-.task-checkbox.checked::after { content: '✓'; font-size: 11px; font-weight: 700; color: white; }
+.task-checkbox.checked::after { content: '✓'; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 12px; color: #fff; }
 .task-info { flex: 1; min-width: 0; }
-.task-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 500; color: var(--text); line-height: 1.3; }
-.task-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
-.task-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; align-items: center; }
-.task-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
-.task-badge.cat-b  { border: 0.5px solid transparent; }
+.task-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.task-card.task-done .task-title { text-decoration: line-through; color: var(--text-muted); }
+.task-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.task-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.task-badge {
+  font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
+  display: inline-flex; align-items: center; letter-spacing: 0.04em;
+}
+.task-badge.cat-b { border: 0.5px solid transparent; }
 .task-badge.date-b { background: var(--surface2); color: var(--text-muted); border: 0.5px solid var(--border); }
 .task-badge.late-b { background: var(--task-late-dim); color: var(--task-late); border: 0.5px solid rgba(232,160,80,0.3); }
-.task-badge.report-b { background: var(--danger-dim); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); }
-.task-badge.done-b  { background: var(--task-done-dim); color: var(--task-done); border: 0.5px solid rgba(110,200,122,0.3); }
 .task-badge.recur-b { background: var(--recur-dim); color: var(--recur); border: 0.5px solid var(--recur-border); }
-.task-badge.deadline-b { background: rgba(200,110,110,0.12); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.25); }
-.task-badge.streak-b { background: rgba(200,169,110,0.15); color: var(--accent); border: 0.5px solid rgba(200,169,110,0.3); }
-.task-actions { display: flex; gap: 5px; align-items: flex-start; flex-shrink: 0; }
-.task-expand-btn {
-  background: none; border: 0.5px solid var(--border); color: var(--text-dim); cursor: pointer;
-  border-radius: var(--radius); padding: 5px 8px; font-size: 12px; transition: all 0.15s;
-}
-.task-expand-btn:hover { border-color: var(--border2); color: var(--text-muted); }
-.task-history {
-  border-top: 0.5px solid var(--border);
-  padding: 10px 14px 12px;
-  display: none;
-}
+.task-badge.report-b { background: var(--surface2); color: var(--text-dim); border: 0.5px solid var(--border); }
+.task-badge.deadline-b { background: rgba(200,110,110,0.10); color: var(--danger); border: 0.5px solid rgba(200,110,110,0.2); }
+.task-badge.done-b { background: var(--task-done-dim); color: var(--task-done); border: 0.5px solid rgba(110,200,122,0.3); }
+.task-badge.streak-b { background: rgba(232,160,80,0.14); color: var(--task-late); border: 0.5px solid rgba(232,160,80,0.3); }
+.task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.task-expand-btn { background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px 9px; font-size: 13px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+.task-expand-btn:hover { border-color: var(--accent); color: var(--accent); }
+.task-history { padding: 0 14px 12px; border-top: 0.5px solid var(--border); margin-top: 8px; display: none; }
 .task-history.open { display: block; }
-.task-history-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 8px; }
+.task-history-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 8px; padding-top: 10px; }
 .history-grid { display: flex; flex-wrap: wrap; gap: 4px; }
-.history-dot {
-  width: 28px; height: 28px; border-radius: 6px; font-size: 10px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center; cursor: default;
-  border: 0.5px solid transparent;
-}
-.history-dot.hd-done    { background: var(--task-done-dim); color: var(--task-done); border-color: rgba(110,200,122,0.3); }
-.history-dot.hd-missed  { background: var(--danger-dim); color: var(--danger); border-color: rgba(200,110,110,0.25); }
-.history-dot.hd-pending { background: var(--surface2); color: var(--text-dim); border-color: var(--border); }
-.history-dot.hd-skip    { background: transparent; color: var(--text-dim); border-color: var(--border); opacity: 0.4; }
+.history-dot { width: 26px; height: 26px; border-radius: 5px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); }
+.history-dot.hd-done    { background: var(--task-done-dim); color: var(--task-done); }
+.history-dot.hd-missed  { background: var(--task-late-dim); color: var(--task-late); }
+.history-dot.hd-pending { background: var(--surface2); border: 0.5px solid var(--border); }
 
-/* ── Day-picker ──────────────────────────────── */
-.day-picker { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
-.day-pill {
-  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border2);
-  background: var(--surface2); color: var(--text-muted); font-size: 11px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; user-select: none; font-family: 'DM Sans', sans-serif;
-}
-.day-pill:hover { border-color: var(--recur); color: var(--recur); }
-.day-pill.selected { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); }
-
-/* ── Modal ───────────────────────────────────── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  z-index: 200; align-items: center; justify-content: center; padding: 1rem;
-  backdrop-filter: blur(4px);
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 520px;
-  max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
-}
-@keyframes modalIn { from { opacity:0; transform: scale(0.94); } to { opacity:1; transform: none; } }
-.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-.modal-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
-.modal-close { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; }
+/* ── Task modal ──────────────────────────────── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(2px); }
+.modal-overlay.open { display: flex; animation: fadeIn 0.15s ease; }
+.modal { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+.modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 4px; }
 .modal-close:hover { color: var(--text); }
-.modal-section { margin-bottom: 1rem; }
-.modal-footer { display: flex; gap: 8px; margin-top: 1.25rem; }
-.modal-footer .btn { flex: 1; }
-.recur-type-row { display: flex; gap: 6px; margin-bottom: 10px; }
-.recur-type-btn {
-  flex: 1; padding: 8px 6px; border-radius: var(--radius); border: 0.5px solid var(--border2);
-  background: transparent; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif;
-  cursor: pointer; transition: all 0.15s; text-align: center;
-}
-.recur-type-btn:hover { border-color: var(--recur); color: var(--recur); }
-.recur-type-btn.active { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); font-weight: 500; }
+.recur-types { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.rtype-btn { padding: 6px 12px; border-radius: 20px; border: 0.5px solid var(--border2); background: transparent; color: var(--text-muted); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; }
+.rtype-btn:hover { border-color: var(--recur); color: var(--recur); }
+.rtype-btn.active { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); }
 .recur-panel { display: none; }
-.recur-panel.active { display: block; }
+.recur-panel.active { display: block; animation: fadeSlide 0.15s ease; }
+.day-picker { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.day-pill { width: 38px; height: 30px; border-radius: 6px; border: 0.5px solid var(--border2); background: transparent; color: var(--text-muted); font-size: 11px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.day-pill.selected { background: var(--recur-dim); border-color: var(--recur); color: var(--recur); }
+.deadline-section { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--border); }
+.deadline-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border); }
+
+/* ── Sync badge ──────────────────────────────── */
+.sync-badge { font-size: 14px; cursor: default; transition: color 0.3s; }
 
 /* ── Review tab ──────────────────────────────── */
-.review-header { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.review-date { font-size: 13px; font-weight: 500; color: var(--accent); font-family: 'Playfair Display', serif; letter-spacing: 0; text-transform: none; }
-.review-table { display: flex; flex-direction: column; gap: 5px; }
-.review-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-radius: var(--radius);
-  background: var(--surface); border: 0.5px solid var(--border);
-  transition: border-color 0.15s;
-}
-.review-row.late-row  { border-color: rgba(232,160,80,0.35); background: var(--task-late-dim); }
-.review-row.recur-row { border-left: 3px solid var(--recur); padding-left: 11px; }
-.review-type { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; width: 36px; flex-shrink: 0; }
-.review-type.type-word  { color: var(--accent); }
-.review-type.type-task  { color: var(--task-done); }
-.review-type.type-recur { color: var(--recur); }
-.review-label { flex: 1; font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--text); }
-.review-label.no-anki { color: var(--anki); }
-.review-badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.review-add-btn {
-  background: var(--accent-dim); border: 0.5px solid rgba(200,169,110,0.25); color: var(--accent);
-  font-size: 11px; padding: 4px 10px; border-radius: var(--radius); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; font-weight: 500; transition: background 0.15s; white-space: nowrap;
-}
-.review-add-btn:hover { background: rgba(200,169,110,0.28); }
-.review-add-btn:disabled { opacity: 0.35; cursor: default; }
-.review-check {
-  width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2);
-  background: var(--surface2); cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-}
+.review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 0.5px solid var(--border); }
+.review-header span:first-child { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+.review-date { font-size: 12px; color: var(--text-muted); }
+.review-table { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+.review-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; flex-wrap: wrap; }
+.review-row.late-row { border-color: rgba(232,160,80,0.3); background: var(--task-late-dim); }
+.review-row.recur-row { border-color: var(--recur-border); }
+.review-type { font-size: 9px; font-weight: 700; letter-spacing: 0.07em; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+.review-type.type-task { background: var(--accent-dim); color: var(--accent); }
+.review-type.type-recur { background: var(--recur-dim); color: var(--recur); }
+.review-type.type-word { background: var(--surface2); color: var(--text-muted); border: 0.5px solid var(--border2); }
+.review-label { font-size: 13px; font-weight: 500; flex: 1; min-width: 100px; }
+.review-label.no-anki { color: var(--text-muted); }
+.review-badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.review-check { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--border2); cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
 .review-check:hover { border-color: var(--task-done); }
-.review-check.checked { background: var(--task-done); border-color: var(--task-done); }
-.review-check.checked::after { content: '✓'; font-size: 10px; font-weight: 700; color: white; }
+.review-add-btn { font-size: 11px; padding: 4px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--surface2); color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.review-add-btn:hover:not([disabled]) { border-color: var(--accent); color: var(--accent); }
+.review-add-btn[disabled] { opacity: 0.4; cursor: default; }
 
-/* ── Charts ──────────────────────────────────── */
-.chart-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-.chart-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 1rem; }
-.chart-wrap { position: relative; height: 220px; }
-.top-words { display: flex; flex-direction: column; gap: 8px; }
-.top-word-row { display: flex; align-items: center; gap: 10px; }
-.top-word-label { font-family: 'Playfair Display', serif; font-size: 0.95rem; min-width: 110px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.top-word-label.is-anki { color: var(--anki); }
-.top-word-bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-.top-word-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
-.top-word-bar.is-anki { background: var(--anki); }
-.top-word-count { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: right; }
-.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+/* ── Stats tab ───────────────────────────────── */
+.chart-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.chart-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 1rem; }
+.chart-wrap { position: relative; height: 160px; }
 .heatmap-grid { display: flex; gap: 3px; }
 .heatmap-week { display: flex; flex-direction: column; gap: 3px; }
-.heatmap-day {
-  width: 13px; height: 13px; border-radius: 2.5px;
-  background: var(--surface2); cursor: default; transition: background 0.1s;
-  position: relative;
-}
-.heatmap-day[data-v="0"] { background: var(--surface2); }
-.heatmap-day[data-v="1"] { background: rgba(180,110,200,0.28); }
-.heatmap-day[data-v="2"] { background: rgba(180,110,200,0.50); }
-.heatmap-day[data-v="3"] { background: rgba(180,110,200,0.75); }
-.heatmap-day[data-v="4"] { background: rgba(180,110,200,1); }
-.heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
-.heatmap-legend-label { font-size: 10px; color: var(--text-dim); }
-.heatmap-legend-boxes { display: flex; gap: 2px; }
-.heatmap-legend-box { width: 13px; height: 13px; border-radius: 2px; }
-.anki-progress-bar-wrap { height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; margin: 6px 0 4px; }
-.anki-progress-bar { height: 100%; background: var(--anki); border-radius: 4px; transition: width 0.5s ease; }
-.anki-progress-labels { display: flex; justify-content: space-between; }
-.anki-progress-label { font-size: 11px; color: var(--text-muted); }
+.heatmap-day { width: 12px; height: 12px; border-radius: 2px; background: var(--surface2); }
+.heatmap-day[data-v="1"] { background: rgba(180,110,200,0.25); }
+.heatmap-day[data-v="2"] { background: rgba(180,110,200,0.45); }
+.heatmap-day[data-v="3"] { background: rgba(180,110,200,0.65); }
+.heatmap-day[data-v="4"] { background: var(--recur); }
+.heatmap-legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 10px; color: var(--text-dim); }
+.heatmap-legend-scale { display: flex; gap: 2px; }
+.heatmap-legend-scale span { width: 10px; height: 10px; border-radius: 2px; }
+.top-word-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+.top-word-row:last-child { border-bottom: none; }
+.top-word-label { font-family: 'Playfair Display', serif; font-size: 13px; min-width: 100px; }
+.top-word-label.is-anki { color: var(--anki); }
+.top-word-bar-wrap { flex: 1; background: var(--surface2); border-radius: 3px; height: 6px; overflow: hidden; }
+.top-word-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; }
+.top-word-bar.is-anki { background: var(--anki); }
+.top-word-count { font-size: 12px; color: var(--text-muted); min-width: 24px; text-align: right; }
 .recur-stats-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.recur-stats-table th { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; padding: 4px 8px; text-align: left; border-bottom: 0.5px solid var(--border); }
-.recur-stats-table td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); color: var(--text-muted); }
-.recur-stats-table td:first-child { color: var(--text); font-family: 'Playfair Display', serif; font-size: 0.9rem; }
-.recur-stats-table .pct-good  { color: var(--task-done); font-weight: 500; }
-.recur-stats-table .pct-mid   { color: var(--accent); font-weight: 500; }
-.recur-stats-table .pct-low   { color: var(--task-late); font-weight: 500; }
-.streak-bar { display: flex; gap: 2px; align-items: center; }
-.streak-dot { width: 8px; height: 8px; border-radius: 2px; }
+.recur-stats-table th { text-align: left; padding: 6px 8px; color: var(--text-dim); font-weight: 500; border-bottom: 0.5px solid var(--border); }
+.recur-stats-table td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); }
+.recur-stats-table tr:last-child td { border-bottom: none; }
+.pct-good { color: var(--task-done); font-weight: 500; }
+.pct-mid  { color: var(--accent);    font-weight: 500; }
+.pct-low  { color: var(--danger);    font-weight: 500; }
+.anki-progress-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; margin: 8px 0; overflow: hidden; }
+.anki-progress-bar { height: 100%; background: var(--anki); border-radius: 4px; transition: width 0.4s; }
+.anki-progress-labels { display: flex; gap: 14px; flex-wrap: wrap; }
+.anki-progress-label { font-size: 12px; color: var(--text-muted); }
 
-/* ── Notifications / install ─────────────────── */
-.notif-banner {
-  display: none; background: var(--anki-dim); border: 0.5px solid rgba(110,180,200,0.25);
-  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 1rem;
-  font-size: 13px; color: var(--anki); align-items: center; gap: 10px;
-}
-.notif-banner.show { display: flex; }
-.notif-banner p { flex: 1; }
-.install-banner { display: none; position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 16px; gap: 12px; align-items: center; box-shadow: var(--shadow); z-index: 100; width: calc(100% - 2.5rem); max-width: 480px; animation: slideUp 0.3s ease; }
-.install-banner.show { display: flex; }
-@keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
-.install-banner p { flex: 1; font-size: 13px; color: var(--text-muted); }
-.install-banner p strong { color: var(--text); display: block; font-size: 14px; }
-.install-banner-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; padding: 0 4px; }
-
-/* ══════════════════════════════════════════════
-   WRITING SUGGESTIONS WIDGET
-══════════════════════════════════════════════ */
+/* ── Suggestions engine ──────────────────────── */
 #sugg-container {
-  position: fixed;
-  z-index: 9999;
-  background: var(--surface);
-  border: 0.5px solid var(--border2);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  min-width: 180px;
-  max-width: 320px;
-  overflow: hidden;
-  display: none;
-  animation: suggIn 0.12s ease;
+  position: absolute; z-index: 500; background: var(--surface);
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  box-shadow: var(--shadow); min-width: 160px; max-width: 320px;
+  display: none; overflow: hidden;
 }
-@keyframes suggIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform: none; } }
-#sugg-container.visible { display: block; }
+#sugg-container.visible { display: block; animation: fadeSlide 0.12s ease; }
 .sugg-item {
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; transition: background 0.1s;
   color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 0.5px solid var(--border);
-  transition: background 0.1s;
-  font-family: 'DM Sans', sans-serif;
 }
-.sugg-item:last-child { border-bottom: none; }
 .sugg-item:hover, .sugg-item.active { background: var(--surface2); color: var(--text); }
-.sugg-item .sugg-icon { font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
-.sugg-item .sugg-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sugg-item .sugg-source {
-  font-size: 9px; padding: 1px 5px; border-radius: 4px;
-  background: var(--surface3); color: var(--text-dim);
-  flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.04em;
-}
-.sugg-item .sugg-source.src-hist { background: var(--accent-dim); color: var(--accent); }
-.sugg-item .sugg-source.src-ngram { background: var(--anki-dim); color: var(--anki); }
+.sugg-icon { font-size: 11px; flex-shrink: 0; color: var(--text-dim); }
+.sugg-text { flex: 1; font-family: 'DM Sans', sans-serif; }
+.sugg-source { font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 10px; flex-shrink: 0; letter-spacing: 0.05em; }
+.sugg-source.src-hist { background: var(--accent-dim); color: var(--accent); }
+.sugg-source.src-ngram { background: var(--surface3); color: var(--text-dim); }
 
-/* Inline ghost suggestion */
-.sugg-inline-ghost {
-  pointer-events: none;
-  color: var(--text-dim);
-  font-style: italic;
-  font-size: 13px;
-  position: absolute;
-  white-space: pre;
-  overflow: hidden;
-}
-
-/* Suggestions preferences panel */
-.sugg-prefs-btn {
-  background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px;
-  padding: 5px 12px; font-size: 11px; cursor: pointer; color: var(--text-dim);
-  transition: all 0.2s; white-space: nowrap; margin-left: 4px;
-}
-.sugg-prefs-btn:hover { border-color: var(--anki); color: var(--anki); }
-
-.sugg-prefs-panel {
-  display: none; position: fixed; z-index: 500;
-  background: var(--surface); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 1.1rem; box-shadow: var(--shadow);
-  min-width: 260px;
-}
+/* ── Suggestions prefs panel ─────────────────── */
+.sugg-prefs-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+.sugg-prefs-btn:hover { border-color: var(--accent); }
+.sugg-prefs-panel { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius); box-shadow: var(--shadow); z-index: 300; width: 220px; padding: 12px; }
 .sugg-prefs-panel.open { display: block; animation: fadeSlide 0.15s ease; }
-.sugg-prefs-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
-.sugg-prefs-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.sugg-prefs-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 10px; }
+.sugg-prefs-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .sugg-prefs-label { font-size: 12px; color: var(--text-muted); }
-.sugg-prefs-select {
-  background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 8px;
-  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px;
-  padding: 4px 8px; outline: none; cursor: pointer;
-}
-.sugg-prefs-select option { background: var(--surface); }
+.sugg-prefs-select { background: var(--surface2); border: 0.5px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; padding: 3px 6px; outline: none; }
 
-@media (max-width: 480px) {
-  .tabs { gap: 0; }
-  .tab { padding: 10px 10px; font-size: 12px; }
-  .stats-row { gap: 1rem; }
-  .word-card-top { gap: 6px; }
-  .modal { padding: 1.25rem; }
+/* ── Notification & Install banners ──────────── */
+.notif-banner, .install-banner {
+  background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius);
+  padding: 10px 14px; margin-bottom: 1rem; display: none; align-items: center; gap: 10px; font-size: 13px;
 }
+.notif-banner.show, .install-banner.show { display: flex; animation: fadeSlide 0.2s ease; }
+.install-banner-info { flex: 1; }
+.install-banner-title { font-weight: 500; font-size: 13px; }
+.install-banner-desc  { font-size: 11px; color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -572,30 +438,37 @@ body {
   <div class="header">
     <div class="header-left">
       <div class="header-text">
-        <h1>Le<span>xique</span></h1>
-        <p data-i18n="header.subtitle">Vocabulaire · Tâches récurrentes · Révision</p>
+        <h1>Lexi<span>qu</span></h1>
+        <p id="headerSubtitle" data-i18n="header.subtitle">Vocabulaire · Tâches récurrentes · Révision</p>
       </div>
     </div>
     <div class="header-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Sombre</button>
-      <span class="offline-badge" id="offlineBadge">⚡ <span data-i18n="status.offline">Hors ligne</span></span>
-      <span id="syncBadge" style="font-size:13px;margin-left:6px;transition:color .2s;"></span>
+      <span class="offline-badge" id="offlineBadge">⊘ <span data-i18n="status.offline">Hors ligne</span></span>
+      <span class="sync-badge" id="syncBadge" title="Sync">✓</span>
 
       <!-- Language selector -->
       <div style="position:relative" id="langBtnWrap">
-        <button class="lang-btn" id="langBtn" onclick="toggleLangDropdown()">
+        <button class="lang-btn" onclick="toggleLangDropdown()">
           <span id="langFlag">🇫🇷</span>
           <span id="langLabel">FR</span>
           <span style="font-size:9px;opacity:0.5">▾</span>
         </button>
         <div class="lang-dropdown" id="langDropdown">
-          <div class="lang-option active" data-lang="fr" onclick="setLanguage('fr')"><span class="lang-flag">🇫🇷</span> Français</div>
-          <div class="lang-option" data-lang="en" onclick="setLanguage('en')"><span class="lang-flag">🇬🇧</span> English</div>
-          <div class="lang-option" data-lang="es" onclick="setLanguage('es')"><span class="lang-flag">🇪🇸</span> Español</div>
+          <div class="lang-option active" data-lang="fr" onclick="setLanguage('fr')">
+            <span class="lang-flag">🇫🇷</span> Français
+          </div>
+          <div class="lang-option" data-lang="en" onclick="setLanguage('en')">
+            <span class="lang-flag">🇬🇧</span> English
+          </div>
+          <div class="lang-option" data-lang="es" onclick="setLanguage('es')">
+            <span class="lang-flag">🇪🇸</span> Español
+          </div>
         </div>
       </div>
 
-      <!-- Suggestions preferences -->
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️ Clair</button>
+
+      <!-- Suggestions prefs -->
       <div style="position:relative">
         <button class="sugg-prefs-btn" onclick="toggleSuggPrefs()" title="Préférences des suggestions">💡</button>
         <div class="sugg-prefs-panel" id="suggPrefsPanel">
@@ -634,6 +507,16 @@ body {
     <p>🔔 <span data-i18n="notif.enable_text">Activer les notifications pour les rappels Anki et tâches.</span></p>
     <button class="btn btn-sm" onclick="requestNotifPermission()" data-i18n="notif.enable_btn">Activer</button>
     <button style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px" onclick="document.getElementById('notifBanner').classList.remove('show')">×</button>
+  </div>
+
+  <!-- Install banner -->
+  <div class="install-banner" id="installBanner">
+    <div class="install-banner-info">
+      <div class="install-banner-title" data-i18n="pwa.install_title">Installer Lexique</div>
+      <div class="install-banner-desc" data-i18n="pwa.install_desc">Accès rapide depuis l'écran d'accueil.</div>
+    </div>
+    <button class="btn btn-sm" id="installBtn" data-i18n="pwa.install_btn">Installer</button>
+    <button style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px" onclick="dismissInstall()">×</button>
   </div>
 
   <!-- ── TABS ── -->
@@ -708,160 +591,164 @@ body {
       <div class="stat"><span class="stat-val recur-val" id="taskStatRecur">0</span><span class="stat-label" data-i18n="tasks.recurring_active">Récurrentes actives</span></div>
       <div class="stat"><span class="stat-val" id="taskStatPct">0%</span><span class="stat-label" data-i18n="tasks.completion_rate">Taux complétion</span></div>
     </div>
-
-    <div style="display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
-      <button class="btn btn-sm" onclick="openTaskModal(null)" data-i18n="tasks.add_simple">+ Tâche simple</button>
-      <button class="btn btn-sm btn-recur" onclick="openTaskModal(null,'recur')" data-i18n="tasks.add_recur">↻ Tâche récurrente</button>
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="openTaskModal(null,'once')" data-i18n="tasks.add_simple">+ Tâche simple</button>
+      <button class="btn btn-sm btn-recur" onclick="openTaskModal(null,'daily')" data-i18n="tasks.add_recur">↻ Tâche récurrente</button>
     </div>
-
     <div class="filters" id="taskFilterRow"></div>
     <div class="task-list" id="taskList"></div>
   </div>
 
   <!-- ══════════ TAB STATS ══════════ -->
   <div class="tab-content" id="tab-stats">
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.occ_30">Occurrences de mots — 30 derniers jours</h3>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.occ_30">Occurrences de mots — 30 derniers jours</div>
       <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.recur_heatmap">Consistance des tâches récurrentes — 12 semaines</h3>
-      <div class="heatmap-scroll" id="recurHeatmap"></div>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.recur_heatmap">Consistance des tâches récurrentes — 12 semaines</div>
+      <div id="recurHeatmap"></div>
       <div class="heatmap-legend">
-        <span class="heatmap-legend-label" data-i18n="stats_tab.less">Moins</span>
-        <div class="heatmap-legend-boxes">
-          <div class="heatmap-legend-box" style="background:var(--surface2)"></div>
-          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.28)"></div>
-          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.50)"></div>
-          <div class="heatmap-legend-box" style="background:rgba(180,110,200,0.75)"></div>
-          <div class="heatmap-legend-box" style="background:rgba(180,110,200,1)"></div>
+        <span data-i18n="stats_tab.less">Moins</span>
+        <div class="heatmap-legend-scale">
+          <span style="background:var(--surface2)"></span>
+          <span style="background:rgba(180,110,200,0.25)"></span>
+          <span style="background:rgba(180,110,200,0.45)"></span>
+          <span style="background:rgba(180,110,200,0.65)"></span>
+          <span style="background:var(--recur)"></span>
         </div>
-        <span class="heatmap-legend-label" data-i18n="stats_tab.more">Plus</span>
+        <span data-i18n="stats_tab.more">Plus</span>
       </div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.recur_consist">Tâches récurrentes — consistance par tâche</h3>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.recur_consist">Tâches récurrentes — consistance par tâche</div>
       <div id="recurConsistTable"></div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.tasks_30">Tâches complétées vs reportées — 30 jours</h3>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.tasks_30">Tâches complétées vs reportées — 30 jours</div>
       <div class="chart-wrap"><canvas id="chartTasksBar"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.anki_pie">Mots sur Anki vs. en attente</h3>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.anki_pie">Mots sur Anki vs. en attente</div>
       <div id="ankiProgress"></div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chartAnkiPie"></canvas></div>
+      <div class="chart-wrap" style="margin-top:1rem"><canvas id="chartAnkiPie"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.by_cat">Répartition par catégorie</h3>
-      <div class="chart-wrap" style="height:190px"><canvas id="chartCats"></canvas></div>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.by_cat">Répartition par catégorie</div>
+      <div class="chart-wrap"><canvas id="chartCats"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h3 data-i18n="stats_tab.top10">Top 10 mots les plus fréquents</h3>
-      <div class="top-words" id="topWords"></div>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.top10">Top 10 mots les plus fréquents</div>
+      <div id="topWords"></div>
     </div>
   </div>
 
 </div><!-- /.app -->
 
-<!-- ══════════ TASK MODAL ══════════ -->
+<!-- ── TASK MODAL ── -->
 <div class="modal-overlay" id="taskModal">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="modalTitle" data-i18n="modal.new_task">Nouvelle tâche</span>
+      <span class="modal-title" id="modalTitle">Nouvelle tâche</span>
       <button class="modal-close" onclick="closeTaskModal()">×</button>
     </div>
-    <div class="modal-section">
-      <label class="form-label" data-i18n="modal.title_label">Titre *</label>
-      <input class="form-input" type="text" id="mTaskTitle" data-i18n-placeholder="modal.title_placeholder" placeholder="Titre de la tâche..." autocomplete="off" />
-      <label class="form-label" data-i18n="modal.desc_label">Description</label>
-      <textarea class="form-textarea" id="mTaskDesc" data-i18n-placeholder="modal.desc_placeholder" placeholder="Description (optionnel)..."></textarea>
-      <label class="form-label" data-i18n="modal.cat_label">Catégorie</label>
-      <select class="form-select" id="mTaskCat">
-        <option value="" data-i18n-opt="modal.cat_none">— Catégorie —</option>
-        <option value="perso" data-i18n-opt="cats.perso">Personnel</option>
-        <option value="pro" data-i18n-opt="cats.pro">Professionnel</option>
-        <option value="etude" data-i18n-opt="cats.etude">Étude</option>
-        <option value="sport" data-i18n-opt="cats.sport">Sport / Santé</option>
-        <option value="autre" data-i18n-opt="cats.autre">Autre</option>
-      </select>
+
+    <label class="form-label" data-i18n="modal.title_label">Titre *</label>
+    <input class="form-input" type="text" id="mTaskTitle" data-i18n-placeholder="modal.title_placeholder" placeholder="Titre de la tâche..." autocomplete="off" />
+
+    <label class="form-label" data-i18n="modal.desc_label">Description</label>
+    <textarea class="form-textarea" id="mTaskDesc" data-i18n-placeholder="modal.desc_placeholder" placeholder="Description (optionnel)..."></textarea>
+
+    <label class="form-label" data-i18n="modal.cat_label">Catégorie</label>
+    <select class="form-select" id="mTaskCat">
+      <option value="" data-i18n="modal.cat_none">— Catégorie —</option>
+      <option value="perso" data-i18n="cats.perso">Personnel</option>
+      <option value="pro"   data-i18n="cats.pro">Professionnel</option>
+      <option value="etude" data-i18n="cats.etude">Étude</option>
+      <option value="sport" data-i18n="cats.sport">Sport / Santé</option>
+      <option value="autre" data-i18n="cats.autre">Autre</option>
+    </select>
+
+    <label class="form-label" data-i18n="modal.task_type">Type de tâche</label>
+    <div class="recur-types">
+      <button class="rtype-btn active" id="rtype-once"     onclick="setRecurType('once')"     data-i18n="modal.type_once">Une seule fois</button>
+      <button class="rtype-btn"        id="rtype-daily"    onclick="setRecurType('daily')"    data-i18n="modal.type_daily">Quotidienne</button>
+      <button class="rtype-btn"        id="rtype-weekly"   onclick="setRecurType('weekly')"   data-i18n="modal.type_weekly">Jours choisis</button>
+      <button class="rtype-btn"        id="rtype-interval" onclick="setRecurType('interval')" data-i18n="modal.type_interval">Toutes les N jours</button>
     </div>
-    <div class="modal-section">
-      <label class="form-label" data-i18n="modal.task_type">Type de tâche</label>
-      <div class="recur-type-row">
-        <button class="recur-type-btn active" id="rtype-once"     onclick="setRecurType('once')"     data-i18n="modal.type_once">Une seule fois</button>
-        <button class="recur-type-btn"         id="rtype-daily"    onclick="setRecurType('daily')"    data-i18n="modal.type_daily">Quotidienne</button>
-        <button class="recur-type-btn"         id="rtype-weekly"   onclick="setRecurType('weekly')"   data-i18n="modal.type_weekly">Jours choisis</button>
-        <button class="recur-type-btn"         id="rtype-interval" onclick="setRecurType('interval')" data-i18n="modal.type_interval">Toutes les N jours</button>
-      </div>
-    </div>
+
+    <!-- Once panel -->
     <div class="recur-panel active" id="panel-once">
-      <div class="modal-section">
-        <label class="form-label" data-i18n="modal.due_date">Date prévue</label>
-        <input class="form-input" type="date" id="mTaskDate" style="margin-bottom:0" />
-      </div>
+      <label class="form-label" data-i18n="modal.due_date">Date prévue</label>
+      <input class="form-input" type="date" id="mTaskDate" />
     </div>
+
+    <!-- Daily panel -->
     <div class="recur-panel" id="panel-daily">
-      <div class="modal-section">
-        <label class="form-label" data-i18n="modal.start_date">Date de début</label>
-        <div class="form-row">
-          <input class="form-input" type="date" id="mDailyStart" />
-          <input class="form-input" type="date" id="mDailyEnd" placeholder="Date de fin (optionnel)" />
+      <div class="form-row">
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.start_date">Date de début</label>
+          <input class="form-input" type="date" id="mDailyStart" style="margin-bottom:0" />
+        </div>
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.end_date_opt">Date de fin (optionnel)</label>
+          <input class="form-input" type="date" id="mDailyEnd" style="margin-bottom:0" />
         </div>
       </div>
     </div>
+
+    <!-- Weekly panel -->
     <div class="recur-panel" id="panel-weekly">
-      <div class="modal-section">
-        <label class="form-label" data-i18n="modal.repeat_days">Jours de répétition</label>
-        <div class="day-picker" id="dayPicker">
-          <div class="day-pill" data-day="1" onclick="toggleDay(1)" data-i18n-day="1">Lun</div>
-          <div class="day-pill" data-day="2" onclick="toggleDay(2)" data-i18n-day="2">Mar</div>
-          <div class="day-pill" data-day="3" onclick="toggleDay(3)" data-i18n-day="3">Mer</div>
-          <div class="day-pill" data-day="4" onclick="toggleDay(4)" data-i18n-day="4">Jeu</div>
-          <div class="day-pill" data-day="5" onclick="toggleDay(5)" data-i18n-day="5">Ven</div>
-          <div class="day-pill" data-day="6" onclick="toggleDay(6)" data-i18n-day="6">Sam</div>
-          <div class="day-pill" data-day="0" onclick="toggleDay(0)" data-i18n-day="0">Dim</div>
+      <label class="form-label" data-i18n="modal.repeat_days">Jours de répétition</label>
+      <div class="day-picker">
+        <button class="day-pill" data-day="1" onclick="toggleDay(1)" data-i18n-day="1">Lun</button>
+        <button class="day-pill" data-day="2" onclick="toggleDay(2)" data-i18n-day="2">Mar</button>
+        <button class="day-pill" data-day="3" onclick="toggleDay(3)" data-i18n-day="3">Mer</button>
+        <button class="day-pill" data-day="4" onclick="toggleDay(4)" data-i18n-day="4">Jeu</button>
+        <button class="day-pill" data-day="5" onclick="toggleDay(5)" data-i18n-day="5">Ven</button>
+        <button class="day-pill" data-day="6" onclick="toggleDay(6)" data-i18n-day="6">Sam</button>
+        <button class="day-pill" data-day="0" onclick="toggleDay(0)" data-i18n-day="0">Dim</button>
+      </div>
+      <div class="form-row">
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.start_date">Date de début</label>
+          <input class="form-input" type="date" id="mWeeklyStart" style="margin-bottom:0" />
         </div>
-        <div class="form-row">
-          <div style="flex:1">
-            <label class="form-label" data-i18n="modal.start_date">Date de début</label>
-            <input class="form-input" type="date" id="mWeeklyStart" style="margin-bottom:0" />
-          </div>
-          <div style="flex:1">
-            <label class="form-label" data-i18n="modal.end_date_opt">Date de fin (optionnel)</label>
-            <input class="form-input" type="date" id="mWeeklyEnd" style="margin-bottom:0" />
-          </div>
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.end_date_opt">Date de fin (optionnel)</label>
+          <input class="form-input" type="date" id="mWeeklyEnd" style="margin-bottom:0" />
         </div>
       </div>
     </div>
+
+    <!-- Interval panel -->
     <div class="recur-panel" id="panel-interval">
-      <div class="modal-section">
-        <div class="form-row">
-          <div style="flex:1">
-            <label class="form-label" data-i18n="modal.repeat_every">Répéter tous les</label>
-            <input class="form-input" type="number" id="mInterval" min="1" max="60" value="2" style="margin-bottom:0" />
-          </div>
-          <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:1px">
-            <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;padding:10px 0 10px 4px" data-i18n="modal.days">jours</span>
-          </div>
+      <div class="form-row" style="align-items:center">
+        <label class="form-label" style="margin-bottom:0;white-space:nowrap" data-i18n="modal.repeat_every">Répéter tous les</label>
+        <input class="form-input" type="number" id="mInterval" min="1" max="365" value="2" style="max-width:70px;margin-bottom:0;text-align:center" />
+        <span style="font-size:13px;color:var(--text-muted)" data-i18n="modal.days">jours</span>
+      </div>
+      <div class="form-row">
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.start_date">Date de début</label>
+          <input class="form-input" type="date" id="mIntervalStart" style="margin-bottom:0" />
         </div>
-        <div class="form-row" style="margin-top:8px">
-          <div style="flex:1">
-            <label class="form-label" data-i18n="modal.start_date">Date de début</label>
-            <input class="form-input" type="date" id="mIntervalStart" style="margin-bottom:0" />
-          </div>
-          <div style="flex:1">
-            <label class="form-label" data-i18n="modal.end_date_opt">Date de fin (optionnel)</label>
-            <input class="form-input" type="date" id="mIntervalEnd" style="margin-bottom:0" />
-          </div>
+        <div style="flex:1">
+          <label class="form-label" data-i18n="modal.end_date_opt">Date de fin (optionnel)</label>
+          <input class="form-input" type="date" id="mIntervalEnd" style="margin-bottom:0" />
         </div>
       </div>
     </div>
-    <div class="modal-section" id="deadlineSection" style="display:none">
-      <label class="form-label" data-i18n="modal.global_deadline">Deadline globale (optionnel)</label>
-      <input class="form-input" type="date" id="mDeadline" style="margin-bottom:0" />
-      <p style="font-size:11px;color:var(--text-dim);margin-top:4px" data-i18n="modal.deadline_hint">La tâche récurrente s'arrêtera automatiquement à cette date.</p>
+
+    <!-- Deadline (recurring only) -->
+    <div id="deadlineSection" style="display:none">
+      <div class="deadline-section">
+        <label class="form-label" data-i18n="modal.global_deadline">Deadline globale (optionnel)</label>
+        <input class="form-input" type="date" id="mDeadline" />
+        <div class="deadline-hint" data-i18n="modal.deadline_hint">La tâche récurrente s'arrêtera automatiquement à cette date.</div>
+      </div>
     </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeTaskModal()" data-i18n="common.cancel">Annuler</button>
       <button class="btn btn-sm" id="modalSaveBtn" onclick="saveTaskFromModal()" data-i18n="modal.create_task">Créer la tâche</button>
@@ -869,22 +756,54 @@ body {
   </div>
 </div>
 
-<!-- PWA install banner -->
-<div class="install-banner" id="installBanner">
-  <p><strong data-i18n="pwa.install_title">Installer Lexique</strong><span data-i18n="pwa.install_desc">Accès rapide depuis l'écran d'accueil.</span></p>
-  <button class="btn btn-sm" id="installBtn" data-i18n="pwa.install_btn">Installer</button>
-  <button class="install-banner-close" onclick="dismissInstall()">×</button>
-</div>
-
-<!-- Writing suggestions floating container -->
-<div id="sugg-container" role="listbox" aria-label="Suggestions"></div>
+<!-- ── SUGGESTIONS DROPDOWN ── -->
+<div id="sugg-container" role="listbox"></div>
 
 <script>
 'use strict';
 
 // ════════════════════════════════════════════════════════════════
-//  ① i18n — TRANSLATIONS + ENGINE
+//  ① CONSTANTS
 // ════════════════════════════════════════════════════════════════
+
+const ANKI_THRESHOLD  = 3;
+const MAX_CLICKS      = 3;
+const WORDNIK_API_KEY = 'VOTRE_CLE_WORDNIK'; // TODO: replace with env var or config
+
+/** @type {Record<string, {bg:string, color:string, border:string}>} */
+const PALETTE = [
+  { bg:'rgba(200,169,110,0.14)', color:'#c8a96e', border:'rgba(200,169,110,0.25)' },
+  { bg:'rgba(110,180,200,0.14)', color:'#6eb4c8', border:'rgba(110,180,200,0.25)' },
+  { bg:'rgba(140,200,110,0.14)', color:'#8cc86e', border:'rgba(140,200,110,0.25)' },
+  { bg:'rgba(180,110,200,0.14)', color:'#b46ec8', border:'rgba(180,110,200,0.25)' },
+  { bg:'rgba(200,110,130,0.14)', color:'#c86e82', border:'rgba(200,110,130,0.25)' },
+  { bg:'rgba(100,160,220,0.14)', color:'#64a0dc', border:'rgba(100,160,220,0.25)' },
+];
+
+const TASK_CAT_LABELS_KEY = {
+  perso: 'cats.perso', pro: 'cats.pro', etude: 'cats.etude',
+  sport: 'cats.sport', autre: 'cats.autre', '': '',
+};
+
+const TASK_CAT_COLORS = {
+  perso: { bg:'rgba(110,180,200,0.14)', color:'#6eb4c8', border:'rgba(110,180,200,0.25)' },
+  pro:   { bg:'rgba(200,169,110,0.14)', color:'#c8a96e', border:'rgba(200,169,110,0.25)' },
+  etude: { bg:'rgba(140,200,110,0.14)', color:'#8cc86e', border:'rgba(140,200,110,0.25)' },
+  sport: { bg:'rgba(200,110,130,0.14)', color:'#c86e82', border:'rgba(200,110,130,0.25)' },
+  autre: { bg:'rgba(180,110,200,0.14)', color:'#b46ec8', border:'rgba(180,110,200,0.25)' },
+};
+
+const LS_KEY_STATE = 'lexique_v6';
+const LS_KEY_THEME = 'lexique_theme';
+const LS_KEY_LANG  = 'lexique_lang';
+const LS_KEY_SUGG  = 'lexique_sugg_prefs';
+const LS_KEY_HIST  = 'lexique_sugg_hist';
+const LS_SYNC_KEYS = [LS_KEY_STATE, LS_KEY_THEME];
+
+// ════════════════════════════════════════════════════════════════
+//  ② i18n
+// ════════════════════════════════════════════════════════════════
+
 const TRANSLATIONS = {
   fr: {
     'header.subtitle':        'Vocabulaire · Tâches récurrentes · Révision',
@@ -980,7 +899,7 @@ const TRANSLATIONS = {
     'review.today':           'Tableau du jour',
     'review.tasks_section':   'Tâches à faire',
     'review.words_section':   'Mots du jour',
-    'review.nothing':         'Rien à réviser aujourd\'hui !',
+    'review.nothing':         "Rien à réviser aujourd'hui !",
     'tasks.no_tasks':         'Aucune tâche à afficher.',
     'words.no_words':         'Aucun mot encore.',
     'words.no_results':       'Aucun résultat pour',
@@ -1079,7 +998,7 @@ const TRANSLATIONS = {
     'modal.task_type':        'Task type',
     'modal.type_once':        'One time',
     'modal.type_daily':       'Daily',
-    'modal.type_weekly':      'Chosen days',
+    'modal.type_weekly':      'Selected days',
     'modal.type_interval':    'Every N days',
     'modal.due_date':         'Due date',
     'modal.start_date':       'Start date',
@@ -1088,7 +1007,7 @@ const TRANSLATIONS = {
     'modal.repeat_every':     'Repeat every',
     'modal.days':             'days',
     'modal.global_deadline':  'Global deadline (optional)',
-    'modal.deadline_hint':    'The recurring task will stop automatically on this date.',
+    'modal.deadline_hint':    'The recurring task will stop automatically at this date.',
     'modal.create_task':      'Create task',
     'modal.save_task':        'Save',
     'common.add':             'Add',
@@ -1096,13 +1015,13 @@ const TRANSLATIONS = {
     'notif.enable_text':      'Enable notifications for Anki and task reminders.',
     'notif.enable_btn':       'Enable',
     'pwa.install_title':      'Install Lexique',
-    'pwa.install_desc':       'Quick access from your home screen.',
+    'pwa.install_desc':       'Quick access from home screen.',
     'pwa.install_btn':        'Install',
     'sugg.prefs_title':       'Suggestions',
     'sugg.pref_freq':         'Frequency',
-    'sugg.pref_freq_aggressive':'After 1 char.',
-    'sugg.pref_freq_moderate': 'After 3 chars.',
-    'sugg.pref_freq_discrete': 'After 1 word',
+    'sugg.pref_freq_aggressive':'From 1 char.',
+    'sugg.pref_freq_moderate': 'From 3 chars.',
+    'sugg.pref_freq_discrete': 'From 1 word',
     'sugg.pref_max':          'Max suggestions',
     'sugg.pref_style':        'Style',
     'sugg.pref_style_all':    'All',
@@ -1110,7 +1029,7 @@ const TRANSLATIONS = {
     'sugg.pref_style_word':   'Words',
     'day.0': 'Sun', 'day.1': 'Mon', 'day.2': 'Tue',
     'day.3': 'Wed', 'day.4': 'Thu', 'day.5': 'Fri', 'day.6': 'Sat',
-    'review.today':           "Today's Board",
+    'review.today':           "Today's board",
     'review.tasks_section':   'Tasks to do',
     'review.words_section':   "Today's words",
     'review.nothing':         'Nothing to review today!',
@@ -1126,7 +1045,7 @@ const TRANSLATIONS = {
     'sync.error':             'Sync error',
     'notif.anki_title':       'Lexique — Word ready for Anki',
     'notif.max_title':        'Lexique — Maximum reached',
-    'notif.tasks_today_title':'Lexique — Today\'s tasks',
+    'notif.tasks_today_title':'Lexique — Tasks today',
     'notif.tasks_late_title': 'Lexique — Missed tasks',
     'notif.recur_title':      'Lexique — Recurring reminder',
     'tasks.filter_all':       'All',
@@ -1150,7 +1069,7 @@ const TRANSLATIONS = {
     'words.anki_ready_filter':'Anki ready',
     'words.all_filter':       'All',
     'history.last14':         'Last 14 occurrences',
-    'tasks.deadline_auto':    'The recurring task will stop automatically on this date.',
+    'tasks.deadline_auto':    'The recurring task will stop automatically at this date.',
   },
   es: {
     'header.subtitle':        'Vocabulario · Tareas recurrentes · Revisión',
@@ -1172,26 +1091,31 @@ const TRANSLATIONS = {
     'words.sort_alpha':       'Alfabético',
     'words.sort_recent':      'Más reciente',
     'words.sort_oldest':      'Más antiguo',
-    'revision.words_today':   'Palabras del día',
-    'revision.tasks_today':   'Tareas del día',
+    'revision.words_today':   'Palabras de hoy',
+    'revision.tasks_today':   'Tareas de hoy',
     'revision.recurring':     'Recurrentes',
     'revision.late':          'Atrasadas',
     'tasks.done_today':       'Terminadas hoy',
     'tasks.late':             'Atrasadas',
     'tasks.recurring_active': 'Recurrentes activas',
-    'tasks.completion_rate':  'Tasa completado',
+    'tasks.completion_rate':  'Tasa de compleción',
     'tasks.add_simple':       '+ Tarea simple',
     'tasks.add_recur':        '↻ Tarea recurrente',
+    'tasks_filter.all':       'Todas',
+    'tasks_filter.today':     'Hoy',
+    'tasks_filter.recur':     '↻ Recurrentes',
+    'tasks_filter.late':      'Atrasadas',
+    'tasks_filter.done':      'Terminadas',
     'cats.perso':             'Personal',
     'cats.pro':               'Profesional',
     'cats.etude':             'Estudio',
     'cats.sport':             'Deporte / Salud',
     'cats.autre':             'Otro',
-    'stats_tab.occ_30':       'Ocurrencias — últimos 30 días',
+    'stats_tab.occ_30':       'Ocurrencias de palabras — últimos 30 días',
     'stats_tab.recur_heatmap':'Consistencia tareas recurrentes — 12 semanas',
     'stats_tab.less':         'Menos',
     'stats_tab.more':         'Más',
-    'stats_tab.recur_consist':'Tareas recurrentes — consistencia',
+    'stats_tab.recur_consist':'Tareas recurrentes — consistencia por tarea',
     'stats_tab.tasks_30':     'Tareas completadas vs perdidas — 30 días',
     'stats_tab.anki_pie':     'Palabras en Anki vs. pendientes',
     'stats_tab.by_cat':       'Distribución por categoría',
@@ -1205,14 +1129,14 @@ const TRANSLATIONS = {
     'modal.cat_label':        'Categoría',
     'modal.cat_none':         '— Categoría —',
     'modal.task_type':        'Tipo de tarea',
-    'modal.type_once':        'Una vez',
+    'modal.type_once':        'Una sola vez',
     'modal.type_daily':       'Diaria',
     'modal.type_weekly':      'Días elegidos',
     'modal.type_interval':    'Cada N días',
     'modal.due_date':         'Fecha prevista',
     'modal.start_date':       'Fecha de inicio',
     'modal.repeat_days':      'Días de repetición',
-    'modal.end_date_opt':     'Fecha fin (opcional)',
+    'modal.end_date_opt':     'Fecha de fin (opcional)',
     'modal.repeat_every':     'Repetir cada',
     'modal.days':             'días',
     'modal.global_deadline':  'Fecha límite global (opcional)',
@@ -1279,7 +1203,7 @@ const TRANSLATIONS = {
     'words.all_filter':       'Todas',
     'history.last14':         'Últimas 14 ocurrencias',
     'tasks.deadline_auto':    'La tarea recurrente se detendrá automáticamente en esta fecha.',
-  }
+  },
 };
 
 const LANG_META = {
@@ -1288,388 +1212,165 @@ const LANG_META = {
   es: { flag: '🇪🇸', label: 'ES', dir: 'ltr' },
 };
 
-// — i18n state —
 let currentLang = 'fr';
 
 function detectLang() {
-  const saved = localStorage.getItem('lexique_lang');
+  const saved = localStorage.getItem(LS_KEY_LANG);
   if (saved && TRANSLATIONS[saved]) return saved;
-  const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'fr';
-  const code = nav.slice(0,2).toLowerCase();
+  const nav  = (navigator.languages && navigator.languages[0]) || navigator.language || 'fr';
+  const code = nav.slice(0, 2).toLowerCase();
   return TRANSLATIONS[code] ? code : 'fr';
 }
 
+/** Translate a key, with optional fallback. */
 function t(key, fallback) {
-  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) ||
-         (TRANSLATIONS['fr'][key]) ||
-         fallback || key;
+  return (TRANSLATIONS[currentLang]?.[key]) ?? (TRANSLATIONS.fr[key]) ?? fallback ?? key;
 }
 
 function setLanguage(lang) {
   if (!TRANSLATIONS[lang]) return;
   currentLang = lang;
-  localStorage.setItem('lexique_lang', lang);
+  localStorage.setItem(LS_KEY_LANG, lang);
   applyTranslations();
   closeLangDropdown();
-  // Re-render dynamic content
-  if (typeof render === 'function') render();
-  if (typeof renderTaskFilters === 'function') { renderTaskFilters(); renderTasks(); }
-  if (typeof renderCatManager === 'function') renderCatManager();
-  if (typeof updateStats === 'function') updateStats();
-  if (typeof updateTaskStats === 'function') updateTaskStats();
+  render();
+  renderTaskFilters(); renderTasks();
+  renderCatManager();
+  updateStats(); updateTaskStats();
 }
 
 function applyTranslations() {
-  const lang = currentLang;
-  const meta = LANG_META[lang];
-  // Update html attributes
-  document.documentElement.lang = lang;
+  const meta = LANG_META[currentLang];
+  document.documentElement.lang = currentLang;
   document.documentElement.dir  = meta.dir;
-  // Update lang button
-  document.getElementById('langFlag').textContent = meta.flag;
+  document.getElementById('langFlag').textContent  = meta.flag;
   document.getElementById('langLabel').textContent = meta.label;
-  // Update active option
   document.querySelectorAll('.lang-option').forEach(el => {
-    el.classList.toggle('active', el.dataset.lang === lang);
+    el.classList.toggle('active', el.dataset.lang === currentLang);
   });
-  // Apply data-i18n text nodes
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const val = t(key);
+    const val = t(el.getAttribute('data-i18n'));
     if (val) el.textContent = val;
   });
-  // Apply data-i18n-placeholder
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    const val = t(key);
+    const val = t(el.getAttribute('data-i18n-placeholder'));
     if (val) el.placeholder = val;
   });
-  // Apply data-i18n-opt on <option>
   document.querySelectorAll('[data-i18n-opt]').forEach(el => {
-    const key = el.getAttribute('data-i18n-opt');
-    const val = t(key);
+    const val = t(el.getAttribute('data-i18n-opt'));
     if (val) el.textContent = val;
   });
-  // Apply day names
   document.querySelectorAll('[data-i18n-day]').forEach(el => {
-    const d = el.getAttribute('data-i18n-day');
-    const val = t('day.' + d);
+    const val = t('day.' + el.getAttribute('data-i18n-day'));
     if (val) el.textContent = val;
   });
-  // Update theme button text (preserves emoji)
   const isLight = document.body.classList.contains('light');
   document.getElementById('themeBtn').textContent = isLight ? '🌙 Sombre' : '☀️ Clair';
 }
 
-function toggleLangDropdown() {
-  document.getElementById('langDropdown').classList.toggle('open');
-}
-function closeLangDropdown() {
-  document.getElementById('langDropdown').classList.remove('open');
-}
-// Close on outside click
+function toggleLangDropdown() { document.getElementById('langDropdown').classList.toggle('open'); }
+function closeLangDropdown()  { document.getElementById('langDropdown').classList.remove('open'); }
+
 document.addEventListener('click', e => {
   const wrap = document.getElementById('langBtnWrap');
   if (wrap && !wrap.contains(e.target)) closeLangDropdown();
 });
 
 // ════════════════════════════════════════════════════════════════
-//  ② WRITING SUGGESTIONS ENGINE
+//  ③ DATE UTILITIES
 // ════════════════════════════════════════════════════════════════
 
-// — Preferences —
-let suggPrefs = { minChars: 3, maxItems: 5, style: 'completion' };
-function loadSuggPrefs() {
-  try {
-    const raw = localStorage.getItem('lexique_sugg_prefs');
-    if (raw) suggPrefs = { ...suggPrefs, ...JSON.parse(raw) };
-  } catch(e) {}
-  document.getElementById('prefFreq').value  = String(suggPrefs.minChars);
-  document.getElementById('prefMax').value   = String(suggPrefs.maxItems);
-  document.getElementById('prefStyle').value = suggPrefs.style;
-}
-function saveSuggPrefs() {
-  suggPrefs.minChars = parseInt(document.getElementById('prefFreq').value)  || 3;
-  suggPrefs.maxItems = parseInt(document.getElementById('prefMax').value)   || 5;
-  suggPrefs.style    = document.getElementById('prefStyle').value || 'completion';
-  localStorage.setItem('lexique_sugg_prefs', JSON.stringify(suggPrefs));
-}
-function toggleSuggPrefs() {
-  const panel = document.getElementById('suggPrefsPanel');
-  panel.classList.toggle('open');
-  // Position near button
-  if (panel.classList.contains('open')) {
-    const btn = panel.previousElementSibling;
-    const rect = btn.getBoundingClientRect();
-    panel.style.top   = (rect.bottom + 6) + 'px';
-    panel.style.right = (window.innerWidth - rect.right) + 'px';
-  }
-}
-// Close prefs on outside click
-document.addEventListener('click', e => {
-  const panel = document.getElementById('suggPrefsPanel');
-  if (panel && panel.classList.contains('open')) {
-    const btn = panel.previousElementSibling;
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-      panel.classList.remove('open');
-    }
-  }
-});
+const DateUtils = {
+  ts() { return Date.now(); },
+  todayStr() { return this.fmtDay(Date.now()); },
 
-// — N-gram model (lightweight bigrams) —
-// Built from user's own word list + common words per language
-const COMMON_WORDS = {
-  fr: ['le','la','les','un','une','des','de','du','et','est','en','au','aux','ce','je','tu','il','elle','nous','vous','ils','elles','que','qui','ne','pas','plus','très','avec','pour','dans','sur','par','comme','mais','ou','donc','or','ni','car','si','être','avoir','faire','dire','aller','voir','vouloir','pouvoir','savoir','venir','prendre','donner','trouver','croire','aimer','parler','penser','sentir','attendre'],
-  en: ['the','a','an','and','is','in','it','of','to','be','as','at','by','do','for','go','he','if','in','my','no','on','or','so','up','us','we','who','you','are','but','by','can','did','get','has','had','him','his','how','its','let','may','not','now','our','out','see','set','she','than','that','them','then','they','this','was','what','when','with','have','been','will','from','into','also','just','like','make','more','much','over','some','such','time','very','well','know','said','take','came','come','feel','give','good','here','keep','last','life','look','long','most','move','need','next','open','part','play','same','show','tell','think','turn','want','work'],
-  es: ['el','la','los','las','un','una','de','en','y','que','a','es','se','no','lo','al','por','con','su','para','una','está','le','me','si','ya','más','pero','como','del','os','son','fue','ser','uno','tiene','una','sin','hay','mi','esto','también','sus','así','muy','bien','todo','cuando','sobre','porque','antes','entre','hasta','desde','sin','mismo','mientras','aunque','durante','después','siempre','ahora','aquí','donde','algo','solo','nunca','tal'],
+  /** Format timestamp as YYYY-MM-DD */
+  fmtDay(ts) {
+    const d = new Date(ts);
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
+  },
+
+  /** Format timestamp as DD/MM/YYYY */
+  fmtShort(ts) {
+    const d = new Date(ts);
+    return String(d.getDate()).padStart(2, '0') + '/'
+      + String(d.getMonth() + 1).padStart(2, '0') + '/'
+      + d.getFullYear();
+  },
+
+  /** Format timestamp as DD/MM/YYYY HH:MM */
+  fmtFull(ts) {
+    const d = new Date(ts);
+    return this.fmtShort(ts) + ' '
+      + String(d.getHours()).padStart(2, '0') + ':'
+      + String(d.getMinutes()).padStart(2, '0');
+  },
+
+  /** Add N days to a YYYY-MM-DD string, return YYYY-MM-DD */
+  addDays(dateStr, n) {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    return this.fmtDay(d.getTime());
+  },
+
+  daysBetween(a, b) {
+    return Math.round(
+      (new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86_400_000
+    );
+  },
+
+  getDow(dateStr) { return new Date(dateStr + 'T12:00:00').getDay(); },
+
+  /** Get locale string for current language */
+  getLocale() {
+    return currentLang === 'en' ? 'en-GB' : currentLang === 'es' ? 'es-ES' : 'fr-FR';
+  },
 };
 
-function buildNgramModel(words, lang) {
-  const model = {}; // prefix -> [{ word, count }]
-  const addEntry = (prefix, word) => {
-    if (!model[prefix]) model[prefix] = {};
-    model[prefix][word] = (model[prefix][word] || 0) + 1;
-  };
-  // From user word list
-  Object.values(words).forEach(w => {
-    const word = w.label.toLowerCase();
-    for (let i = 1; i <= Math.min(word.length, 4); i++) {
-      addEntry(word.slice(0, i), word);
-    }
-    // Bigram context from occurrences (simulate)
-    addEntry('__any__', word);
-  });
-  // From common words
-  const common = COMMON_WORDS[lang] || COMMON_WORDS.fr;
-  common.forEach(word => {
-    for (let i = 1; i <= Math.min(word.length, 4); i++) {
-      addEntry(word.slice(0, i), word);
-    }
-    addEntry('__any__', word);
-  });
-  return model;
-}
-
-let ngramModel = {};
-function rebuildNgrams() {
-  if (typeof state !== 'undefined') {
-    ngramModel = buildNgramModel(state.words || {}, currentLang);
-  }
-}
-
-// — Suggestion pipeline —
-let suggTarget = null;   // the currently focused input/textarea
-let suggTimer  = null;
-let suggActive = -1;     // keyboard navigation index
-let suggList   = [];
-
-function getTokenContext(text) {
-  const words = text.split(/\s+/);
-  const current = words[words.length - 1] || '';
-  const prev    = words[words.length - 2] || '';
-  return { current, prev, full: text };
-}
-
-function getHistorySuggestions(prefix, maxItems) {
-  if (!prefix) return [];
-  const results = [];
-  // From user's vocabulary
-  if (typeof state !== 'undefined') {
-    Object.values(state.words).forEach(w => {
-      const lbl = w.label.toLowerCase();
-      if (lbl.startsWith(prefix.toLowerCase()) && lbl !== prefix.toLowerCase()) {
-        results.push({ text: w.label, score: w.occurrences.length, source: 'hist' });
-      }
-    });
-  }
-  return results.sort((a, b) => b.score - a.score).slice(0, maxItems);
-}
-
-function getNgramSuggestions(prefix, maxItems) {
-  if (!prefix || !ngramModel) return [];
-  const key = prefix.toLowerCase().slice(0, 4);
-  const entries = ngramModel[key] || ngramModel['__any__'] || {};
-  return Object.entries(entries)
-    .filter(([w]) => w.startsWith(prefix.toLowerCase()) && w !== prefix.toLowerCase())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, maxItems)
-    .map(([w, count]) => ({ text: w, score: count, source: 'ngram' }));
-}
-
-function mergeSuggestions(hist, ngram, max) {
-  const seen = new Set();
-  const out = [];
-  for (const s of [...hist, ...ngram]) {
-    const key = s.text.toLowerCase();
-    if (!seen.has(key)) { seen.add(key); out.push(s); }
-    if (out.length >= max) break;
-  }
-  return out;
-}
-
-function computeSuggestions(text) {
-  const { current } = getTokenContext(text);
-  if (current.length < suggPrefs.minChars) return [];
-  const hist   = getHistorySuggestions(current, suggPrefs.maxItems);
-  const ngram  = getNgramSuggestions(current, suggPrefs.maxItems);
-  return mergeSuggestions(hist, ngram, suggPrefs.maxItems);
-}
-
-// — UI rendering —
-const suggContainer = document.getElementById('sugg-container');
-
-function showSuggestions(items, targetEl) {
-  if (!items.length) { hideSuggestions(); return; }
-  suggList = items;
-  suggActive = -1;
-  const rect = targetEl.getBoundingClientRect();
-  let top = rect.bottom + window.scrollY + 3;
-  let left = rect.left + window.scrollX;
-  // Flip up if too close to bottom
-  if (rect.bottom + 220 > window.innerHeight) {
-    top = rect.top + window.scrollY - 3;
-    suggContainer.style.transform = 'translateY(-100%)';
-  } else {
-    suggContainer.style.transform = '';
-  }
-  suggContainer.style.top  = top + 'px';
-  suggContainer.style.left = left + 'px';
-  suggContainer.style.maxWidth = Math.max(rect.width, 180) + 'px';
-  suggContainer.innerHTML = items.map((s, i) => `
-    <div class="sugg-item${i === suggActive ? ' active' : ''}"
-         role="option"
-         onmousedown="acceptSuggestion(${i})"
-         onmouseenter="setSuggActive(${i})">
-      <span class="sugg-icon">${s.source === 'hist' ? '⏱' : '◦'}</span>
-      <span class="sugg-text">${escHtml(s.text)}</span>
-      <span class="sugg-source src-${s.source}">${s.source === 'hist' ? 'hist' : 'auto'}</span>
-    </div>`).join('');
-  suggContainer.classList.add('visible');
-}
-
-function hideSuggestions() {
-  suggContainer.classList.remove('visible');
-  suggList = [];
-  suggActive = -1;
-}
-
-function setSuggActive(idx) {
-  suggActive = idx;
-  suggContainer.querySelectorAll('.sugg-item').forEach((el, i) => {
-    el.classList.toggle('active', i === idx);
-  });
-}
-
-function acceptSuggestion(idx) {
-  const s = suggList[idx];
-  if (!s || !suggTarget) { hideSuggestions(); return; }
-  const text = suggTarget.value;
-  const { current } = getTokenContext(text);
-  const before = text.slice(0, text.length - current.length);
-  suggTarget.value = before + s.text + ' ';
-  suggTarget.dispatchEvent(new Event('input', { bubbles: true }));
-  // Record usage in history
-  recordSuggUsage(s.text);
-  hideSuggestions();
-  suggTarget.focus();
-}
-
-function recordSuggUsage(word) {
-  try {
-    const raw = localStorage.getItem('lexique_sugg_hist') || '{}';
-    const hist = JSON.parse(raw);
-    hist[word.toLowerCase()] = (hist[word.toLowerCase()] || 0) + 1;
-    // Keep only top 200
-    const entries = Object.entries(hist).sort((a,b) => b[1]-a[1]).slice(0,200);
-    localStorage.setItem('lexique_sugg_hist', JSON.stringify(Object.fromEntries(entries)));
-  } catch(e) {}
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// — Attach suggestions to all inputs & textareas —
-function attachSuggestions() {
-  const selector = 'input[type="text"], input:not([type]), textarea';
-  const excluded = ['#searchInput']; // search doesn't need suggestions
-
-  document.querySelectorAll(selector).forEach(el => {
-    if (excluded.some(s => el.matches(s))) return;
-    if (el.dataset.suggAttached) return;
-    el.dataset.suggAttached = '1';
-
-    el.addEventListener('focus', () => { suggTarget = el; });
-    el.addEventListener('blur',  () => { setTimeout(hideSuggestions, 150); });
-
-    el.addEventListener('input', () => {
-      clearTimeout(suggTimer);
-      suggTarget = el;
-      const val = el.value;
-      suggTimer = setTimeout(() => {
-        rebuildNgrams();
-        const items = computeSuggestions(val);
-        showSuggestions(items, el);
-      }, 180);
-    });
-
-    el.addEventListener('keydown', e => {
-      if (!suggList.length) return;
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSuggActive(Math.min(suggActive + 1, suggList.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSuggActive(Math.max(suggActive - 1, 0));
-      } else if (e.key === 'Tab' || e.key === 'Enter') {
-        if (suggActive >= 0) {
-          e.preventDefault();
-          acceptSuggestion(suggActive);
-        }
-      } else if (e.key === 'Escape') {
-        hideSuggestions();
-      }
-    });
-  });
-}
-
-// Re-attach when DOM mutates (dynamic inputs in modal etc.)
-const suggObserver = new MutationObserver(() => attachSuggestions());
-suggObserver.observe(document.body, { childList: true, subtree: true });
+// Convenience aliases so existing call-sites need no change
+const ts        = () => DateUtils.ts();
+const todayStr  = () => DateUtils.todayStr();
+const fmtDay    = ts => DateUtils.fmtDay(ts);
+const fmtShort  = ts => DateUtils.fmtShort(ts);
+const fmtFull   = ts => DateUtils.fmtFull(ts);
+const addDays   = (d, n) => DateUtils.addDays(d, n);
+const daysBetween = (a, b) => DateUtils.daysBetween(a, b);
+const getDowFromStr = d => DateUtils.getDow(d);
 
 // ════════════════════════════════════════════════════════════════
-//  ORIGINAL APP CODE (conflict-resolved)
+//  ④ PERSISTENCE (localStorage)
 // ════════════════════════════════════════════════════════════════
-const PALETTE = [
-  {bg:'rgba(200,169,110,0.14)',color:'#c8a96e',border:'rgba(200,169,110,0.25)'},
-  {bg:'rgba(110,180,200,0.14)',color:'#6eb4c8',border:'rgba(110,180,200,0.25)'},
-  {bg:'rgba(140,200,110,0.14)',color:'#8cc86e',border:'rgba(140,200,110,0.25)'},
-  {bg:'rgba(180,110,200,0.14)',color:'#b46ec8',border:'rgba(180,110,200,0.25)'},
-  {bg:'rgba(200,110,130,0.14)',color:'#c86e82',border:'rgba(200,110,130,0.25)'},
-  {bg:'rgba(100,160,220,0.14)',color:'#64a0dc',border:'rgba(100,160,220,0.25)'},
-];
-const ANKI_THRESHOLD = 3;
-const MAX_CLICKS     = 3;
-const WORDNIK_API_KEY = 'VOTRE_CLE_WORDNIK';
 
-const TASK_CAT_LABELS_KEY = {perso:'cats.perso',pro:'cats.pro',etude:'cats.etude',sport:'cats.sport',autre:'cats.autre',''  :''};
-const TASK_CAT_COLORS  = {
-  perso:{bg:'rgba(110,180,200,0.14)',color:'#6eb4c8',border:'rgba(110,180,200,0.25)'},
-  pro  :{bg:'rgba(200,169,110,0.14)',color:'#c8a96e',border:'rgba(200,169,110,0.25)'},
-  etude:{bg:'rgba(140,200,110,0.14)',color:'#8cc86e',border:'rgba(140,200,110,0.25)'},
-  sport:{bg:'rgba(200,110,130,0.14)',color:'#c86e82',border:'rgba(200,110,130,0.25)'},
-  autre:{bg:'rgba(180,110,200,0.14)',color:'#b46ec8',border:'rgba(180,110,200,0.25)'},
+const Storage = {
+  readState() {
+    try {
+      const raw = localStorage.getItem(LS_KEY_STATE);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  },
+
+  writeState(appState) {
+    try { localStorage.setItem(LS_KEY_STATE, JSON.stringify(appState)); } catch { /* quota */ }
+  },
+
+  /** Install a proxy so cloud sync fires on relevant key writes. */
+  installSyncProxy() {
+    const native = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = (key, value) => {
+      native(key, value);
+      if (LS_SYNC_KEYS.includes(key)) CloudSync.schedule();
+    };
+  },
 };
 
-function getTaskCatLabel(cat) {
-  const key = TASK_CAT_LABELS_KEY[cat] || '';
-  return key ? t(key) : '';
-}
+// ════════════════════════════════════════════════════════════════
+//  ⑤ APP STATE
+// ════════════════════════════════════════════════════════════════
 
-const DAY_NAMES_KEYS = ['day.0','day.1','day.2','day.3','day.4','day.5','day.6'];
+let state = { words: {}, categories: {}, tasks: [] };
 
-// ── STATE ──────────────────────────────────────────────────────
-let state = { words:{}, categories:{}, tasks:[] };
 let activeFilter     = 'all';
 let activeTaskFilter = 'all';
 let modalEditId      = null;
@@ -1679,118 +1380,530 @@ let selectedDays     = new Set();
 let chartTimeline = null, chartCats = null, chartAnkiPie = null, chartTasksBar = null;
 let deferredInstallPrompt = null;
 let validationTimer = null;
+
+/** Cache: word → wordnik result (true/false/null) */
 const validationCache = {};
 
-// ── PERSISTENCE ────────────────────────────────────────────────
 function load() {
-  try {
-    const raw = localStorage.getItem('lexique_v6');
-    if (raw) state = JSON.parse(raw);
-  } catch(e) {}
+  state = Storage.readState();
   if (!state.words)      state.words      = {};
   if (!state.categories) state.categories = {};
   if (!state.tasks)      state.tasks      = [];
   migrate();
 }
-function save() {
-  try { localStorage.setItem('lexique_v6', JSON.stringify(state)); } catch(e) {}
-}
+
+function save() { Storage.writeState(state); }
+
 function migrate() {
-  ['lexique_v5','lexique_v4'].forEach(key => {
+  // Migrate from older versions
+  ['lexique_v5', 'lexique_v4'].forEach(key => {
     try {
       const old = localStorage.getItem(key);
-      if (old && !localStorage.getItem(key+'_migrated')) {
+      if (old && !localStorage.getItem(key + '_migrated')) {
         const p = JSON.parse(old);
         if (p.words)      Object.assign(state.words,      p.words);
         if (p.categories) Object.assign(state.categories, p.categories);
-        if (p.tasks)      state.tasks.push(...p.tasks.filter(t => !state.tasks.find(x=>x.id===t.id)));
-        localStorage.setItem(key+'_migrated','1');
+        if (p.tasks) {
+          state.tasks.push(...p.tasks.filter(t => !state.tasks.find(x => x.id === t.id)));
+        }
+        localStorage.setItem(key + '_migrated', '1');
       }
-    } catch(e) {}
+    } catch { /* ignore corrupted data */ }
   });
+
+  // Ensure required fields exist on all words
   Object.values(state.words).forEach(w => {
-    if (!w.validity)  w.validity  = 'unknown';
-    if (!w.ankiDone)  w.ankiDone  = false;
+    w.validity ??= 'unknown';
+    w.ankiDone ??= false;
   });
-  state.tasks.forEach(t => {
-    if (!t.id) t.id = 'task_' + Math.random().toString(36).slice(2);
-    if (!t.recurType)     t.recurType = 'once';
-    if (!t.reportHistory) t.reportHistory = [];
-    if (!t.reportCount)   t.reportCount   = 0;
-    if (!t.history)       t.history       = {};
+
+  // Ensure required fields exist on all tasks
+  state.tasks.forEach(task => {
+    task.id            ??= 'task_' + Math.random().toString(36).slice(2);
+    task.recurType     ??= 'once';
+    task.reportHistory ??= [];
+    task.reportCount   ??= 0;
+    task.history       ??= {};
   });
+
   save();
 }
 
-// ── DATE UTILS ─────────────────────────────────────────────────
-function ts()        { return Date.now(); }
-function todayStr()  { return fmtDay(Date.now()); }
-function fmtDay(t) {
-  const d = new Date(t);
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function fmtShort(t) {
-  const d = new Date(t);
-  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-}
-function fmtFull(t) {
-  const d = new Date(t);
-  return fmtShort(t)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-}
-function addDays(dateStr, n) {
-  const d = new Date(dateStr+'T12:00:00');
-  d.setDate(d.getDate() + n);
-  return fmtDay(d.getTime());
-}
-function daysBetween(a, b) {
-  return Math.round((new Date(b+'T12:00:00') - new Date(a+'T12:00:00')) / 86400000);
-}
-function getDowFromStr(dateStr) {
-  return new Date(dateStr+'T12:00:00').getDay();
+// ════════════════════════════════════════════════════════════════
+//  ⑥ RECURRENCE ENGINE
+// ════════════════════════════════════════════════════════════════
+
+const RecurrenceEngine = {
+  isActiveOnDate(task, dateStr) {
+    if (task.recurType === 'once') return task.dueDate === dateStr;
+
+    const start = task.recurStart || task.dueDate || dateStr;
+    const end   = task.recurEnd   || task.deadline || null;
+    const dl    = task.deadline   || null;
+
+    if (dateStr < start)         return false;
+    if (end && dateStr > end)    return false;
+    if (dl  && dateStr > dl)     return false;
+    if (task.recurType === 'daily') return true;
+
+    if (task.recurType === 'weekly') {
+      return (task.recurDays || []).includes(getDowFromStr(dateStr));
+    }
+
+    if (task.recurType === 'interval') {
+      const interval = task.recurInterval || 1;
+      const diff = daysBetween(start, dateStr);
+      return diff >= 0 && diff % interval === 0;
+    }
+
+    return false;
+  },
+
+  getOccurrence(task, dateStr) {
+    task.history ??= {};
+    return task.history[dateStr] || null;
+  },
+
+  /** Returns all active dates from task start up to `upTo` (inclusive). */
+  getPastDueDates(task, upTo) {
+    const today = upTo || todayStr();
+    if (task.recurType === 'once') return [task.dueDate].filter(d => d <= today);
+
+    const start = task.recurStart || task.dueDate || today;
+    const results = [];
+    let cursor = start;
+    let guard  = 0;
+
+    while (cursor <= today && guard < 400) {
+      if (this.isActiveOnDate(task, cursor)) results.push(cursor);
+      cursor = addDays(cursor, 1);
+      guard++;
+    }
+    return results;
+  },
+
+  /** Count consecutive completed days ending at `upTo`. */
+  getStreak(task, upTo) {
+    let streak = 0, cursor = upTo, guard = 0;
+    while (guard < 365) {
+      if (!this.isActiveOnDate(task, cursor)) { cursor = addDays(cursor, -1); guard++; continue; }
+      if (task.history[cursor] === 'done')    { streak++; cursor = addDays(cursor, -1); guard++; }
+      else break;
+    }
+    return streak;
+  },
+};
+
+// Convenience aliases
+const isTaskActiveOnDate = (task, d) => RecurrenceEngine.isActiveOnDate(task, d);
+const getTaskOccurrence  = (task, d) => RecurrenceEngine.getOccurrence(task, d);
+const getPastDueDates    = (task, d) => RecurrenceEngine.getPastDueDates(task, d);
+const getStreak          = (task, d) => RecurrenceEngine.getStreak(task, d);
+
+// ════════════════════════════════════════════════════════════════
+//  ⑦ THEME
+// ════════════════════════════════════════════════════════════════
+
+function initTheme() { applyTheme(localStorage.getItem(LS_KEY_THEME) || 'dark'); }
+
+function applyTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+  document.getElementById('themeBtn').textContent = theme === 'light' ? '🌙 Sombre' : '☀️ Clair';
+  localStorage.setItem(LS_KEY_THEME, theme);
 }
 
-// ── RECURRENCE ENGINE ──────────────────────────────────────────
-function isTaskActiveOnDate(task, dateStr) {
-  if (task.recurType === 'once') return task.dueDate === dateStr;
-  const start = task.recurStart || task.dueDate || dateStr;
-  const end   = task.recurEnd   || task.deadline || null;
-  const dl    = task.deadline   || null;
-  if (dateStr < start) return false;
-  if (end  && dateStr > end)  return false;
-  if (dl   && dateStr > dl)   return false;
-  if (task.recurType === 'daily') return true;
-  if (task.recurType === 'weekly') {
-    const dow = getDowFromStr(dateStr);
-    return (task.recurDays || []).includes(dow);
-  }
-  if (task.recurType === 'interval') {
-    const interval = task.recurInterval || 1;
-    const diff = daysBetween(start, dateStr);
-    return diff >= 0 && diff % interval === 0;
-  }
-  return false;
+function toggleTheme() {
+  applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
 }
-function getTaskOccurrence(task, dateStr) {
-  if (!task.history) task.history = {};
-  return task.history[dateStr] || null;
+
+// ════════════════════════════════════════════════════════════════
+//  ⑧ TAB NAVIGATION
+// ════════════════════════════════════════════════════════════════
+
+const TAB_NAMES = ['mots', 'revision', 'taches', 'stats'];
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((tab, i) => {
+    tab.classList.toggle('active', TAB_NAMES[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+
+  if (name === 'stats')    renderCharts();
+  if (name === 'revision') renderRevision();
+  if (name === 'taches')   { autoReportTasks(); renderTasks(); updateTaskStats(); }
 }
-function getPastDueDates(task, upTo) {
-  const today = upTo || todayStr();
-  if (task.recurType === 'once') return [task.dueDate].filter(d => d <= today);
-  const start = task.recurStart || task.dueDate || today;
-  const results = [];
-  let cursor = start;
-  let guard = 0;
-  while (cursor <= today && guard < 400) {
-    if (isTaskActiveOnDate(task, cursor)) results.push(cursor);
-    cursor = addDays(cursor, 1);
-    guard++;
+
+function toggleSection(bodyId, iconId) {
+  document.getElementById(bodyId).classList.toggle('open');
+  document.getElementById(iconId).classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ⑨ CATEGORIES
+// ════════════════════════════════════════════════════════════════
+
+/** Slugify a label into a safe key */
+function slug(s) {
+  return s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+function getCatColor(key) {
+  const cat = state.categories[key];
+  return cat ? PALETTE[cat.colorIdx % PALETTE.length] : null;
+}
+
+function addCategory() {
+  const inp   = document.getElementById('catInput');
+  const label = inp.value.trim();
+  if (!label) return;
+
+  const key = slug(label) || 'cat' + ts();
+  if (!state.categories[key]) {
+    state.categories[key] = { label, colorIdx: Object.keys(state.categories).length };
   }
-  return results;
+  inp.value = '';
+  save();
+  renderCatManager(); renderCatSelect(); renderFilters(); updateStats();
 }
-function autoReportTasks() {
+
+function deleteCategory(key) {
+  delete state.categories[key];
+  Object.values(state.words).forEach(w => { if (w.catKey === key) w.catKey = null; });
+  if (activeFilter === key) activeFilter = 'all';
+  save();
+  renderCatManager(); renderCatSelect(); renderFilters(); render();
+}
+
+function renderCatManager() {
+  const list = document.getElementById('catChipList');
+  const keys = Object.keys(state.categories);
+  if (!keys.length) {
+    list.innerHTML = `<span style="font-size:12px;color:var(--text-dim)">${t('words.no_cats')}</span>`;
+    return;
+  }
+  list.innerHTML = keys.map(key => {
+    const { label } = state.categories[key];
+    const col = getCatColor(key);
+    return `<div class="cat-chip" style="background:${col.bg};color:${col.color};border-color:${col.border}">
+      ${label}<button class="cat-chip-del" onclick="deleteCategory('${key}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderCatSelect() {
+  document.getElementById('catSelect').innerHTML =
+    `<option value="">— ${t('stats.categories')} —</option>`
+    + Object.entries(state.categories)
+        .map(([k, v]) => `<option value="${k}">${v.label}</option>`)
+        .join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ⑩ FILTERS
+// ════════════════════════════════════════════════════════════════
+
+function renderFilters() {
+  const row = document.getElementById('filterRow');
+  const parts = [
+    `<button class="filter-btn ${activeFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">${t('words.all_filter')}</button>`,
+  ];
+
+  Object.entries(state.categories).forEach(([key, cat]) => {
+    const col = getCatColor(key);
+    const isA = activeFilter === key;
+    parts.push(
+      `<button class="filter-btn ${isA ? 'active' : ''}" onclick="setFilter('${key}')"
+        style="${isA ? `background:${col.bg};border-color:${col.color};color:${col.color}` : ''}">
+        ${cat.label}
+      </button>`
+    );
+  });
+
+  parts.push(
+    `<button class="filter-btn ${activeFilter === 'none' ? 'active' : ''}" onclick="setFilter('none')">${t('words.cat_none')}</button>`,
+    `<button class="filter-btn anki-filter ${activeFilter === 'anki' ? 'active' : ''}" onclick="setFilter('anki')">${t('words.anki_ready_filter')}</button>`,
+  );
+
+  row.innerHTML = parts.join('');
+}
+
+function setFilter(f) { activeFilter = f; renderFilters(); render(); }
+
+// ════════════════════════════════════════════════════════════════
+//  ⑪ WORD VALIDATION (Wordnik)
+// ════════════════════════════════════════════════════════════════
+
+async function checkWordnik(word) {
+  if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
+  try {
+    const res = await fetch(
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (res.status === 404) return false;
+    if (!res.ok)            return null;
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0;
+  } catch { return null; }
+}
+
+async function validateWord(word) {
+  const strip = document.getElementById('validationStrip');
+  if (!word)                          { strip.innerHTML = ''; return; }
+  if (validationCache[word] !== undefined) {
+    renderValidationStrip(strip, word, validationCache[word]);
+    return;
+  }
+  if (!navigator.onLine) {
+    strip.innerHTML = `<span class="val-badge pending">⚡ ${t('words.offline')}</span>`;
+    return;
+  }
+  strip.innerHTML = `<span class="val-badge pending"><span class="val-spinner"></span>${t('words.checking')}</span>`;
+  const result = await checkWordnik(word);
+  validationCache[word] = result;
+  renderValidationStrip(strip, word, result);
+}
+
+function renderValidationStrip(strip, word, result) {
+  if (result === null) {
+    strip.innerHTML = `<span class="val-badge pending">${t('words.wordnik_na')}</span>`;
+  } else {
+    const cls   = result ? 'valid' : 'invalid';
+    const icon  = result ? '✓' : '✗';
+    const label = result ? t('words.wordnik_valid') : t('words.wordnik_unknown');
+    strip.innerHTML = `<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
+  }
+  const key = word.toLowerCase().replace(/\s+/g, '_');
+  if (state.words[key]) {
+    state.words[key].validity = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    save(); render();
+  }
+}
+
+function onWordInputChange() {
+  const word = document.getElementById('wordInput').value.trim();
+  clearTimeout(validationTimer);
+  document.getElementById('validationStrip').innerHTML = '';
+  if (!word || word.length < 2) return;
+  validationTimer = setTimeout(() => validateWord(word), 600);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ⑫ WORDS (CRUD)
+// ════════════════════════════════════════════════════════════════
+
+const isAnkiReady  = w => w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
+const isMaxReached = w => w.occurrences.length >= MAX_CLICKS;
+
+async function addWord() {
+  const inp    = document.getElementById('wordInput');
+  const sel    = document.getElementById('catSelect');
+  const label  = inp.value.trim();
+  if (!label) return;
+
+  const key    = label.toLowerCase().replace(/\s+/g, '_');
+  const catKey = sel.value || null;
+  const now    = ts();
+
+  if (!state.words[key]) {
+    state.words[key] = { label, createdAt: now, catKey, occurrences: [now], ankiDone: false, validity: 'unknown' };
+  } else {
+    if (isMaxReached(state.words[key])) { notify('max', label); inp.value = ''; return; }
+    state.words[key].occurrences.push(now);
+    if (catKey) state.words[key].catKey = catKey;
+  }
+
+  inp.value = '';
+  document.getElementById('validationStrip').innerHTML = '';
+  save(); updateStats(); render(); rebuildNgrams();
+
+  if (state.words[key].occurrences.length === ANKI_THRESHOLD) notify('anki', label);
+  if (navigator.onLine) await validateWord(label);
+}
+
+function clickWord(key) {
+  const w = state.words[key];
+  if (!w) return;
+  if (isMaxReached(w)) { notify('max', w.label); return; }
+  const prev = w.occurrences.length;
+  w.occurrences.push(ts());
+  if (prev + 1 === ANKI_THRESHOLD) notify('anki', w.label);
+  save(); updateStats(); render();
+}
+
+function deleteWord(key) {
+  delete state.words[key];
+  save(); updateStats(); render(); rebuildNgrams();
+}
+
+function markAnkiDone(key) {
+  if (!state.words[key]) return;
+  state.words[key].ankiDone = true;
+  save(); updateStats(); render();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ⑬ TASK MODAL
+// ════════════════════════════════════════════════════════════════
+
+function openTaskModal(editId, defaultType) {
+  modalEditId = editId;
   const today = todayStr();
-  let changed = false;
+  document.getElementById('modalTitle').textContent    = editId ? t('modal.edit_task') : t('modal.new_task');
+  document.getElementById('modalSaveBtn').textContent  = editId ? t('modal.save_task')  : t('modal.create_task');
+
+  if (editId) {
+    const task = state.tasks.find(x => x.id === editId);
+    if (!task) return;
+    document.getElementById('mTaskTitle').value       = task.title  || '';
+    document.getElementById('mTaskDesc').value        = task.desc   || '';
+    document.getElementById('mTaskCat').value         = task.cat    || '';
+    document.getElementById('mTaskDate').value        = task.dueDate    || today;
+    document.getElementById('mDailyStart').value      = task.recurStart || today;
+    document.getElementById('mDailyEnd').value        = task.recurEnd   || '';
+    document.getElementById('mWeeklyStart').value     = task.recurStart || today;
+    document.getElementById('mWeeklyEnd').value       = task.recurEnd   || '';
+    document.getElementById('mIntervalStart').value   = task.recurStart || today;
+    document.getElementById('mIntervalEnd').value     = task.recurEnd   || '';
+    document.getElementById('mInterval').value        = task.recurInterval || 2;
+    document.getElementById('mDeadline').value        = task.deadline || '';
+    selectedDays = new Set(task.recurDays || []);
+    setRecurType(task.recurType || 'once');
+  } else {
+    document.getElementById('mTaskTitle').value     = '';
+    document.getElementById('mTaskDesc').value      = '';
+    document.getElementById('mTaskCat').value       = '';
+    document.getElementById('mTaskDate').value      = today;
+    document.getElementById('mDailyStart').value    = today;
+    document.getElementById('mDailyEnd').value      = '';
+    document.getElementById('mWeeklyStart').value   = today;
+    document.getElementById('mWeeklyEnd').value     = '';
+    document.getElementById('mIntervalStart').value = today;
+    document.getElementById('mIntervalEnd').value   = '';
+    document.getElementById('mInterval').value      = 2;
+    document.getElementById('mDeadline').value      = '';
+    selectedDays = new Set();
+    setRecurType(defaultType || 'once');
+  }
+
+  renderDayPicker();
+  document.getElementById('taskModal').classList.add('open');
+  document.getElementById('mTaskTitle').focus();
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('open');
+  modalEditId = null;
+  hideSuggestions();
+}
+
+function setRecurType(type) {
+  modalRecurType = type;
+  ['once', 'daily', 'weekly', 'interval'].forEach(rt => {
+    document.getElementById('rtype-' + rt).classList.toggle('active',  rt === type);
+    document.getElementById('panel-' + rt).classList.toggle('active',  rt === type);
+  });
+  document.getElementById('deadlineSection').style.display = type !== 'once' ? 'block' : 'none';
+}
+
+function toggleDay(d) {
+  if (selectedDays.has(d)) selectedDays.delete(d);
+  else selectedDays.add(d);
+  renderDayPicker();
+}
+
+function renderDayPicker() {
+  document.querySelectorAll('.day-pill').forEach(el => {
+    el.classList.toggle('selected', selectedDays.has(parseInt(el.dataset.day)));
+  });
+}
+
+function saveTaskFromModal() {
+  const title = document.getElementById('mTaskTitle').value.trim();
+  if (!title) { document.getElementById('mTaskTitle').focus(); return; }
+
+  const today    = todayStr();
+  const type     = modalRecurType;
+  let task;
+
+  if (modalEditId) {
+    task = state.tasks.find(x => x.id === modalEditId);
+    if (!task) return;
+  } else {
+    task = { id: 'task_' + ts(), done: false, doneAt: null, reportCount: 0, reportHistory: [], history: {}, createdAt: ts() };
+    state.tasks.push(task);
+  }
+
+  task.title    = title;
+  task.desc     = document.getElementById('mTaskDesc').value.trim();
+  task.cat      = document.getElementById('mTaskCat').value;
+  task.deadline = document.getElementById('mDeadline').value || null;
+  task.recurType = type;
+
+  if (type === 'once') {
+    task.dueDate       = document.getElementById('mTaskDate').value    || today;
+    task.recurDays     = [];
+    task.recurStart    = task.dueDate;
+    task.recurEnd      = null;
+    task.recurInterval = null;
+  } else if (type === 'daily') {
+    task.recurStart    = document.getElementById('mDailyStart').value  || today;
+    task.recurEnd      = document.getElementById('mDailyEnd').value    || null;
+    task.dueDate       = task.recurStart;
+    task.recurDays     = [0, 1, 2, 3, 4, 5, 6];
+    task.recurInterval = null;
+  } else if (type === 'weekly') {
+    task.recurDays     = [...selectedDays];
+    task.recurStart    = document.getElementById('mWeeklyStart').value || today;
+    task.recurEnd      = document.getElementById('mWeeklyEnd').value   || null;
+    task.dueDate       = task.recurStart;
+    task.recurInterval = null;
+  } else if (type === 'interval') {
+    task.recurInterval = parseInt(document.getElementById('mInterval').value) || 2;
+    task.recurStart    = document.getElementById('mIntervalStart').value || today;
+    task.recurEnd      = document.getElementById('mIntervalEnd').value   || null;
+    task.dueDate       = task.recurStart;
+    task.recurDays     = [];
+  }
+
+  save();
+  closeTaskModal();
+  autoReportTasks();
+  renderTasks();
+  updateTaskStats();
+  scheduleTaskNotifs();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ⑭ TASK DONE TOGGLE
+// ════════════════════════════════════════════════════════════════
+
+function toggleTaskDone(id, dateStr) {
+  const task = state.tasks.find(t => t.id === id);
+  if (!task) return;
+  const d = dateStr || todayStr();
+
+  if (task.recurType === 'once') {
+    task.done   = !task.done;
+    task.doneAt = task.done ? ts() : null;
+  } else {
+    const current     = task.history[d] || null;
+    task.history[d]   = current === 'done' ? null : 'done';
+    if (task.history[d] === null) delete task.history[d];
+  }
+  save(); renderTasks(); updateTaskStats();
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  save(); renderTasks(); updateTaskStats();
+}
+
+function autoReportTasks() {
+  const today   = todayStr();
+  let changed   = false;
+
   state.tasks.forEach(task => {
     if (task.recurType === 'once') {
       if (!task.done && task.dueDate < today) {
@@ -1801,8 +1914,7 @@ function autoReportTasks() {
         changed = true;
       }
     } else {
-      const past = getPastDueDates(task, addDays(today, -1));
-      past.forEach(d => {
+      getPastDueDates(task, addDays(today, -1)).forEach(d => {
         if (!task.history[d]) {
           task.history[d] = 'missed';
           task.reportCount = (task.reportCount || 0) + 1;
@@ -1811,388 +1923,113 @@ function autoReportTasks() {
       });
     }
   });
+
   if (changed) { save(); scheduleTaskNotifs(); }
 }
 
-// ── THEME ──────────────────────────────────────────────────────
-function initTheme() {
-  const saved = localStorage.getItem('lexique_theme') || 'dark';
-  applyTheme(saved);
-}
-function applyTheme(theme) {
-  document.body.classList.toggle('light', theme === 'light');
-  document.getElementById('themeBtn').textContent = theme === 'light' ? '🌙 Sombre' : '☀️ Clair';
-  localStorage.setItem('lexique_theme', theme);
-}
-function toggleTheme() {
-  applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
-}
+// ════════════════════════════════════════════════════════════════
+//  ⑮ TASK STATS
+// ════════════════════════════════════════════════════════════════
 
-// ── TABS ───────────────────────────────────────────────────────
-function switchTab(name) {
-  const tabs = ['mots','revision','taches','stats'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === name));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  if (name === 'stats')    renderCharts();
-  if (name === 'revision') renderRevision();
-  if (name === 'taches')   { autoReportTasks(); renderTasks(); updateTaskStats(); }
-}
-function toggleSection(bodyId, iconId) {
-  document.getElementById(bodyId).classList.toggle('open');
-  document.getElementById(iconId).classList.toggle('open');
-}
-
-// ── CATEGORIES ─────────────────────────────────────────────────
-function slug(s) { return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,''); }
-function getCatColor(key) {
-  const cat = state.categories[key];
-  return cat ? PALETTE[cat.colorIdx % PALETTE.length] : null;
-}
-function addCategory() {
-  const inp = document.getElementById('catInput');
-  const label = inp.value.trim(); if (!label) return;
-  const key = slug(label) || 'cat'+ts();
-  if (!state.categories[key]) state.categories[key] = {label, colorIdx: Object.keys(state.categories).length};
-  inp.value = '';
-  save(); renderCatManager(); renderCatSelect(); renderFilters(); updateStats();
-}
-function deleteCategory(key) {
-  delete state.categories[key];
-  Object.values(state.words).forEach(w => { if (w.catKey===key) w.catKey=null; });
-  if (activeFilter===key) activeFilter='all';
-  save(); renderCatManager(); renderCatSelect(); renderFilters(); render();
-}
-function renderCatManager() {
-  const list = document.getElementById('catChipList');
-  const keys = Object.keys(state.categories);
-  if (!keys.length) { list.innerHTML=`<span style="font-size:12px;color:var(--text-dim)">${t('words.no_cats')}</span>`; return; }
-  list.innerHTML = keys.map(key => {
-    const c=state.categories[key], col=getCatColor(key);
-    return `<div class="cat-chip" style="background:${col.bg};color:${col.color};border-color:${col.border}">
-      ${c.label}<button class="cat-chip-del" onclick="deleteCategory('${key}')">×</button></div>`;
-  }).join('');
-}
-function renderCatSelect() {
-  document.getElementById('catSelect').innerHTML = `<option value="">— ${t('stats.categories')} —</option>` +
-    Object.keys(state.categories).map(k=>`<option value="${k}">${state.categories[k].label}</option>`).join('');
-}
-
-// ── FILTERS ────────────────────────────────────────────────────
-function renderFilters() {
-  const row = document.getElementById('filterRow');
-  let html = `<button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">${t('words.all_filter')}</button>`;
-  Object.keys(state.categories).forEach(key => {
-    const c=state.categories[key], col=getCatColor(key), isA=activeFilter===key;
-    html += `<button class="filter-btn ${isA?'active':''}" onclick="setFilter('${key}')"
-      style="${isA?`background:${col.bg};border-color:${col.color};color:${col.color}`:''}">
-      ${c.label}</button>`;
-  });
-  html += `<button class="filter-btn ${activeFilter==='none'?'active':''}" onclick="setFilter('none')">${t('words.cat_none')}</button>`;
-  html += `<button class="filter-btn anki-filter ${activeFilter==='anki'?'active':''}" onclick="setFilter('anki')">${t('words.anki_ready_filter')}</button>`;
-  row.innerHTML = html;
-}
-function setFilter(f) { activeFilter=f; renderFilters(); render(); }
-
-// ── WORD VALIDATION ────────────────────────────────────────────
-async function checkWordnik(word) {
-  if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
-  try {
-    const res = await fetch(
-      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-    if (res.status === 404) return false;
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) && data.length > 0;
-  } catch { return null; }
-}
-async function validateWord(word) {
-  const strip = document.getElementById('validationStrip');
-  if (!word) { strip.innerHTML = ''; return; }
-  if (validationCache[word] !== undefined) { renderValidationStrip(strip, word, validationCache[word]); return; }
-  if (!navigator.onLine) { strip.innerHTML=`<span class="val-badge pending">⚡ ${t('words.offline')}</span>`; return; }
-  strip.innerHTML=`<span class="val-badge pending"><span class="val-spinner"></span>${t('words.checking')}</span>`;
-  const result = await checkWordnik(word);
-  validationCache[word] = result;
-  renderValidationStrip(strip, word, result);
-}
-function renderValidationStrip(strip, word, result) {
-  if (result===null) { strip.innerHTML=`<span class="val-badge pending">${t('words.wordnik_na')}</span>`; }
-  else {
-    const cls=result?'valid':'invalid', icon=result?'✓':'✗', label=result?t('words.wordnik_valid'):t('words.wordnik_unknown');
-    strip.innerHTML=`<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
-  }
-  const key=word.toLowerCase().replace(/\s+/g,'_');
-  if (state.words[key]) { state.words[key].validity=result===true?'valid':result===false?'invalid':'unknown'; save(); render(); }
-}
-function onWordInputChange() {
-  const word=document.getElementById('wordInput').value.trim();
-  clearTimeout(validationTimer);
-  document.getElementById('validationStrip').innerHTML='';
-  if (!word||word.length<2) return;
-  validationTimer=setTimeout(()=>validateWord(word),600);
-}
-
-// ── WORDS ──────────────────────────────────────────────────────
-function isAnkiReady(w) { return w.occurrences.length>=ANKI_THRESHOLD && !w.ankiDone; }
-function isMaxReached(w) { return w.occurrences.length>=MAX_CLICKS; }
-
-async function addWord() {
-  const inp=document.getElementById('wordInput'), sel=document.getElementById('catSelect');
-  const label=inp.value.trim(); if (!label) return;
-  const key=label.toLowerCase().replace(/\s+/g,'_'), catKey=sel.value||null, now=ts();
-  if (!state.words[key]) {
-    state.words[key]={label,createdAt:now,catKey,occurrences:[now],ankiDone:false,validity:'unknown'};
-  } else {
-    if (isMaxReached(state.words[key])) { notify('max',label); inp.value=''; return; }
-    state.words[key].occurrences.push(now);
-    if (catKey) state.words[key].catKey=catKey;
-  }
-  inp.value=''; document.getElementById('validationStrip').innerHTML='';
-  save(); updateStats(); render(); rebuildNgrams();
-  if (state.words[key].occurrences.length===ANKI_THRESHOLD) notify('anki',label);
-  if (navigator.onLine) await validateWord(label);
-}
-function clickWord(key) {
-  if (!state.words[key]) return;
-  const w=state.words[key];
-  if (isMaxReached(w)) { notify('max',w.label); return; }
-  const prev=w.occurrences.length;
-  w.occurrences.push(ts());
-  if (prev+1===ANKI_THRESHOLD) notify('anki',w.label);
-  save(); updateStats(); render();
-}
-function deleteWord(key) { delete state.words[key]; save(); updateStats(); render(); rebuildNgrams(); }
-function markAnkiDone(key) { if (state.words[key]) { state.words[key].ankiDone=true; save(); updateStats(); render(); } }
-
-// ── TASK MODAL ─────────────────────────────────────────────────
-function openTaskModal(editId, defaultType) {
-  modalEditId = editId;
-  const today = todayStr();
-  document.getElementById('modalTitle').textContent = editId ? t('modal.edit_task') : t('modal.new_task');
-  document.getElementById('modalSaveBtn').textContent = editId ? t('modal.save_task') : t('modal.create_task');
-
-  if (editId) {
-    const task = state.tasks.find(x=>x.id===editId);
-    if (!task) return;
-    document.getElementById('mTaskTitle').value = task.title || '';
-    document.getElementById('mTaskDesc').value  = task.desc  || '';
-    document.getElementById('mTaskCat').value   = task.cat   || '';
-    document.getElementById('mTaskDate').value  = task.dueDate || today;
-    document.getElementById('mDailyStart').value = task.recurStart || today;
-    document.getElementById('mDailyEnd').value   = task.recurEnd   || '';
-    document.getElementById('mWeeklyStart').value= task.recurStart || today;
-    document.getElementById('mWeeklyEnd').value  = task.recurEnd   || '';
-    document.getElementById('mIntervalStart').value= task.recurStart || today;
-    document.getElementById('mIntervalEnd').value  = task.recurEnd   || '';
-    document.getElementById('mInterval').value   = task.recurInterval || 2;
-    document.getElementById('mDeadline').value   = task.deadline || '';
-    selectedDays = new Set(task.recurDays || []);
-    setRecurType(task.recurType || 'once');
-  } else {
-    document.getElementById('mTaskTitle').value = '';
-    document.getElementById('mTaskDesc').value  = '';
-    document.getElementById('mTaskCat').value   = '';
-    document.getElementById('mTaskDate').value  = today;
-    document.getElementById('mDailyStart').value  = today;
-    document.getElementById('mDailyEnd').value    = '';
-    document.getElementById('mWeeklyStart').value = today;
-    document.getElementById('mWeeklyEnd').value   = '';
-    document.getElementById('mIntervalStart').value = today;
-    document.getElementById('mIntervalEnd').value   = '';
-    document.getElementById('mInterval').value   = 2;
-    document.getElementById('mDeadline').value   = '';
-    selectedDays = new Set();
-    setRecurType(defaultType || 'once');
-  }
-  renderDayPicker();
-  document.getElementById('taskModal').classList.add('open');
-  document.getElementById('mTaskTitle').focus();
-}
-function closeTaskModal() {
-  document.getElementById('taskModal').classList.remove('open');
-  modalEditId = null;
-  hideSuggestions();
-}
-function setRecurType(type) {
-  modalRecurType = type;
-  ['once','daily','weekly','interval'].forEach(t2 => {
-    document.getElementById('rtype-'+t2).classList.toggle('active', t2===type);
-    document.getElementById('panel-'+t2).classList.toggle('active', t2===type);
-  });
-  document.getElementById('deadlineSection').style.display = type !== 'once' ? 'block' : 'none';
-}
-function toggleDay(d) {
-  if (selectedDays.has(d)) selectedDays.delete(d);
-  else selectedDays.add(d);
-  renderDayPicker();
-}
-function renderDayPicker() {
-  document.querySelectorAll('.day-pill').forEach(el => {
-    const d = parseInt(el.dataset.day);
-    el.classList.toggle('selected', selectedDays.has(d));
-  });
-}
-function saveTaskFromModal() {
-  const title = document.getElementById('mTaskTitle').value.trim();
-  if (!title) { document.getElementById('mTaskTitle').focus(); return; }
-  const desc     = document.getElementById('mTaskDesc').value.trim();
-  const cat      = document.getElementById('mTaskCat').value;
-  const deadline = document.getElementById('mDeadline').value || null;
-  const type     = modalRecurType;
-  const today    = todayStr();
-  let task;
-  if (modalEditId) {
-    task = state.tasks.find(x=>x.id===modalEditId);
-    if (!task) return;
-  } else {
-    task = { id: 'task_'+ts(), done:false, doneAt:null, reportCount:0, reportHistory:[], history:{}, createdAt: ts() };
-    state.tasks.push(task);
-  }
-  task.title    = title;
-  task.desc     = desc;
-  task.cat      = cat;
-  task.deadline = deadline;
-  task.recurType = type;
-  if (type === 'once') {
-    task.dueDate   = document.getElementById('mTaskDate').value || today;
-    task.recurDays = [];
-    task.recurStart= task.dueDate;
-    task.recurEnd  = null;
-    task.recurInterval = null;
-  } else if (type === 'daily') {
-    task.recurStart = document.getElementById('mDailyStart').value || today;
-    task.recurEnd   = document.getElementById('mDailyEnd').value   || null;
-    task.dueDate    = task.recurStart;
-    task.recurDays  = [0,1,2,3,4,5,6];
-    task.recurInterval = null;
-  } else if (type === 'weekly') {
-    task.recurDays  = [...selectedDays];
-    task.recurStart = document.getElementById('mWeeklyStart').value || today;
-    task.recurEnd   = document.getElementById('mWeeklyEnd').value   || null;
-    task.dueDate    = task.recurStart;
-    task.recurInterval = null;
-  } else if (type === 'interval') {
-    task.recurInterval = parseInt(document.getElementById('mInterval').value) || 2;
-    task.recurStart    = document.getElementById('mIntervalStart').value || today;
-    task.recurEnd      = document.getElementById('mIntervalEnd').value   || null;
-    task.dueDate       = task.recurStart;
-    task.recurDays     = [];
-  }
-  save();
-  closeTaskModal();
-  autoReportTasks();
-  renderTasks();
-  updateTaskStats();
-  scheduleTaskNotifs();
-}
-
-// ── TASK DONE TOGGLE ───────────────────────────────────────────
-function toggleTaskDone(id, dateStr) {
-  const task = state.tasks.find(t=>t.id===id);
-  if (!task) return;
-  const d = dateStr || todayStr();
-  if (task.recurType === 'once') {
-    task.done  = !task.done;
-    task.doneAt = task.done ? ts() : null;
-  } else {
-    const current = task.history[d] || null;
-    task.history[d] = current === 'done' ? null : 'done';
-    if (task.history[d] === null) delete task.history[d];
-  }
-  save(); renderTasks(); updateTaskStats();
-}
-function deleteTask(id) {
-  state.tasks = state.tasks.filter(t=>t.id!==id);
-  save(); renderTasks(); updateTaskStats();
-}
-
-// ── TASK STATS ─────────────────────────────────────────────────
 function updateTaskStats() {
   const today = todayStr();
-  const doneTodayCount = state.tasks.filter(t => {
-    if (t.recurType === 'once') return t.done && t.doneAt && fmtDay(t.doneAt)===today;
-    return t.history[today] === 'done';
+
+  const doneTodayCount = state.tasks.filter(task => {
+    if (task.recurType === 'once') return task.done && task.doneAt && fmtDay(task.doneAt) === today;
+    return task.history[today] === 'done';
   }).length;
-  const lateCount = state.tasks.filter(t => {
-    if (t.recurType === 'once') return !t.done && t.dueDate < today;
-    return isTaskActiveOnDate(t, today) && t.history[today] !== 'done';
+
+  const lateCount = state.tasks.filter(task => {
+    if (task.recurType === 'once') return !task.done && task.dueDate < today;
+    return isTaskActiveOnDate(task, today) && task.history[today] !== 'done';
   }).length;
-  const recurActive = state.tasks.filter(t => t.recurType !== 'once' && (!t.recurEnd || t.recurEnd >= today) && (!t.deadline || t.deadline >= today)).length;
-  const allDue  = state.tasks.reduce((a,t) => a + getPastDueDates(t).length, 0);
-  const allDone = state.tasks.reduce((a,t) => {
-    if (t.recurType==='once') return a + (t.done?1:0);
-    return a + Object.values(t.history).filter(v=>v==='done').length;
-  },0);
-  const pct = allDue > 0 ? Math.round(allDone/allDue*100) : 0;
+
+  const recurActive = state.tasks.filter(task =>
+    task.recurType !== 'once'
+    && (!task.recurEnd  || task.recurEnd  >= today)
+    && (!task.deadline  || task.deadline  >= today)
+  ).length;
+
+  const allDue  = state.tasks.reduce((a, task) => a + getPastDueDates(task).length, 0);
+  const allDone = state.tasks.reduce((a, task) => {
+    if (task.recurType === 'once') return a + (task.done ? 1 : 0);
+    return a + Object.values(task.history).filter(v => v === 'done').length;
+  }, 0);
+  const pct = allDue > 0 ? Math.round(allDone / allDue * 100) : 0;
+
   document.getElementById('taskStatDone').textContent  = doneTodayCount;
   document.getElementById('taskStatLate').textContent  = lateCount;
   document.getElementById('taskStatRecur').textContent = recurActive;
   document.getElementById('taskStatPct').textContent   = pct + '%';
 }
 
-// ── RENDER TASKS ───────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+//  ⑯ TASK RENDERING
+// ════════════════════════════════════════════════════════════════
+
 function renderTaskFilters() {
-  const row = document.getElementById('taskFilterRow');
   const opts = [
-    {f:'all',  l: t('tasks.filter_all')},
-    {f:'today',l: t('tasks.filter_today')},
-    {f:'recur',l: t('tasks.filter_recur')},
-    {f:'late', l: t('tasks.filter_late')},
-    {f:'done', l: t('tasks.filter_done')},
-    {f:'perso',l: t('cats.perso')},
-    {f:'pro',  l: t('cats.pro')},
-    {f:'etude',l: t('cats.etude')},
-    {f:'sport',l: t('cats.sport')},
+    { f: 'all',   l: t('tasks.filter_all')  },
+    { f: 'today', l: t('tasks.filter_today') },
+    { f: 'recur', l: t('tasks.filter_recur') },
+    { f: 'late',  l: t('tasks.filter_late')  },
+    { f: 'done',  l: t('tasks.filter_done')  },
+    { f: 'perso', l: t('cats.perso') },
+    { f: 'pro',   l: t('cats.pro')   },
+    { f: 'etude', l: t('cats.etude') },
+    { f: 'sport', l: t('cats.sport') },
   ];
-  row.innerHTML = opts.map(({f,l}) =>
-    `<button class="filter-btn ${activeTaskFilter===f?'active':''} ${f==='recur'?'recur-filter':''}" onclick="setTaskFilter('${f}')">${l}</button>`
+  document.getElementById('taskFilterRow').innerHTML = opts.map(({ f, l }) =>
+    `<button class="filter-btn ${activeTaskFilter === f ? 'active' : ''} ${f === 'recur' ? 'recur-filter' : ''}"
+      onclick="setTaskFilter('${f}')">${l}</button>`
   ).join('');
 }
-function setTaskFilter(f) { activeTaskFilter=f; renderTaskFilters(); renderTasks(); }
+
+function setTaskFilter(f) { activeTaskFilter = f; renderTaskFilters(); renderTasks(); }
 
 function renderTasks() {
   renderTaskFilters();
   const today = todayStr();
   const list  = document.getElementById('taskList');
-  let items = buildTaskItems(today);
-  items = items.filter(item => {
-    const task = item.task;
-    if (activeTaskFilter==='all')   return true;
-    if (activeTaskFilter==='today') return item.date===today && !item.done;
-    if (activeTaskFilter==='recur') return task.recurType!=='once';
-    if (activeTaskFilter==='late')  return item.isLate;
-    if (activeTaskFilter==='done')  return item.done;
-    return task.cat===activeTaskFilter;
+
+  let items = buildTaskItems(today).filter(item => {
+    const { task } = item;
+    if (activeTaskFilter === 'all')   return true;
+    if (activeTaskFilter === 'today') return item.date === today && !item.done;
+    if (activeTaskFilter === 'recur') return task.recurType !== 'once';
+    if (activeTaskFilter === 'late')  return item.isLate;
+    if (activeTaskFilter === 'done')  return item.done;
+    return task.cat === activeTaskFilter;
   });
-  items.sort((a,b) => {
-    if (a.done!==b.done) return a.done?1:-1;
-    if (a.isLate!==b.isLate) return a.isLate?-1:1;
+
+  items.sort((a, b) => {
+    if (a.done !== b.done)       return a.done ? 1 : -1;
+    if (a.isLate !== b.isLate)   return a.isLate ? -1 : 1;
     return a.date.localeCompare(b.date);
   });
+
   if (!items.length) {
-    list.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>${t('tasks.no_tasks')}</div>`;
+    list.innerHTML = `<div class="empty"><span class="empty-icon">✦</span>${t('tasks.no_tasks')}</div>`;
     return;
   }
   list.innerHTML = items.map(item => renderTaskCard(item, today)).join('');
 }
 
 function buildTaskItems(today) {
-  const items = [];
+  const items    = [];
   const lookback = 7;
+
   state.tasks.forEach(task => {
     if (task.recurType === 'once') {
       items.push({ task, id: task.id, date: task.dueDate, done: task.done, isLate: !task.done && task.dueDate < today, occurrence: null });
     } else {
-      for (let i=-lookback; i<=0; i++) {
-        const d = addDays(today, i);
+      for (let i = -lookback; i <= 0; i++) {
+        const d   = addDays(today, i);
         if (!isTaskActiveOnDate(task, d)) continue;
-        const occ = task.history[d] || null;
+        const occ  = task.history[d] || null;
         const done = occ === 'done';
         if (i < 0 && done) continue;
-        items.push({ task, id: task.id+'_'+d, date: d, done, isLate: !done && d <= today, occurrence: occ });
+        items.push({ task, id: task.id + '_' + d, date: d, done, isLate: !done && d <= today, occurrence: occ });
       }
     }
   });
@@ -2204,35 +2041,55 @@ function renderTaskCard(item, today) {
   const isRecur = task.recurType !== 'once';
   const isToday = date === today;
   const col = TASK_CAT_COLORS[task.cat] || TASK_CAT_COLORS['autre'];
+
   const catLabel = getTaskCatLabel(task.cat);
-  const catBadge = task.cat ? `<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>` : '';
-  const lateText = isToday && isLate ? t('tasks.late_badge') : isLate ? `⚠ ${date}` : isToday ? t('tasks.today') : `📅 ${date}`;
-  const dateBadge = `<span class="task-badge ${isLate?'late-b':'date-b'}">${lateText}</span>`;
-  const recurBadge = isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : '';
-  const reportBadge = (task.reportCount||0)>0 ? `<span class="task-badge report-b">↩ ${task.reportCount}</span>` : '';
+  const catBadge = task.cat
+    ? `<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>` : '';
+
+  const lateText = isToday && isLate ? t('tasks.late_badge')
+    : isLate  ? `⚠ ${date}`
+    : isToday ? t('tasks.today')
+    : `📅 ${date}`;
+  const dateBadge    = `<span class="task-badge ${isLate ? 'late-b' : 'date-b'}">${lateText}</span>`;
+  const recurBadge   = isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : '';
+  const reportBadge  = (task.reportCount || 0) > 0 ? `<span class="task-badge report-b">↩ ${task.reportCount}</span>` : '';
   const deadlineBadge = task.deadline && !done ? `<span class="task-badge deadline-b">${t('tasks.deadline')} ${task.deadline}</span>` : '';
-  const doneBadge = done ? `<span class="task-badge done-b">✓</span>` : '';
+  const doneBadge    = done ? `<span class="task-badge done-b">✓</span>` : '';
+
   let streakBadge = '';
-  if (isRecur) { const streak = getStreak(task, date); if (streak > 1) streakBadge = `<span class="task-badge streak-b">🔥 ×${streak}</span>`; }
-  const checkId = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
+  if (isRecur) {
+    const streak = getStreak(task, date);
+    if (streak > 1) streakBadge = `<span class="task-badge streak-b">🔥 ×${streak}</span>`;
+  }
+
+  const checkFn    = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
   const checkState = done ? ' checked' : '';
+
   let historyHtml = '';
   if (isRecur) {
     const past = getPastDueDates(task, today).slice(-14);
     const dots = past.map(d => {
-      const v = task.history[d];
-      const cls = v==='done'?'hd-done': v==='missed'?'hd-missed':'hd-pending';
+      const v   = task.history[d];
+      const cls = v === 'done' ? 'hd-done' : v === 'missed' ? 'hd-missed' : 'hd-pending';
       return `<div class="history-dot ${cls}" title="${d}">${d.slice(8)}</div>`;
     }).join('');
-    if (dots) historyHtml = `<div class="task-history" id="hist_${item.id}"><div class="task-history-title">${t('history.last14')}</div><div class="history-grid">${dots}</div></div>`;
+    if (dots) {
+      historyHtml = `<div class="task-history" id="hist_${item.id}">
+        <div class="task-history-title">${t('history.last14')}</div>
+        <div class="history-grid">${dots}</div>
+      </div>`;
+    }
   }
-  const expandBtn = isRecur ? `<button class="task-expand-btn" onclick="toggleTaskHistory('hist_${item.id}')" title="Historique">▾</button>` : '';
-  return `<div class="task-card${done?' task-done':''}${isLate&&!done?' task-late':''}${isRecur?' task-recur':''}">
+
+  const expandBtn = isRecur
+    ? `<button class="task-expand-btn" onclick="toggleTaskHistory('hist_${item.id}')" title="Historique">▾</button>` : '';
+
+  return `<div class="task-card${done ? ' task-done' : ''}${isLate && !done ? ' task-late' : ''}${isRecur ? ' task-recur' : ''}">
     <div class="task-card-top">
-      <div class="task-checkbox${checkState}" onclick="${checkId}"></div>
+      <div class="task-checkbox${checkState}" onclick="${checkFn}"></div>
       <div class="task-info">
-        <div class="task-title">${task.title}</div>
-        ${task.desc ? `<div class="task-desc">${task.desc}</div>` : ''}
+        <div class="task-title">${escHtml(task.title)}</div>
+        ${task.desc ? `<div class="task-desc">${escHtml(task.desc)}</div>` : ''}
         <div class="task-meta">${catBadge}${dateBadge}${recurBadge}${reportBadge}${deadlineBadge}${streakBadge}${doneBadge}</div>
       </div>
       <div class="task-actions">
@@ -2246,158 +2103,82 @@ function renderTaskCard(item, today) {
 }
 
 function toggleTaskHistory(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.toggle('open');
+  document.getElementById(id)?.classList.toggle('open');
 }
 
 function recurTypeLabel(task) {
-  if (task.recurType==='daily') return '↻ ' + (currentLang==='fr'?'Quotidien':currentLang==='es'?'Diario':'Daily');
-  if (task.recurType==='weekly') {
-    const names = (task.recurDays||[]).sort().map(d=>t('day.'+d));
-    return '↻ '+names.join('/');
+  if (task.recurType === 'daily') return '↻ ' + (currentLang === 'fr' ? 'Quotidien' : currentLang === 'es' ? 'Diario' : 'Daily');
+  if (task.recurType === 'weekly') {
+    return '↻ ' + (task.recurDays || []).sort().map(d => t('day.' + d)).join('/');
   }
-  if (task.recurType==='interval') return `↻ /${task.recurInterval}${t('modal.days').slice(0,1)}`;
+  if (task.recurType === 'interval') return `↻ /${task.recurInterval}${t('modal.days').slice(0, 1)}`;
   return '';
 }
 
-function getStreak(task, upTo) {
-  let streak = 0, cursor = upTo, guard = 0;
-  while (guard < 365) {
-    if (!isTaskActiveOnDate(task, cursor)) { cursor = addDays(cursor,-1); guard++; continue; }
-    if (task.history[cursor] === 'done') { streak++; cursor = addDays(cursor,-1); guard++; }
-    else break;
-  }
-  return streak;
+function getTaskCatLabel(cat) {
+  const key = TASK_CAT_LABELS_KEY[cat] || '';
+  return key ? t(key) : '';
 }
 
-// ── RÉVISION ───────────────────────────────────────────────────
-function renderRevision() {
-  autoReportTasks();
-  const today = todayStr();
-  const container = document.getElementById('reviewContent');
-  const todayWords = Object.entries(state.words).filter(([,w]) => w.occurrences.some(t2 => fmtDay(t2)===today));
-  const todayItems = buildTaskItems(today).filter(item => item.date===today && !item.done);
-  const lateItems  = todayItems.filter(i=>i.isLate);
-  const recurItems = todayItems.filter(i=>i.task.recurType!=='once');
+// ════════════════════════════════════════════════════════════════
+//  ⑰ WORD STATS & RENDERING
+// ════════════════════════════════════════════════════════════════
 
-  document.getElementById('revStatWords').textContent  = todayWords.length;
-  document.getElementById('revStatTasks').textContent  = todayItems.filter(i=>i.task.recurType==='once').length;
-  document.getElementById('revStatRecur').textContent  = recurItems.length;
-  document.getElementById('revStatLate').textContent   = lateItems.length;
-
-  if (!todayWords.length && !todayItems.length) {
-    container.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>${t('review.nothing')}</div>`;
-    return;
-  }
-
-  const locale = currentLang === 'en' ? 'en-GB' : currentLang === 'es' ? 'es-ES' : 'fr-FR';
-  const dateDisp = new Date().toLocaleDateString(locale,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  let html = `<div class="review-header"><span>${t('review.today')}</span><span class="review-date">${dateDisp}</span></div>`;
-
-  if (todayItems.length) {
-    html += `<div class="section-divider" style="margin-bottom:8px">${t('review.tasks_section')}</div><div class="review-table">`;
-    todayItems.forEach(item => {
-      const task = item.task;
-      const isRecur = task.recurType !== 'once';
-      const col = TASK_CAT_COLORS[task.cat] || TASK_CAT_COLORS['autre'];
-      const catLabel = getTaskCatLabel(task.cat);
-      const checkFn = isRecur ? `toggleRevTask('${task.id}','${today}')` : `toggleRevTask('${task.id}')`;
-      html += `<div class="review-row${item.isLate?' late-row':''}${isRecur?' recur-row':''}">
-        <span class="review-type ${isRecur?'type-recur':'type-task'}">${isRecur?t('tasks.recur_badge'):t('tasks.task_badge')}</span>
-        <span class="review-label">${task.title}</span>
-        <div class="review-badges">
-          ${task.cat?`<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>`:''}
-          ${item.isLate?`<span class="task-badge late-b">⚠ ${t('revision.late')}</span>`:''}
-          ${isRecur?`<span class="task-badge recur-b">${recurTypeLabel(task)}</span>`:''}
-          ${task.deadline?`<span class="task-badge deadline-b">📅 ${task.deadline}</span>`:''}
-        </div>
-        <div class="review-check" onclick="${checkFn}"></div>
-      </div>`;
-    });
-    html += '</div>';
-  }
-
-  if (todayWords.length) {
-    html += `<div class="section-divider" style="margin:14px 0 8px">${t('review.words_section')}</div><div class="review-table">`;
-    todayWords.forEach(([key,w]) => {
-      const maxed = isMaxReached(w);
-      const noAnki = !w.ankiDone && !isAnkiReady(w);
-      const col = w.catKey ? getCatColor(w.catKey) : null;
-      const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : '';
-      const validBadge = w.validity==='valid'?`<span class="val-badge valid" style="font-size:9px">✓</span>`
-        :w.validity==='invalid'?`<span class="val-badge invalid" style="font-size:9px">✗</span>`:'';
-      html += `<div class="review-row word-row">
-        <span class="review-type type-word">${currentLang==='en'?'WORD':currentLang==='es'?'PAL':'MOT'}</span>
-        <span class="review-label${noAnki?' no-anki':''}">${w.label}</span>
-        <div class="review-badges">
-          ${col?`<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>`:''}
-          <span class="count-badge" style="font-size:10px;padding:2px 8px">${w.occurrences.length}×</span>
-          ${isAnkiReady(w)?`<span class="anki-badge" style="font-size:9px">Anki</span>`:''}
-          ${validBadge}
-        </div>
-        <button class="review-add-btn" onclick="clickWordFromRevision('${key}')" ${maxed?'disabled':''}>
-          ${maxed?'Max':'+ clic'}
-        </button>
-      </div>`;
-    });
-    html += '</div>';
-  }
-  container.innerHTML = html;
-}
-
-function toggleRevTask(id, dateStr) { toggleTaskDone(id, dateStr); renderRevision(); }
-function clickWordFromRevision(key) { clickWord(key); renderRevision(); }
-
-// ── WORD STATS ─────────────────────────────────────────────────
 function updateStats() {
-  const words=Object.values(state.words);
-  document.getElementById('statWords').textContent=words.length;
-  document.getElementById('statOcc').textContent  =words.reduce((a,w)=>a+w.occurrences.length,0);
-  document.getElementById('statCats').textContent =Object.keys(state.categories).length;
-  document.getElementById('statAnki').textContent =words.filter(w=>isAnkiReady(w)).length;
+  const words = Object.values(state.words);
+  document.getElementById('statWords').textContent = words.length;
+  document.getElementById('statOcc').textContent   = words.reduce((a, w) => a + w.occurrences.length, 0);
+  document.getElementById('statCats').textContent  = Object.keys(state.categories).length;
+  document.getElementById('statAnki').textContent  = words.filter(w => isAnkiReady(w)).length;
 }
 
-// ── RENDER WORDS ───────────────────────────────────────────────
 function render() {
   const list   = document.getElementById('wordList');
   const sort   = document.getElementById('sortSelect').value;
-  const search = (document.getElementById('searchInput').value||'').trim().toLowerCase();
+  const search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
   let keys = Object.keys(state.words).filter(key => {
-    const w=state.words[key];
+    const w = state.words[key];
     if (search && !w.label.toLowerCase().includes(search)) return false;
-    if (activeFilter==='all')  return true;
-    if (activeFilter==='none') return !w.catKey;
-    if (activeFilter==='anki') return isAnkiReady(w);
-    return w.catKey===activeFilter;
+    if (activeFilter === 'all')  return true;
+    if (activeFilter === 'none') return !w.catKey;
+    if (activeFilter === 'anki') return isAnkiReady(w);
+    return w.catKey === activeFilter;
   });
-  keys.sort((a,b)=>{
-    const wa=state.words[a], wb=state.words[b];
-    if (sort==='freq')   return wb.occurrences.length-wa.occurrences.length;
-    if (sort==='alpha')  return wa.label.localeCompare(wb.label);
-    if (sort==='recent') return (wb.occurrences[wb.occurrences.length-1]||0)-(wa.occurrences[wa.occurrences.length-1]||0);
-    if (sort==='oldest') return wa.createdAt-wb.createdAt;
+
+  keys.sort((a, b) => {
+    const wa = state.words[a], wb = state.words[b];
+    if (sort === 'freq')   return wb.occurrences.length - wa.occurrences.length;
+    if (sort === 'alpha')  return wa.label.localeCompare(wb.label);
+    if (sort === 'recent') return (wb.occurrences.at(-1) || 0) - (wa.occurrences.at(-1) || 0);
+    if (sort === 'oldest') return wa.createdAt - wb.createdAt;
     return 0;
   });
+
   if (!keys.length) {
-    const msg = search ? `${t('words.no_results')} "${search}"` : activeFilter==='anki' ? t('words.no_anki') : t('words.no_words');
-    list.innerHTML=`<div class="empty"><span class="empty-icon">✦</span>${msg}</div>`; return;
+    const msg = search        ? `${t('words.no_results')} "${search}"`
+      : activeFilter === 'anki' ? t('words.no_anki')
+      : t('words.no_words');
+    list.innerHTML = `<div class="empty"><span class="empty-icon">✦</span>${msg}</div>`;
+    return;
   }
-  list.innerHTML=keys.map(key=>{
-    const w=state.words[key];
-    const anki=isAnkiReady(w), done=w.ankiDone, maxed=isMaxReached(w);
-    const col=w.catKey?getCatColor(w.catKey):null;
-    const catLabel=w.catKey&&state.categories[w.catKey]?state.categories[w.catKey].label:null;
-    const badge=catLabel&&col?`<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>`:'';
-    const ankiBadge=anki?`<span class="anki-badge">Anki</span>`:'';
-    const ankiBtn=anki?`<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>`:'';
-    const maxBadge=maxed&&!done?`<span class="val-badge invalid" style="font-size:9px">${t('words.max_occ')}</span>`:'';
-    const dates=w.occurrences.map(t2=>`<span class="date-tag" title="${fmtFull(t2)}">${fmtShort(t2)}</span>`).join('');
-    let validBadge='';
-    if (w.validity==='valid')   validBadge=`<span class="word-valid-badge valid">✓</span>`;
-    else if (w.validity==='invalid') validBadge=`<span class="word-valid-badge invalid">✗</span>`;
-    return `<div class="word-card${anki?' anki-ready':''}${done?' anki-done':''}${maxed&&!done?' max-reached':''}">
+
+  list.innerHTML = keys.map(key => {
+    const w        = state.words[key];
+    const anki     = isAnkiReady(w), done = w.ankiDone, maxed = isMaxReached(w);
+    const col      = w.catKey ? getCatColor(w.catKey) : null;
+    const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : null;
+    const badge    = catLabel && col ? `<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>` : '';
+    const ankiBadge = anki ? `<span class="anki-badge">Anki</span>` : '';
+    const ankiBtn   = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
+    const maxBadge  = maxed && !done ? `<span class="val-badge invalid" style="font-size:9px">${t('words.max_occ')}</span>` : '';
+    const dates     = w.occurrences.map(ts => `<span class="date-tag" title="${fmtFull(ts)}">${fmtShort(ts)}</span>`).join('');
+    const validBadge = w.validity === 'valid'   ? `<span class="word-valid-badge valid">✓</span>`
+      : w.validity === 'invalid' ? `<span class="word-valid-badge invalid">✗</span>` : '';
+
+    return `<div class="word-card${anki ? ' anki-ready' : ''}${done ? ' anki-done' : ''}${maxed && !done ? ' max-reached' : ''}">
       <div class="word-card-top">
-        <button class="word-btn" onclick="clickWord('${key}')" ${maxed?'disabled':''}>${w.label}</button>
+        <button class="word-btn" onclick="clickWord('${key}')" ${maxed ? 'disabled' : ''}>${escHtml(w.label)}</button>
         ${badge}${validBadge}${maxBadge}${ankiBadge}
         <span class="count-badge">${w.occurrences.length}×</span>
         ${ankiBtn}
@@ -2408,12 +2189,99 @@ function render() {
   }).join('');
 }
 
-// ── CHARTS ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+//  ⑱ REVISION TAB
+// ════════════════════════════════════════════════════════════════
+
+function renderRevision() {
+  autoReportTasks();
+  const today     = todayStr();
+  const container = document.getElementById('reviewContent');
+  const todayWords = Object.entries(state.words).filter(([, w]) => w.occurrences.some(ts => fmtDay(ts) === today));
+  const todayItems = buildTaskItems(today).filter(item => item.date === today && !item.done);
+  const lateItems  = todayItems.filter(i => i.isLate);
+  const recurItems = todayItems.filter(i => i.task.recurType !== 'once');
+
+  document.getElementById('revStatWords').textContent = todayWords.length;
+  document.getElementById('revStatTasks').textContent = todayItems.filter(i => i.task.recurType === 'once').length;
+  document.getElementById('revStatRecur').textContent = recurItems.length;
+  document.getElementById('revStatLate').textContent  = lateItems.length;
+
+  if (!todayWords.length && !todayItems.length) {
+    container.innerHTML = `<div class="empty"><span class="empty-icon">✦</span>${t('review.nothing')}</div>`;
+    return;
+  }
+
+  const dateDisp = new Date().toLocaleDateString(DateUtils.getLocale(), {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+  let html = `<div class="review-header"><span>${t('review.today')}</span><span class="review-date">${dateDisp}</span></div>`;
+
+  if (todayItems.length) {
+    html += `<div class="section-divider" style="margin-bottom:8px">${t('review.tasks_section')}</div><div class="review-table">`;
+    todayItems.forEach(item => {
+      const { task } = item;
+      const isRecur  = task.recurType !== 'once';
+      const col      = TASK_CAT_COLORS[task.cat] || TASK_CAT_COLORS['autre'];
+      const catLabel = getTaskCatLabel(task.cat);
+      const checkFn  = isRecur ? `toggleRevTask('${task.id}','${today}')` : `toggleRevTask('${task.id}')`;
+      html += `<div class="review-row${item.isLate ? ' late-row' : ''}${isRecur ? ' recur-row' : ''}">
+        <span class="review-type ${isRecur ? 'type-recur' : 'type-task'}">${isRecur ? t('tasks.recur_badge') : t('tasks.task_badge')}</span>
+        <span class="review-label">${escHtml(task.title)}</span>
+        <div class="review-badges">
+          ${task.cat ? `<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${catLabel}</span>` : ''}
+          ${item.isLate ? `<span class="task-badge late-b">⚠ ${t('revision.late')}</span>` : ''}
+          ${isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : ''}
+          ${task.deadline ? `<span class="task-badge deadline-b">📅 ${task.deadline}</span>` : ''}
+        </div>
+        <div class="review-check" onclick="${checkFn}"></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  if (todayWords.length) {
+    html += `<div class="section-divider" style="margin:14px 0 8px">${t('review.words_section')}</div><div class="review-table">`;
+    todayWords.forEach(([key, w]) => {
+      const maxed    = isMaxReached(w);
+      const noAnki   = !w.ankiDone && !isAnkiReady(w);
+      const col      = w.catKey ? getCatColor(w.catKey) : null;
+      const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : '';
+      const validBadge = w.validity === 'valid'   ? `<span class="val-badge valid"   style="font-size:9px">✓</span>`
+        : w.validity === 'invalid' ? `<span class="val-badge invalid" style="font-size:9px">✗</span>` : '';
+      const wordLabel = currentLang === 'en' ? 'WORD' : currentLang === 'es' ? 'PAL' : 'MOT';
+      html += `<div class="review-row word-row">
+        <span class="review-type type-word">${wordLabel}</span>
+        <span class="review-label${noAnki ? ' no-anki' : ''}">${escHtml(w.label)}</span>
+        <div class="review-badges">
+          ${col ? `<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${catLabel}</span>` : ''}
+          <span class="count-badge" style="font-size:10px;padding:2px 8px">${w.occurrences.length}×</span>
+          ${isAnkiReady(w) ? `<span class="anki-badge" style="font-size:9px">Anki</span>` : ''}
+          ${validBadge}
+        </div>
+        <button class="review-add-btn" onclick="clickWordFromRevision('${key}')" ${maxed ? 'disabled' : ''}>
+          ${maxed ? 'Max' : '+ clic'}
+        </button>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function toggleRevTask(id, dateStr)   { toggleTaskDone(id, dateStr); renderRevision(); }
+function clickWordFromRevision(key)   { clickWord(key); renderRevision(); }
+
+// ════════════════════════════════════════════════════════════════
+//  ⑲ CHARTS
+// ════════════════════════════════════════════════════════════════
+
 function renderCharts() {
   renderTimeline(); renderCatChart(); renderTopWords();
   renderRecurHeatmap(); renderRecurConsistTable();
   renderTasksBarChart(); renderAnkiPie();
 }
+
 function chartColors() {
   const light = document.body.classList.contains('light');
   return {
@@ -2422,150 +2290,204 @@ function chartColors() {
     bg:   light ? '#ffffff' : '#1a1a17',
   };
 }
+
 function renderTimeline() {
-  const days=30, labels=[], data=[], now=new Date();
-  const {text,grid} = chartColors();
-  for (let i=days-1;i>=0;i--) {
-    const d=new Date(now); d.setDate(d.getDate()-i);
-    const key=fmtDay(d.getTime());
-    labels.push(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'));
-    let cnt=0;
-    Object.values(state.words).forEach(w=>w.occurrences.forEach(t2=>{if(fmtDay(t2)===key)cnt++;}));
+  const days = 30, labels = [], data = [], now = new Date();
+  const { text, grid } = chartColors();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d   = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = fmtDay(d.getTime());
+    labels.push(String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'));
+    let cnt = 0;
+    Object.values(state.words).forEach(w => w.occurrences.forEach(ts => { if (fmtDay(ts) === key) cnt++; }));
     data.push(cnt);
   }
-  const ctx=document.getElementById('chartTimeline').getContext('2d');
-  if (chartTimeline) chartTimeline.destroy();
-  chartTimeline=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:'rgba(200,169,110,0.5)',borderColor:'#c8a96e',borderWidth:1,borderRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:text,font:{size:10},maxTicksLimit:10},grid:{color:grid}},
-               y:{ticks:{color:text,font:{size:10},stepSize:1},grid:{color:grid}}}}});
+
+  const ctx = document.getElementById('chartTimeline').getContext('2d');
+  chartTimeline?.destroy();
+  chartTimeline = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: 'rgba(200,169,110,0.5)', borderColor: '#c8a96e', borderWidth: 1, borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: text, font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: grid } },
+                y: { ticks: { color: text, font: { size: 10 }, stepSize: 1 }, grid: { color: grid } } } },
+  });
 }
+
 function renderCatChart() {
-  const catKeys=Object.keys(state.categories), labels=[], data=[], colors=[];
-  const {text,bg} = chartColors();
-  catKeys.forEach(key=>{
-    const col=getCatColor(key);
+  const labels = [], data = [], colors = [];
+  const { text, bg } = chartColors();
+
+  Object.keys(state.categories).forEach(key => {
+    const col = getCatColor(key);
     labels.push(state.categories[key].label);
-    data.push(Object.values(state.words).filter(w=>w.catKey===key).length);
+    data.push(Object.values(state.words).filter(w => w.catKey === key).length);
     colors.push(col.color);
   });
-  const uncat=Object.values(state.words).filter(w=>!w.catKey).length;
-  if (uncat>0){labels.push(t('words.cat_none'));data.push(uncat);colors.push('#555550');}
-  const ctx=document.getElementById('chartCats').getContext('2d');
-  if (chartCats) chartCats.destroy();
-  if (!data.length||data.every(d=>d===0)) return;
-  chartCats=new Chart(ctx,{type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:bg,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:text,font:{size:12},padding:14}}}}});
+  const uncat = Object.values(state.words).filter(w => !w.catKey).length;
+  if (uncat > 0) { labels.push(t('words.cat_none')); data.push(uncat); colors.push('#555550'); }
+
+  const ctx = document.getElementById('chartCats').getContext('2d');
+  chartCats?.destroy();
+  if (!data.length || data.every(d => d === 0)) return;
+  chartCats = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: bg, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { color: text, font: { size: 12 }, padding: 14 } } } },
+  });
 }
+
 function renderTopWords() {
-  const container=document.getElementById('topWords');
-  const sorted=Object.values(state.words).sort((a,b)=>b.occurrences.length-a.occurrences.length).slice(0,10);
-  if (!sorted.length){container.innerHTML=`<span style="font-size:13px;color:var(--text-dim)">${t('words.no_words')}</span>`;return;}
-  const max=sorted[0].occurrences.length;
-  container.innerHTML=sorted.map(w=>`
+  const container = document.getElementById('topWords');
+  const sorted    = Object.values(state.words).sort((a, b) => b.occurrences.length - a.occurrences.length).slice(0, 10);
+  if (!sorted.length) { container.innerHTML = `<span style="font-size:13px;color:var(--text-dim)">${t('words.no_words')}</span>`; return; }
+  const max = sorted[0].occurrences.length;
+  container.innerHTML = sorted.map(w => `
     <div class="top-word-row">
-      <span class="top-word-label${isAnkiReady(w)?' is-anki':''}">${w.label}</span>
-      <div class="top-word-bar-wrap"><div class="top-word-bar${isAnkiReady(w)?' is-anki':''}" style="width:${Math.round(w.occurrences.length/max*100)}%"></div></div>
+      <span class="top-word-label${isAnkiReady(w) ? ' is-anki' : ''}">${escHtml(w.label)}</span>
+      <div class="top-word-bar-wrap"><div class="top-word-bar${isAnkiReady(w) ? ' is-anki' : ''}" style="width:${Math.round(w.occurrences.length / max * 100)}%"></div></div>
       <span class="top-word-count">${w.occurrences.length}</span>
     </div>`).join('');
 }
+
 function renderRecurHeatmap() {
-  const weeks=12, today=new Date(); today.setHours(0,0,0,0);
-  const totalDays=weeks*7;
-  const startDate=new Date(today); startDate.setDate(startDate.getDate()-totalDays+1);
-  const doneCounts={};
-  state.tasks.forEach(t2=>{
-    if (t2.recurType==='once') return;
-    Object.entries(t2.history||{}).forEach(([d,v])=>{ if(v==='done') doneCounts[d]=(doneCounts[d]||0)+1; });
+  const weeks = 12, today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalDays = weeks * 7;
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - totalDays + 1);
+
+  const doneCounts = {};
+  state.tasks.forEach(task => {
+    if (task.recurType === 'once') return;
+    Object.entries(task.history || {}).forEach(([d, v]) => {
+      if (v === 'done') doneCounts[d] = (doneCounts[d] || 0) + 1;
+    });
   });
-  const weekCols=[];
-  for (let w=0;w<weeks;w++) {
-    const col=[];
-    for (let d=0;d<7;d++) {
-      const date=new Date(startDate); date.setDate(date.getDate()+w*7+d);
-      const key=fmtDay(date.getTime());
-      const count=doneCounts[key]||0;
-      col.push({key,count,v:Math.min(count,4),label:date.toLocaleDateString(currentLang==='en'?'en-GB':currentLang==='es'?'es-ES':'fr-FR',{day:'numeric',month:'short'})});
+
+  const locale = DateUtils.getLocale();
+  const weekCols = [];
+  for (let w = 0; w < weeks; w++) {
+    const col = [];
+    for (let d = 0; d < 7; d++) {
+      const date  = new Date(startDate);
+      date.setDate(date.getDate() + w * 7 + d);
+      const key   = fmtDay(date.getTime());
+      const count = doneCounts[key] || 0;
+      col.push({ key, count, v: Math.min(count, 4), label: date.toLocaleDateString(locale, { day: 'numeric', month: 'short' }) });
     }
     weekCols.push(col);
   }
-  const container=document.getElementById('recurHeatmap');
-  let html='<div class="heatmap-grid">';
-  weekCols.forEach(col=>{
-    html+='<div class="heatmap-week">';
-    col.forEach(day=>{ html+=`<div class="heatmap-day" data-v="${day.v}" title="${day.label} : ${day.count}"></div>`; });
-    html+='</div>';
-  });
-  html+='</div>';
-  container.innerHTML=html;
+
+  const html = '<div class="heatmap-grid">'
+    + weekCols.map(col =>
+      '<div class="heatmap-week">'
+      + col.map(day => `<div class="heatmap-day" data-v="${day.v}" title="${day.label} : ${day.count}"></div>`).join('')
+      + '</div>'
+    ).join('')
+    + '</div>';
+  document.getElementById('recurHeatmap').innerHTML = html;
 }
+
 function renderRecurConsistTable() {
-  const container=document.getElementById('recurConsistTable');
-  const recurring=state.tasks.filter(t2=>t2.recurType!=='once');
-  if (!recurring.length){container.innerHTML=`<p style="font-size:13px;color:var(--text-dim)">${t('recur.no_recur')}</p>`;return;}
-  const today=todayStr();
-  const rows=recurring.map(task=>{
-    const past=getPastDueDates(task,today), total=past.length;
-    const done=past.filter(d=>task.history[d]==='done').length;
-    const missed=past.filter(d=>task.history[d]==='missed'||(task.history[d]!=='done'&&d<today)).length;
-    const pct=total>0?Math.round(done/total*100):0;
-    const streak=getStreak(task,today);
-    const pctClass=pct>=80?'pct-good':pct>=50?'pct-mid':'pct-low';
-    return {task,total,done,missed,pct,pctClass,streak};
-  });
-  rows.sort((a,b)=>b.pct-a.pct);
-  const th = currentLang==='en'
-    ? ['Task','Type','Completed','Missed','%','Streak']
-    : currentLang==='es'
-    ? ['Tarea','Tipo','Completadas','Perdidas','%','Racha']
-    : ['Tâche','Type','Complétées','Manquées','%','Série'];
-  let html=`<table class="recur-stats-table"><thead><tr>${th.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
-  rows.forEach(({task,total,done,missed,pct,pctClass,streak})=>{
-    html+=`<tr><td>${task.title}</td><td><span class="task-badge recur-b">${recurTypeLabel(task)}</span></td><td>${done}/${total}</td><td>${missed}</td><td class="${pctClass}">${pct}%</td><td>${streak>0?`🔥 ×${streak}`:'-'}</td></tr>`;
-  });
-  html+='</tbody></table>';
-  container.innerHTML=html;
-}
-function renderTasksBarChart() {
-  const days=30,labels=[],doneData=[],reportData=[],now=new Date();
-  const {text,grid}=chartColors();
-  for(let i=days-1;i>=0;i--){
-    const d=new Date(now);d.setDate(d.getDate()-i);
-    const key=fmtDay(d.getTime());
-    labels.push(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'));
-    let done=0,reps=0;
-    state.tasks.forEach(t2=>{
-      if(t2.recurType==='once'){if(t2.done&&fmtDay(t2.doneAt||0)===key)done++;if((t2.reportHistory||[]).includes(key))reps++;}
-      else{if(t2.history[key]==='done')done++;if(t2.history[key]==='missed')reps++;}
-    });
-    doneData.push(done);reportData.push(reps);
+  const container = document.getElementById('recurConsistTable');
+  const recurring = state.tasks.filter(t => t.recurType !== 'once');
+  if (!recurring.length) {
+    container.innerHTML = `<p style="font-size:13px;color:var(--text-dim)">${t('recur.no_recur')}</p>`;
+    return;
   }
-  const ctx=document.getElementById('chartTasksBar').getContext('2d');
-  if(chartTasksBar)chartTasksBar.destroy();
-  const doneLabel = currentLang==='en'?'Done':currentLang==='es'?'Terminadas':'Terminées';
-  const missedLabel = currentLang==='en'?'Missed':currentLang==='es'?'Perdidas':'Manquées';
-  chartTasksBar=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[
-      {label:doneLabel,data:doneData,backgroundColor:'rgba(110,200,122,0.55)',borderColor:'#6ec87a',borderWidth:1,borderRadius:2},
-      {label:missedLabel,data:reportData,backgroundColor:'rgba(232,160,80,0.5)',borderColor:'#e8a050',borderWidth:1,borderRadius:2},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:text,font:{size:11},padding:12}}},
-      scales:{x:{ticks:{color:text,font:{size:10},maxTicksLimit:10},grid:{color:grid},stacked:true},
-               y:{ticks:{color:text,font:{size:10},stepSize:1},grid:{color:grid},stacked:true}}}});
+  const today = todayStr();
+  const rows  = recurring.map(task => {
+    const past   = getPastDueDates(task, today);
+    const total  = past.length;
+    const done   = past.filter(d => task.history[d] === 'done').length;
+    const missed = past.filter(d => task.history[d] !== 'done' && d < today).length;
+    const pct    = total > 0 ? Math.round(done / total * 100) : 0;
+    const streak = getStreak(task, today);
+    const pctClass = pct >= 80 ? 'pct-good' : pct >= 50 ? 'pct-mid' : 'pct-low';
+    return { task, total, done, missed, pct, pctClass, streak };
+  }).sort((a, b) => b.pct - a.pct);
+
+  const th = currentLang === 'en' ? ['Task','Type','Completed','Missed','%','Streak']
+    : currentLang === 'es'        ? ['Tarea','Tipo','Completadas','Perdidas','%','Racha']
+    : ['Tâche','Type','Complétées','Manquées','%','Série'];
+
+  container.innerHTML = `<table class="recur-stats-table">
+    <thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${rows.map(({ task, total, done, missed, pct, pctClass, streak }) =>
+        `<tr>
+          <td>${escHtml(task.title)}</td>
+          <td><span class="task-badge recur-b">${recurTypeLabel(task)}</span></td>
+          <td>${done}/${total}</td>
+          <td>${missed}</td>
+          <td class="${pctClass}">${pct}%</td>
+          <td>${streak > 0 ? `🔥 ×${streak}` : '-'}</td>
+        </tr>`
+      ).join('')}
+    </tbody>
+  </table>`;
 }
+
+function renderTasksBarChart() {
+  const days = 30, labels = [], doneData = [], reportData = [], now = new Date();
+  const { text, grid } = chartColors();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d   = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = fmtDay(d.getTime());
+    labels.push(String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'));
+    let done = 0, reps = 0;
+    state.tasks.forEach(task => {
+      if (task.recurType === 'once') {
+        if (task.done && fmtDay(task.doneAt || 0) === key) done++;
+        if ((task.reportHistory || []).includes(key)) reps++;
+      } else {
+        if (task.history[key] === 'done')   done++;
+        if (task.history[key] === 'missed') reps++;
+      }
+    });
+    doneData.push(done); reportData.push(reps);
+  }
+
+  const doneLabel   = currentLang === 'en' ? 'Done'   : currentLang === 'es' ? 'Terminadas' : 'Terminées';
+  const missedLabel = currentLang === 'en' ? 'Missed' : currentLang === 'es' ? 'Perdidas'   : 'Manquées';
+
+  const ctx = document.getElementById('chartTasksBar').getContext('2d');
+  chartTasksBar?.destroy();
+  chartTasksBar = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: doneLabel,   data: doneData,   backgroundColor: 'rgba(110,200,122,0.55)', borderColor: '#6ec87a', borderWidth: 1, borderRadius: 2 },
+      { label: missedLabel, data: reportData, backgroundColor: 'rgba(232,160,80,0.5)',   borderColor: '#e8a050', borderWidth: 1, borderRadius: 2 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: text, font: { size: 11 }, padding: 12 } } },
+      scales: {
+        x: { ticks: { color: text, font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: grid }, stacked: true },
+        y: { ticks: { color: text, font: { size: 10 }, stepSize: 1 },       grid: { color: grid }, stacked: true },
+      } },
+  });
+}
+
 function renderAnkiPie() {
-  const words=Object.values(state.words),total=words.length;
-  const onAnki=words.filter(w=>w.ankiDone).length;
-  const ready=words.filter(w=>isAnkiReady(w)).length;
-  const notYet=total-onAnki-ready;
-  const pct=total>0?Math.round(onAnki/total*100):0;
-  const {text,bg}=chartColors();
-  const ankiLabel = currentLang==='en'?'On Anki':currentLang==='es'?'En Anki':'Sur Anki';
-  const readyLabel = currentLang==='en'?'Ready':currentLang==='es'?'Listos':'Prêts';
-  const notYetLabel = currentLang==='en'?'Not yet':currentLang==='es'?'No aún':'Pas encore';
-  document.getElementById('ankiProgress').innerHTML=`
+  const words  = Object.values(state.words);
+  const total  = words.length;
+  const onAnki = words.filter(w => w.ankiDone).length;
+  const ready  = words.filter(w => isAnkiReady(w)).length;
+  const notYet = total - onAnki - ready;
+  const pct    = total > 0 ? Math.round(onAnki / total * 100) : 0;
+  const { text, bg } = chartColors();
+
+  const ankiLabel   = currentLang === 'en' ? 'On Anki'  : currentLang === 'es' ? 'En Anki'  : 'Sur Anki';
+  const readyLabel  = currentLang === 'en' ? 'Ready'    : currentLang === 'es' ? 'Listos'   : 'Prêts';
+  const notYetLabel = currentLang === 'en' ? 'Not yet'  : currentLang === 'es' ? 'No aún'   : 'Pas encore';
+
+  document.getElementById('ankiProgress').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:13px;color:var(--text-muted)">${onAnki} / ${total} ${ankiLabel.toLowerCase()}</span>
       <span style="font-size:13px;font-weight:500;color:var(--anki)">${pct}%</span>
@@ -2576,55 +2498,89 @@ function renderAnkiPie() {
       <span class="anki-progress-label" style="color:var(--accent)">${readyLabel} : ${ready}</span>
       <span class="anki-progress-label">${notYetLabel} : ${notYet}</span>
     </div>`;
-  const ctx=document.getElementById('chartAnkiPie').getContext('2d');
-  if(chartAnkiPie)chartAnkiPie.destroy();
-  if(!total)return;
-  chartAnkiPie=new Chart(ctx,{type:'doughnut',
-    data:{labels:[ankiLabel,readyLabel,notYetLabel],
-      datasets:[{data:[onAnki,ready,Math.max(notYet,0)],
-        backgroundColor:['#6eb4c8','rgba(200,169,110,0.7)','rgba(85,85,80,0.5)'],borderColor:bg,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:text,font:{size:11},padding:12}}}}});
+
+  const ctx = document.getElementById('chartAnkiPie').getContext('2d');
+  chartAnkiPie?.destroy();
+  if (!total) return;
+  chartAnkiPie = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: [ankiLabel, readyLabel, notYetLabel],
+      datasets: [{ data: [onAnki, ready, Math.max(notYet, 0)],
+        backgroundColor: ['#6eb4c8', 'rgba(200,169,110,0.7)', 'rgba(85,85,80,0.5)'], borderColor: bg, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { color: text, font: { size: 11 }, padding: 12 } } } },
+  });
 }
 
-// ── NOTIFICATIONS ──────────────────────────────────────────────
-function notify(type, payload) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const map = {
-    anki:        [t('notif.anki_title'),        `"${payload}" — 3 ${currentLang==='en'?'occurrences!':'occurrences !'}`],
-    max:         [t('notif.max_title'),         `"${payload}" : 3 ${currentLang==='en'?'clicks already.':'clics déjà.'}`],
-    tasks_today: [t('notif.tasks_today_title'), `${payload} ${currentLang==='en'?'task(s) today.':'tâche(s) aujourd\'hui.'}`],
-    tasks_late:  [t('notif.tasks_late_title'),  `${payload} ${currentLang==='en'?'missed.':'manquée(s).'}`],
-    recur_due:   [t('notif.recur_title'),       `"${payload}"`],
-  };
-  const [title, body] = map[type] || ['Lexique', String(payload)];
-  new Notification(title, { body, icon:'icon-192.png', badge:'icon-192.png' });
-}
-async function requestNotifPermission() {
-  if (!('Notification' in window)) return;
-  const p = await Notification.requestPermission();
-  if (p==='granted') { document.getElementById('notifBanner').classList.remove('show'); scheduleTaskNotifs(); }
-}
-function scheduleTaskNotifs() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const today = todayStr();
-  const due  = state.tasks.filter(t2 => isTaskActiveOnDate(t2,today) && getTaskOccurrence(t2,today)!=='done' && !t2.done);
-  const late = state.tasks.reduce((a,t2)=>{
-    if (t2.recurType!=='once') { const cnt=Object.entries(t2.history||{}).filter(([d,v])=>d<today&&v==='missed').length; return a+cnt; }
-    return a + (!t2.done&&t2.dueDate<today?1:0);
-  },0);
-  if (due.length>0) notify('tasks_today', due.length);
-  if (late>0) notify('tasks_late', late);
-}
-function checkNotifBanner() {
-  if ('Notification' in window && Notification.permission==='default')
-    document.getElementById('notifBanner').classList.add('show');
-}
+// ════════════════════════════════════════════════════════════════
+//  ⑳ NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════
 
-// ── PWA ────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
+const NotificationService = {
+  canNotify() {
+    return 'Notification' in window && Notification.permission === 'granted';
+  },
+
+  send(type, payload) {
+    if (!this.canNotify()) return;
+    const map = {
+      anki:        [t('notif.anki_title'),         `"${payload}" — 3 occurrences !`],
+      max:         [t('notif.max_title'),          `"${payload}" : 3 clics déjà.`],
+      tasks_today: [t('notif.tasks_today_title'),  `${payload} tâche(s) aujourd'hui.`],
+      tasks_late:  [t('notif.tasks_late_title'),   `${payload} manquée(s).`],
+      recur_due:   [t('notif.recur_title'),        `"${payload}"`],
+    };
+    const [title, body] = map[type] || ['Lexique', String(payload)];
+    new Notification(title, { body, icon: 'icon-192.png', badge: 'icon-192.png' });
+  },
+
+  async requestPermission() {
+    if (!('Notification' in window)) return;
+    const p = await Notification.requestPermission();
+    if (p === 'granted') {
+      document.getElementById('notifBanner').classList.remove('show');
+      scheduleTaskNotifs();
+    }
+  },
+
+  schedule() {
+    if (!this.canNotify()) return;
+    const today = todayStr();
+    const due   = state.tasks.filter(t => isTaskActiveOnDate(t, today) && getTaskOccurrence(t, today) !== 'done' && !t.done);
+    const late  = state.tasks.reduce((a, t) => {
+      if (t.recurType !== 'once') {
+        return a + Object.entries(t.history || {}).filter(([d, v]) => d < today && v === 'missed').length;
+      }
+      return a + (!t.done && t.dueDate < today ? 1 : 0);
+    }, 0);
+    if (due.length > 0) this.send('tasks_today', due.length);
+    if (late > 0)       this.send('tasks_late', late);
+  },
+
+  checkBanner() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      document.getElementById('notifBanner').classList.add('show');
+    }
+  },
+};
+
+// Compatibility aliases
+const notify                  = (type, payload) => NotificationService.send(type, payload);
+const requestNotifPermission  = ()               => NotificationService.requestPermission();
+const scheduleTaskNotifs      = ()               => NotificationService.schedule();
+const checkNotifBanner        = ()               => NotificationService.checkBanner();
+
+// ════════════════════════════════════════════════════════════════
+//  ㉑ PWA / SERVICE WORKER
+// ════════════════════════════════════════════════════════════════
+
+(function initPWA() {
+  if (!('serviceWorker' in navigator)) return;
+
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
+
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
@@ -2634,23 +2590,29 @@ if ('serviceWorker' in navigator) {
           }
         });
       });
+
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
         refreshing = true;
         window.location.reload();
       });
+
       navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data && event.data.type === 'SW_UPDATED') {
+        if (event.data?.type === 'SW_UPDATED') {
           console.log(`[SW] ✅ Lexique mis à jour — version cache : ${event.data.version}`);
         }
       });
-      setInterval(() => { registration.update().catch(() => {}); }, 60 * 1000);
+
+      // Check for updates every minute
+      setInterval(() => registration.update().catch(() => {}), 60_000);
     } catch (err) {
       console.warn('[SW] Erreur :', err);
     }
   });
-}
+})();
+
+let deferredInstallPrompt_ref = null; // avoid conflict with outer let
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -2670,161 +2632,437 @@ document.getElementById('installBtn').addEventListener('click', async () => {
 });
 function dismissInstall() { document.getElementById('installBanner').classList.remove('show'); }
 
+// ════════════════════════════════════════════════════════════════
+//  ㉒ ONLINE / OFFLINE STATUS
+// ════════════════════════════════════════════════════════════════
+
 function updateOnlineStatus() {
   document.getElementById('offlineBadge').classList.toggle('show', !navigator.onLine);
 }
-window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('online',  updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
 
-// ── KEYBOARD ───────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key==='Escape') { closeTaskModal(); hideSuggestions(); }
-  if (e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA') return;
-  if (e.key==='f'||e.key==='F') document.getElementById('searchInput').focus();
-});
-document.getElementById('wordInput').addEventListener('keydown',  e=>{if(e.key==='Enter')addWord();});
-document.getElementById('catInput').addEventListener('keydown',   e=>{if(e.key==='Enter')addCategory();});
-document.getElementById('mTaskTitle').addEventListener('keydown', e=>{if(e.key==='Enter')saveTaskFromModal();});
-document.getElementById('taskModal').addEventListener('click', e=>{
-  if (e.target===document.getElementById('taskModal')) closeTaskModal();
-});
-
 // ════════════════════════════════════════════════════════════════
-//  FIREBASE (Cloud sync)
+//  ㉓ WRITING SUGGESTIONS ENGINE
 // ════════════════════════════════════════════════════════════════
-const FIREBASE_CONFIG = {
-  authDomain:        "lexique-999ff.firebaseapp.com",
-  projectId:         "lexique-999ff",
-  storageBucket:     "lexique-999ff.firebasestorage.app",
-  messagingSenderId: "32359120766",
-  appId:             "1:32359120766:web:91b8b664b4bbf67a717d2f",
-};
-const LS_KEYS = ['lexique_v6', 'lexique_theme'];
-let db = null, currentUid = null, syncTimer = null, isSyncing = false, fbReady = false;
 
-function userRef()  { if(!db||!currentUid) return null; return db.collection('users').doc(currentUid); }
-function wordsRef() { const u=userRef(); return u?u.collection('words'):null; }
-function tasksRef() { const u=userRef(); return u?u.collection('tasks'):null; }
+let suggPrefs  = { minChars: 3, maxItems: 5, style: 'completion' };
+let ngramIndex = {};
+let suggList   = [];
+let suggActive = -1;
+let suggTarget = null;
+let suggTimer  = null;
 
-function showSyncStatus(status) {
-  const badge = document.getElementById('syncBadge');
-  if (!badge) return;
-  const map = {
-    syncing: { icon:'↻', color:'var(--accent)',    title: t('sync.syncing') },
-    synced:  { icon:'✓', color:'var(--valid)',     title: t('sync.synced')  },
-    offline: { icon:'⊘', color:'var(--text-dim)', title: t('sync.offline') },
-    error:   { icon:'⚠', color:'var(--danger)',   title: t('sync.error')   },
-  };
-  const c = map[status] || {icon:'',color:'',title:''};
-  badge.textContent = c.icon;
-  badge.style.color = c.color;
-  badge.title       = c.title;
-}
-
-const _lsSet = localStorage.setItem.bind(localStorage);
-const _lsGet = localStorage.getItem.bind(localStorage);
-
-function readLocalState() {
-  try { const raw=_lsGet('lexique_v6'); return raw?JSON.parse(raw):{};
-  } catch { return {}; }
-}
-function writeLocalState(appState) { _lsSet('lexique_v6', JSON.stringify(appState)); }
-
-(function installLocalStorageProxy() {
-  const native = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function (key, value) {
-    native(key, value);
-    if (LS_KEYS.includes(key)) scheduleSyncToCloud();
-  };
-})();
-
-async function syncLocalToCloud() {
-  if (!fbReady||!db||!currentUid) return;
-  if (isSyncing) return;
-  isSyncing = true;
-  showSyncStatus('syncing');
+function loadSuggPrefs() {
   try {
-    const st = readLocalState();
-    const words = st.words||{}, tasks = Array.isArray(st.tasks)?st.tasks:[], now=Date.now();
-    const wRef=wordsRef();
-    if (wRef) {
-      const entries=Object.entries(words);
-      for (let i=0;i<entries.length;i+=400) {
-        const batch=db.batch();
-        entries.slice(i,i+400).forEach(([id,w])=>{
-          batch.set(wRef.doc(String(id)),{text:w.text??'',occurrences:w.occurrences??0,category:w.category??'',note:w.note??'',ankiDone:w.ankiDone??false,addedAt:w.addedAt??now,updatedAt:w.updatedAt??now},{merge:true});
-        });
-        await batch.commit();
-      }
-    }
-    const tRef=tasksRef();
-    if (tRef&&tasks.length>0) {
-      for (let i=0;i<tasks.length;i+=400) {
-        const batch=db.batch();
-        tasks.slice(i,i+400).forEach(t2=>{
-          if (!t2.id) return;
-          batch.set(tRef.doc(String(t2.id)),{id:t2.id,title:t2.title??'',note:t2.note??'',category:t2.category??'',dueDate:t2.dueDate??'',done:t2.done??false,doneAt:t2.doneAt??null,recurType:t2.recurType??'once',recurDays:t2.recurDays??[],history:t2.history??{},reportHistory:t2.reportHistory??[],createdAt:t2.createdAt??now,updatedAt:t2.updatedAt??now},{merge:true});
-        });
-        await batch.commit();
-      }
-    }
-    const u=userRef();
-    if(u) await u.set({lastSync:Date.now(),appVersion:'lexique-v6'},{merge:true});
-    showSyncStatus('synced');
-  } catch(err) {
-    console.error('[Sync↑]',err);
-    showSyncStatus('error');
-  } finally { isSyncing=false; }
+    const raw = localStorage.getItem(LS_KEY_SUGG);
+    if (raw) suggPrefs = { ...suggPrefs, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  document.getElementById('prefFreq').value  = String(suggPrefs.minChars);
+  document.getElementById('prefMax').value   = String(suggPrefs.maxItems);
+  document.getElementById('prefStyle').value = suggPrefs.style;
 }
 
-async function syncCloudToLocal() {
-  if (!fbReady||!db||!currentUid) return;
-  showSyncStatus('syncing');
-  try {
-    const appState=readLocalState();
-    const localWords=appState.words||{}, localTasks={};
-    (Array.isArray(appState.tasks)?appState.tasks:[]).forEach(t2=>{if(t2.id)localTasks[String(t2.id)]=t2;});
-    const wRef=wordsRef();
-    if(wRef){const snap=await wRef.get();snap.forEach(doc=>{const cloud=doc.data(),local=localWords[doc.id];if(!local||(cloud.updatedAt??0)>=(local.updatedAt??0)){localWords[doc.id]={...local,...cloud,id:doc.id};}});}
-    const tRef=tasksRef();
-    if(tRef){const snap=await tRef.get();snap.forEach(doc=>{const cloud=doc.data(),local=localTasks[String(cloud.id)];if(!local||(cloud.updatedAt??0)>=(local.updatedAt??0)){localTasks[String(cloud.id)]={...local,...cloud};}});}
-    appState.words=localWords;
-    appState.tasks=Object.values(localTasks);
-    writeLocalState(appState);
-    showSyncStatus('synced');
-  } catch(err) {
-    if(err.code==='unavailable'){showSyncStatus('offline');}
-    else{console.error('[Sync↓]',err);showSyncStatus('error');}
+function saveSuggPrefs() {
+  suggPrefs.minChars = parseInt(document.getElementById('prefFreq').value) || 3;
+  suggPrefs.maxItems = parseInt(document.getElementById('prefMax').value)  || 5;
+  suggPrefs.style    = document.getElementById('prefStyle').value          || 'completion';
+  localStorage.setItem(LS_KEY_SUGG, JSON.stringify(suggPrefs));
+}
+
+function toggleSuggPrefs() {
+  const panel = document.getElementById('suggPrefsPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const rect = panel.previousElementSibling.getBoundingClientRect();
+    const maxRight = window.innerWidth - 8;
+    if (rect.left + 220 > maxRight) panel.style.right = '0';
   }
 }
 
-function scheduleSyncToCloud(delayMs=2000) {
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer=setTimeout(()=>{
-    if(navigator.onLine) syncLocalToCloud();
-    else showSyncStatus('offline');
-  },delayMs);
+// Close sugg prefs on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('suggPrefsPanel');
+  if (panel?.classList.contains('open') && !panel.closest('[style*="position:relative"]')?.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+// ── N-gram index ──────────────────────────────
+
+function rebuildNgrams() {
+  ngramIndex = {};
+  const words = Object.values(state.words).map(w => w.label.toLowerCase());
+  words.forEach(word => {
+    for (let n = 2; n <= 4; n++) {
+      for (let i = 0; i <= word.length - n; i++) {
+        const gram = word.slice(i, i + n);
+        if (!ngramIndex[gram]) ngramIndex[gram] = new Set();
+        ngramIndex[gram].add(word);
+      }
+    }
+  });
 }
-window.addEventListener('online',  ()=>syncLocalToCloud());
-window.addEventListener('offline', ()=>showSyncStatus('offline'));
+
+function getTokenContext(text) {
+  const tokens  = text.split(/\s+/);
+  const current = tokens.at(-1) || '';
+  const before  = tokens.slice(0, -1);
+  return { tokens, current, before };
+}
+
+function getHistorySuggestions(prefix, max) {
+  try {
+    const raw  = localStorage.getItem(LS_KEY_HIST) || '{}';
+    const hist = JSON.parse(raw);
+    return Object.entries(hist)
+      .filter(([w]) => w.startsWith(prefix.toLowerCase()) && w !== prefix.toLowerCase())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, max)
+      .map(([w]) => ({ text: w, source: 'hist' }));
+  } catch { return []; }
+}
+
+function getNgramSuggestions(prefix, max) {
+  if (suggPrefs.style === 'word') return [];
+  const pLow  = prefix.toLowerCase();
+  const hits  = new Map();
+
+  for (let n = Math.min(pLow.length, 4); n >= 2; n--) {
+    const gram = pLow.slice(0, n);
+    (ngramIndex[gram] || new Set()).forEach(word => {
+      if (word.startsWith(pLow) && word !== pLow) {
+        hits.set(word, (hits.get(word) || 0) + 1);
+      }
+    });
+  }
+
+  return [...hits.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, max)
+    .map(([text]) => ({ text, source: 'ngram' }));
+}
+
+function mergeSuggestions(hist, ngram, max) {
+  const seen = new Set();
+  const out  = [];
+  for (const s of [...hist, ...ngram]) {
+    const key = s.text.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(s); }
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+function computeSuggestions(text) {
+  const { current } = getTokenContext(text);
+  if (current.length < suggPrefs.minChars) return [];
+  return mergeSuggestions(
+    getHistorySuggestions(current, suggPrefs.maxItems),
+    getNgramSuggestions(current,   suggPrefs.maxItems),
+    suggPrefs.maxItems,
+  );
+}
+
+// ── Suggestions UI ────────────────────────────
+
+const suggContainer = document.getElementById('sugg-container');
+
+function showSuggestions(items, targetEl) {
+  if (!items.length) { hideSuggestions(); return; }
+  suggList   = items;
+  suggActive = -1;
+  const rect = targetEl.getBoundingClientRect();
+  let top  = rect.bottom + window.scrollY + 3;
+  let left = rect.left   + window.scrollX;
+
+  if (rect.bottom + 220 > window.innerHeight) {
+    top = rect.top + window.scrollY - 3;
+    suggContainer.style.transform = 'translateY(-100%)';
+  } else {
+    suggContainer.style.transform = '';
+  }
+  suggContainer.style.top      = top + 'px';
+  suggContainer.style.left     = left + 'px';
+  suggContainer.style.maxWidth = Math.max(rect.width, 180) + 'px';
+  suggContainer.innerHTML = items.map((s, i) => `
+    <div class="sugg-item${i === suggActive ? ' active' : ''}"
+         role="option"
+         onmousedown="acceptSuggestion(${i})"
+         onmouseenter="setSuggActive(${i})">
+      <span class="sugg-icon">${s.source === 'hist' ? '⏱' : '◦'}</span>
+      <span class="sugg-text">${escHtml(s.text)}</span>
+      <span class="sugg-source src-${s.source}">${s.source === 'hist' ? 'hist' : 'auto'}</span>
+    </div>`).join('');
+  suggContainer.classList.add('visible');
+}
+
+function hideSuggestions() {
+  suggContainer.classList.remove('visible');
+  suggList   = [];
+  suggActive = -1;
+}
+
+function setSuggActive(idx) {
+  suggActive = idx;
+  suggContainer.querySelectorAll('.sugg-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+
+function acceptSuggestion(idx) {
+  const s = suggList[idx];
+  if (!s || !suggTarget) { hideSuggestions(); return; }
+  const { current } = getTokenContext(suggTarget.value);
+  suggTarget.value = suggTarget.value.slice(0, suggTarget.value.length - current.length) + s.text + ' ';
+  suggTarget.dispatchEvent(new Event('input', { bubbles: true }));
+  recordSuggUsage(s.text);
+  hideSuggestions();
+  suggTarget.focus();
+}
+
+function recordSuggUsage(word) {
+  try {
+    const raw  = localStorage.getItem(LS_KEY_HIST) || '{}';
+    const hist = JSON.parse(raw);
+    const key  = word.toLowerCase();
+    hist[key]  = (hist[key] || 0) + 1;
+    // Keep only top 200 entries
+    const trimmed = Object.fromEntries(Object.entries(hist).sort((a, b) => b[1] - a[1]).slice(0, 200));
+    localStorage.setItem(LS_KEY_HIST, JSON.stringify(trimmed));
+  } catch { /* ignore */ }
+}
+
+function attachSuggestions() {
+  const selector = 'input[type="text"], input:not([type]), textarea';
+  const excluded = ['#searchInput'];
+
+  document.querySelectorAll(selector).forEach(el => {
+    if (excluded.some(s => el.matches(s))) return;
+    if (el.dataset.suggAttached) return;
+    el.dataset.suggAttached = '1';
+
+    el.addEventListener('focus', () => { suggTarget = el; });
+    el.addEventListener('blur',  () => { setTimeout(hideSuggestions, 150); });
+    el.addEventListener('input', () => {
+      clearTimeout(suggTimer);
+      suggTarget = el;
+      const val  = el.value;
+      suggTimer  = setTimeout(() => {
+        rebuildNgrams();
+        showSuggestions(computeSuggestions(val), el);
+      }, 180);
+    });
+    el.addEventListener('keydown', e => {
+      if (!suggList.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); setSuggActive(Math.min(suggActive + 1, suggList.length - 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setSuggActive(Math.max(suggActive - 1, 0)); }
+      else if ((e.key === 'Tab' || e.key === 'Enter') && suggActive >= 0) { e.preventDefault(); acceptSuggestion(suggActive); }
+      else if (e.key === 'Escape') hideSuggestions();
+    });
+  });
+}
+
+// Re-attach when DOM mutates (modal inputs etc.)
+new MutationObserver(() => attachSuggestions()).observe(document.body, { childList: true, subtree: true });
 
 // ════════════════════════════════════════════════════════════════
-//  INIT
+//  ㉔ FIREBASE CLOUD SYNC
 // ════════════════════════════════════════════════════════════════
-currentLang = detectLang();
-load();
-initTheme();
-loadSuggPrefs();
-applyTranslations();
-rebuildNgrams();
-autoReportTasks();
-renderCatManager(); renderCatSelect(); renderFilters();
-updateStats(); render();
-renderTaskFilters(); renderTasks(); updateTaskStats();
-checkNotifBanner();
-// Attach suggestions after initial render
-setTimeout(attachSuggestions, 100);
+
+const FIREBASE_CONFIG = {
+  authDomain:        'lexique-999ff.firebaseapp.com',
+  projectId:         'lexique-999ff',
+  storageBucket:     'lexique-999ff.firebasestorage.app',
+  messagingSenderId: '32359120766',
+  appId:             '1:32359120766:web:91b8b664b4bbf67a717d2f',
+};
+
+let db = null, currentUid = null, isSyncing = false, fbReady = false;
+let syncTimer = null;
+
+const CloudSync = {
+  userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
+  wordsRef() { const u = this.userRef(); return u ? u.collection('words') : null; },
+  tasksRef() { const u = this.userRef(); return u ? u.collection('tasks') : null; },
+
+  showStatus(status) {
+    const badge = document.getElementById('syncBadge');
+    if (!badge) return;
+    const map = {
+      syncing: { icon: '↻', color: 'var(--accent)',    title: t('sync.syncing') },
+      synced:  { icon: '✓', color: 'var(--valid)',     title: t('sync.synced')  },
+      offline: { icon: '⊘', color: 'var(--text-dim)', title: t('sync.offline') },
+      error:   { icon: '⚠', color: 'var(--danger)',   title: t('sync.error')   },
+    };
+    const c = map[status] || { icon: '', color: '', title: '' };
+    badge.textContent  = c.icon;
+    badge.style.color  = c.color;
+    badge.title        = c.title;
+  },
+
+  schedule(delayMs = 2000) {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      if (navigator.onLine) this.pushToCloud();
+      else this.showStatus('offline');
+    }, delayMs);
+  },
+
+  async pushToCloud() {
+    if (!fbReady || !db || !currentUid || isSyncing) return;
+    isSyncing = true;
+    this.showStatus('syncing');
+    try {
+      const st = Storage.readState();
+      const words = st.words || {}, tasks = Array.isArray(st.tasks) ? st.tasks : [], now = Date.now();
+      const BATCH_SIZE = 400;
+
+      const wRef = this.wordsRef();
+      if (wRef) {
+        const entries = Object.entries(words);
+        for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+          const batch = db.batch();
+          entries.slice(i, i + BATCH_SIZE).forEach(([id, w]) => {
+            batch.set(wRef.doc(String(id)), {
+              text: w.text ?? '', occurrences: w.occurrences ?? 0, category: w.category ?? '',
+              note: w.note ?? '', ankiDone: w.ankiDone ?? false,
+              addedAt: w.addedAt ?? now, updatedAt: w.updatedAt ?? now,
+            }, { merge: true });
+          });
+          await batch.commit();
+        }
+      }
+
+      const tRef = this.tasksRef();
+      if (tRef && tasks.length > 0) {
+        for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+          const batch = db.batch();
+          tasks.slice(i, i + BATCH_SIZE).forEach(task => {
+            if (!task.id) return;
+            batch.set(tRef.doc(String(task.id)), {
+              id: task.id, title: task.title ?? '', note: task.note ?? '', category: task.category ?? '',
+              dueDate: task.dueDate ?? '', done: task.done ?? false, doneAt: task.doneAt ?? null,
+              recurType: task.recurType ?? 'once', recurDays: task.recurDays ?? [],
+              history: task.history ?? {}, reportHistory: task.reportHistory ?? [],
+              createdAt: task.createdAt ?? now, updatedAt: task.updatedAt ?? now,
+            }, { merge: true });
+          });
+          await batch.commit();
+        }
+      }
+
+      const u = this.userRef();
+      if (u) await u.set({ lastSync: Date.now(), appVersion: 'lexique-v6' }, { merge: true });
+      this.showStatus('synced');
+    } catch (err) {
+      console.error('[Sync↑]', err);
+      this.showStatus('error');
+    } finally {
+      isSyncing = false;
+    }
+  },
+
+  async pullFromCloud() {
+    if (!fbReady || !db || !currentUid) return;
+    this.showStatus('syncing');
+    try {
+      const appState   = Storage.readState();
+      const localWords = appState.words || {};
+      const localTasks = {};
+      (Array.isArray(appState.tasks) ? appState.tasks : []).forEach(t => {
+        if (t.id) localTasks[String(t.id)] = t;
+      });
+
+      const wRef = this.wordsRef();
+      if (wRef) {
+        const snap = await wRef.get();
+        snap.forEach(doc => {
+          const cloud = doc.data(), local = localWords[doc.id];
+          if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+            localWords[doc.id] = { ...local, ...cloud, id: doc.id };
+          }
+        });
+      }
+
+      const tRef = this.tasksRef();
+      if (tRef) {
+        const snap = await tRef.get();
+        snap.forEach(doc => {
+          const cloud = doc.data(), local = localTasks[String(cloud.id)];
+          if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+            localTasks[String(cloud.id)] = { ...local, ...cloud };
+          }
+        });
+      }
+
+      appState.words = localWords;
+      appState.tasks = Object.values(localTasks);
+      Storage.writeState(appState);
+      this.showStatus('synced');
+    } catch (err) {
+      if (err.code === 'unavailable') this.showStatus('offline');
+      else { console.error('[Sync↓]', err); this.showStatus('error'); }
+    }
+  },
+};
+
+// Compatibility alias used by the Storage proxy
+window.addEventListener('online',  () => CloudSync.pushToCloud());
+window.addEventListener('offline', () => CloudSync.showStatus('offline'));
+
+// ════════════════════════════════════════════════════════════════
+//  ㉕ UTILITIES
+// ════════════════════════════════════════════════════════════════
+
+/** Safe HTML escaping — prevents XSS in user-supplied strings. */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ㉖ KEYBOARD SHORTCUTS
+// ════════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeTaskModal(); hideSuggestions(); }
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (e.key === 'f' || e.key === 'F') document.getElementById('searchInput').focus();
+});
+
+document.getElementById('wordInput').addEventListener('keydown',   e => { if (e.key === 'Enter') addWord(); });
+document.getElementById('catInput').addEventListener('keydown',    e => { if (e.key === 'Enter') addCategory(); });
+document.getElementById('mTaskTitle').addEventListener('keydown',  e => { if (e.key === 'Enter') saveTaskFromModal(); });
+document.getElementById('taskModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('taskModal')) closeTaskModal();
+});
+
+// ════════════════════════════════════════════════════════════════
+//  ㉗ BOOTSTRAP
+// ════════════════════════════════════════════════════════════════
+
+(function bootstrap() {
+  currentLang = detectLang();
+  load();
+  initTheme();
+  loadSuggPrefs();
+  applyTranslations();
+  rebuildNgrams();
+  autoReportTasks();
+  renderCatManager(); renderCatSelect(); renderFilters();
+  updateStats(); render();
+  renderTaskFilters(); renderTasks(); updateTaskStats();
+  checkNotifBanner();
+  Storage.installSyncProxy();
+  // Attach suggestions after initial render to catch dynamic inputs
+  setTimeout(attachSuggestions, 100);
+})();
 </script>
 </body>
 </html>
