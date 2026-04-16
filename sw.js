@@ -43,7 +43,7 @@ self.addEventListener('activate', event => {
       .then(() => {
         // Prend le contrôle de tous les clients ouverts
         self.clients.claim();
-        // Notifie les clients qu'une nouvelle version est active
+        // Notifie les clients qu'une nouvelle version est active → déclenchera un reload
         self.clients.matchAll({ type: 'window' }).then(clients => {
           clients.forEach(client =>
             client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION })
@@ -62,9 +62,13 @@ self.addEventListener('message', event => {
 });
 
 // ── Fetch strategy ───────────────────────────────────────────────────────────
-// • API Wordnik  → Network-only  (fail gracefully si hors-ligne)
-// • Tout le reste → Cache-first  (fallback réseau + mise en cache)
+// • API Wordnik  → Network-only     (fail gracefully si hors-ligne)
+// • index.html   → Network-first    (✅ CORRIGÉ : toujours la version fraîche)
+// • Tout le reste → Cache-first     (fallback réseau + mise en cache)
 const API_ORIGINS = ['api.wordnik.com'];
+
+// URLs qui doivent toujours être fraîches (Network-first)
+const NETWORK_FIRST_URLS = ['/', '/index.html'];
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
@@ -81,7 +85,30 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first pour tout le reste
+  // ✅ Network-first pour index.html
+  // On essaie toujours le réseau en premier pour avoir la dernière version.
+  // Si hors-ligne, on sert le cache comme fallback.
+  if (event.request.mode === 'navigate' || NETWORK_FIRST_URLS.includes(url.pathname)) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Mise à jour du cache avec la version fraîche
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          // Hors-ligne : fallback sur le cache
+          return caches.match(event.request)
+            .then(cached => cached || caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
+  // Cache-first pour tout le reste (assets statiques, polices, Chart.js…)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -96,7 +123,6 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          // Fallback navigation hors-ligne
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
