@@ -94,6 +94,9 @@ const NotificationService = {
       setInterval(() => this.schedule(), 24 * 60 * 60 * 1000);
     }, delay);
   },
+
+  // FIX: méthode checkBanner() manquante — le bloc if était orphelin hors de toute fonction
+  checkBanner() {
     if ('Notification' in window && Notification.permission === 'default') {
       document.getElementById('notifBanner').classList.add('show');
     }

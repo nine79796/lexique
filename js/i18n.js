@@ -151,6 +151,7 @@ const TRANSLATIONS = {
     'recur.table.missed':       'Manquées',
     'recur.table.pct':          '%',
     'recur.table.streak':       'Série',
+  },  // FIX: fermeture du bloc fr
   en: {
     'header.subtitle':          'Vocabulary · Recurring tasks · Review',
     'status.offline':           'Offline',
