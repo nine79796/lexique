@@ -1,0 +1,142 @@
+'use strict';
+
+// ════════════════════════════════════════════════════════════════
+//  WORDS — CRUD & Wordnik validation
+// ════════════════════════════════════════════════════════════════
+
+// ── Helpers ───────────────────────────────────────────────────
+
+const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
+const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS;
+
+// ── Category colour ───────────────────────────────────────────
+
+function getCatColor(key) {
+  const cat = state.categories[key];
+  return cat ? PALETTE[cat.colorIdx % PALETTE.length] : null;
+}
+
+// ── CRUD ──────────────────────────────────────────────────────
+
+async function addWord() {
+  const inp   = document.getElementById('wordInput');
+  const sel   = document.getElementById('catSelect');
+  const label = inp.value.trim();
+  if (!label) return;
+
+  const key    = label.toLowerCase().replace(/\s+/g, '_');
+  const catKey = sel.value || null;
+  const now    = ts();
+
+  if (!state.words[key]) {
+    state.words[key] = {
+      label,
+      createdAt:   now,
+      catKey,
+      occurrences: [now],
+      ankiDone:    false,
+      validity:    'unknown',
+    };
+  } else {
+    if (isMaxReached(state.words[key])) {
+      notify('max', label);
+      inp.value = '';
+      return;
+    }
+    state.words[key].occurrences.push(now);
+    if (catKey) state.words[key].catKey = catKey;
+  }
+
+  inp.value = '';
+  document.getElementById('validationStrip').innerHTML = '';
+  save();
+  updateStats();
+  render();
+  rebuildNgrams();
+
+  if (state.words[key].occurrences.length === ANKI_THRESHOLD) notify('anki', label);
+  if (navigator.onLine) await validateWord(label);
+}
+
+function clickWord(key) {
+  const w = state.words[key];
+  if (!w) return;
+  if (isMaxReached(w)) { notify('max', w.label); return; }
+
+  const prev = w.occurrences.length;
+  w.occurrences.push(ts());
+  if (prev + 1 === ANKI_THRESHOLD) notify('anki', w.label);
+
+  save(); updateStats(); render();
+}
+
+function deleteWord(key) {
+  delete state.words[key];
+  save(); updateStats(); render(); rebuildNgrams();
+}
+
+function markAnkiDone(key) {
+  if (!state.words[key]) return;
+  state.words[key].ankiDone = true;
+  save(); updateStats(); render();
+}
+
+// ── Wordnik validation ────────────────────────────────────────
+
+async function checkWordnik(word) {
+  if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
+  try {
+    const res = await fetch(
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (res.status === 404) return false;
+    if (!res.ok)            return null;
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0;
+  } catch { return null; }
+}
+
+async function validateWord(word) {
+  const strip = document.getElementById('validationStrip');
+  if (!word)                              { strip.innerHTML = ''; return; }
+  if (validationCache[word] !== undefined) {
+    renderValidationStrip(strip, word, validationCache[word]);
+    return;
+  }
+  if (!navigator.onLine) {
+    strip.innerHTML = `<span class="val-badge pending">⚡ ${t('words.offline')}</span>`;
+    return;
+  }
+  strip.innerHTML = `<span class="val-badge pending"><span class="val-spinner"></span>${t('words.checking')}</span>`;
+  const result = await checkWordnik(word);
+  validationCache[word] = result;
+  renderValidationStrip(strip, word, result);
+}
+
+function renderValidationStrip(strip, word, result) {
+  if (result === null) {
+    strip.innerHTML = `<span class="val-badge pending">${t('words.wordnik_na')}</span>`;
+  } else {
+    const cls   = result ? 'valid'   : 'invalid';
+    const icon  = result ? '✓'       : '✗';
+    const label = result ? t('words.wordnik_valid') : t('words.wordnik_unknown');
+    strip.innerHTML = `<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
+  }
+
+  // Persist validity on the stored word
+  const key = word.toLowerCase().replace(/\s+/g, '_');
+  if (state.words[key]) {
+    state.words[key].validity = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    save(); render();
+  }
+}
+
+/** Called on every keystroke in the word input — debounces Wordnik check. */
+function onWordInputChange() {
+  const word = document.getElementById('wordInput').value.trim();
+  clearTimeout(validationTimer);
+  document.getElementById('validationStrip').innerHTML = '';
+  if (!word || word.length < 2) return;
+  validationTimer = setTimeout(() => validateWord(word), 600);
+}
