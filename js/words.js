@@ -92,7 +92,7 @@ async function deleteWord(key) {
   // 2. Suppression Firestore
   try {
     await deleteDoc(doc(db, "words", String(key)));
-    console.debug('[deleteWord] Firestore supprimé :', key);
+    console.log('[deleteWord] Firestore supprimé :', key);
   } catch (err) {
     console.error('[deleteWord] erreur Firestore :', err);
   }
