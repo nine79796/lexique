@@ -77,10 +77,27 @@ function clickWord(key) {
   save(); updateStats(); render();
 }
 
-function deleteWord(key) {
-  if (!state.words[key]) return;  // BUG FIX : guard si déjà supprimé
+// words.js — remplace l'ancienne deleteWord
+
+async function deleteWord(key) {
+  if (!state.words[key]) return;  // guard si déjà supprimé
+
+  // 1. Suppression locale (état + localStorage)
   delete state.words[key];
   save(); updateStats(); render(); rebuildNgrams();
+
+  // 2. Suppression Firestore — doc.id === key (même convention partout)
+  try {
+    const wRef = CloudSync.wordsRef();
+    if (wRef && navigator.onLine) {
+      await wRef.doc(String(key)).delete();
+      console.debug('[deleteWord] Firestore doc supprimé :', key);
+    }
+  } catch (err) {
+    console.error('[deleteWord] Erreur suppression Firestore :', err);
+    // L'UI est déjà à jour ; l'entrée orpheline en cloud
+    // sera nettoyée au prochain pushToCloud() via remoteDeletions.
+  }
 }
 
 function markAnkiDone(key) {
