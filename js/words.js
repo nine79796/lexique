@@ -89,10 +89,13 @@ async function deleteWord(key) {
   render(); 
   rebuildNgrams();
 
-  // 2. Suppression Firestore
+  // 2. Suppression Firestore (SANS condition online)
   try {
-    await deleteDoc(doc(db, "words", String(key)));
-    console.log('[deleteWord] Firestore supprimé :', key);
+    const wRef = CloudSync.wordsRef();
+    if (wRef) {
+      await wRef.doc(String(key)).delete();
+      console.debug('[deleteWord] Firestore supprimé :', key);
+    }
   } catch (err) {
     console.error('[deleteWord] erreur Firestore :', err);
   }
