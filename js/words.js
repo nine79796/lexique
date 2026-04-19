@@ -77,26 +77,25 @@ function clickWord(key) {
   save(); updateStats(); render();
 }
 
-// words.js — remplace l'ancienne deleteWord
-
 async function deleteWord(key) {
-  if (!state.words[key]) return;  // guard si déjà supprimé
+  if (!state.words[key]) return;
 
-  // 1. Suppression locale (état + localStorage)
+  // 1. Suppression locale immédiate
   delete state.words[key];
-  save(); updateStats(); render(); rebuildNgrams();
+  save(); 
+  updateStats(); 
+  render(); 
+  rebuildNgrams();
 
-  // 2. Suppression Firestore — doc.id === key (même convention partout)
+  // 2. Suppression Firestore (SANS condition online)
   try {
     const wRef = CloudSync.wordsRef();
-    if (wRef && navigator.onLine) {
+    if (wRef) {
       await wRef.doc(String(key)).delete();
-      console.debug('[deleteWord] Firestore doc supprimé :', key);
+      console.debug('[deleteWord] Firestore supprimé :', key);
     }
   } catch (err) {
-    console.error('[deleteWord] Erreur suppression Firestore :', err);
-    // L'UI est déjà à jour ; l'entrée orpheline en cloud
-    // sera nettoyée au prochain pushToCloud() via remoteDeletions.
+    console.error('[deleteWord] erreur Firestore :', err);
   }
 }
 
