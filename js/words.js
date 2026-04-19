@@ -2,6 +2,13 @@
 
 // ════════════════════════════════════════════════════════════════
 //  WORDS — CRUD & Wordnik validation
+//
+//  ARCHITECTURE :
+//    ✅ Ce fichier NE MODIFIE JAMAIS state.words directement.
+//    ✅ Toute modification passe par firestoreAddWord / firestoreDeleteWord
+//       / firestoreUpdateWord (dans firebase.js).
+//    ✅ onSnapshot (dans firebase.js) est la seule fonction qui
+//       écrit dans state.words et appelle render().
 // ════════════════════════════════════════════════════════════════
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -24,44 +31,45 @@ async function addWord() {
   const label = inp.value.trim();
   if (!label) return;
 
-  console.debug('[addWord] Ajout :', label);
-
   const key    = label.toLowerCase().replace(/\s+/g, '_');
   const catKey = sel.value || null;
   const now    = ts();
 
-  if (!state.words[key]) {
-    state.words[key] = {
-      label,
-      createdAt:   now,
-      updatedAt:   now,   // BUG FIX #2 : requis pour le merge cloud
-      catKey,
-      occurrences: [now],
-      ankiDone:    false,
-      validity:    'unknown',
-    };
-    console.debug('[addWord] Nouveau mot créé :', key);
-  } else {
-    if (isMaxReached(state.words[key])) {
-      notify('max', label);
-      inp.value = '';
-      return;
-    }
-    state.words[key].occurrences.push(now);
-    state.words[key].updatedAt = now;   // BUG FIX #2 : mise à jour du timestamp
-    if (catKey) state.words[key].catKey = catKey;
-    console.debug('[addWord] Occurrence ajoutée :', key, '→', state.words[key].occurrences.length, 'fois');
+  // Vérification locale (MAX_CLICKS) avant d'appeler Firestore
+  const existing = state.words[key];
+  if (existing && isMaxReached(existing)) {
+    notify('max', label);
+    inp.value = '';
+    return;
   }
 
   inp.value = '';
   document.getElementById('validationStrip').innerHTML = '';
-  save();
-  updateStats();
-  render();
-  rebuildNgrams();
 
-  if (state.words[key].occurrences.length === ANKI_THRESHOLD) notify('anki', label);
-  if (navigator.onLine) await validateWord(label);
+  try {
+    // ✅ Délègue l'écriture à firebase.js
+    // ✅ Ne modifie PAS state.words ici — onSnapshot le fera
+    await firestoreAddWord({ key, label, catKey, now });
+
+    // Notification Anki si on vient d'atteindre le seuil
+    const updatedWord = state.words[key];
+    if (updatedWord && updatedWord.occurrences.length === ANKI_THRESHOLD) {
+      notify('anki', label);
+    }
+
+    if (navigator.onLine) await validateWord(label);
+
+  } catch (err) {
+    console.error('[addWord] Erreur :', err);
+    // Fallback local si Firestore échoue
+    if (!state.words[key]) {
+      state.words[key] = { label, createdAt: now, updatedAt: now, catKey, occurrences: [now], ankiDone: false, validity: 'unknown' };
+    } else {
+      state.words[key].occurrences.push(now);
+      state.words[key].updatedAt = now;
+    }
+    save(); updateStats(); render(); rebuildNgrams();
+  }
 }
 
 function clickWord(key) {
@@ -69,24 +77,53 @@ function clickWord(key) {
   if (!w) return;
   if (isMaxReached(w)) { notify('max', w.label); return; }
 
-  const prev = w.occurrences.length;
-  w.occurrences.push(ts());
-  w.updatedAt = ts();   // BUG FIX #2 : mise à jour du timestamp
-  if (prev + 1 === ANKI_THRESHOLD) notify('anki', w.label);
+  const now = ts();
 
-  save(); updateStats(); render();
+  // ✅ Délègue à Firestore — ne pas muter state.words
+  firestoreUpdateWord(key, {
+    occurrences: [...(w.occurrences || []), now],
+    updatedAt:   now,
+  }).catch(err => {
+    // Fallback local
+    console.warn('[clickWord] Fallback local :', err);
+    w.occurrences.push(now);
+    w.updatedAt = now;
+    if (w.occurrences.length === ANKI_THRESHOLD) notify('anki', w.label);
+    save(); updateStats(); render();
+  });
 }
 
+/**
+ * Supprime un mot.
+ *
+ * ⚠️  CORRECTION DU BUG PRINCIPAL :
+ *   Avant : `delete state.words[key]` → Firestore jamais touché
+ *   Maintenant : firestoreDeleteWord(key) → suppression Firestore atomique
+ *                → onSnapshot reçoit l'event 'removed'
+ *                → reconstruit state.words sans ce mot
+ *                → render() appelé automatiquement
+ */
 function deleteWord(key) {
-  delete state.words[key];
-  save(); updateStats(); render(); rebuildNgrams();
+  firestoreDeleteWord(key).catch(err => {
+    // Fallback local si Firestore indisponible
+    console.warn('[deleteWord] Fallback local :', err);
+    delete state.words[key];
+    save(); updateStats(); render(); rebuildNgrams();
+  });
+  // ✅ Pas de `delete state.words[key]` ici
+  // ✅ Pas de render() ici — onSnapshot s'en charge
 }
 
 function markAnkiDone(key) {
   if (!state.words[key]) return;
-  state.words[key].ankiDone  = true;
-  state.words[key].updatedAt = ts();  // BUG FIX #2 : mise à jour du timestamp
-  save(); updateStats(); render();
+  const now = ts();
+  firestoreUpdateWord(key, { ankiDone: true, updatedAt: now }).catch(err => {
+    // Fallback local
+    console.warn('[markAnkiDone] Fallback local :', err);
+    state.words[key].ankiDone  = true;
+    state.words[key].updatedAt = now;
+    save(); updateStats(); render();
+  });
 }
 
 // ── Wordnik validation ────────────────────────────────────────
@@ -107,7 +144,7 @@ async function checkWordnik(word) {
 
 async function validateWord(word) {
   const strip = document.getElementById('validationStrip');
-  if (!word)                              { strip.innerHTML = ''; return; }
+  if (!word)                               { strip.innerHTML = ''; return; }
   if (validationCache[word] !== undefined) {
     renderValidationStrip(strip, word, validationCache[word]);
     return;
@@ -132,12 +169,18 @@ function renderValidationStrip(strip, word, result) {
     strip.innerHTML = `<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
   }
 
-  // Persist validity on the stored word
+  // Persist validity — via Firestore (pas de mutation locale directe)
   const key = word.toLowerCase().replace(/\s+/g, '_');
   if (state.words[key]) {
-    state.words[key].validity  = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
-    state.words[key].updatedAt = ts();  // BUG FIX #2 : on a modifié le mot
-    save(); render();
+    const validity = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    firestoreUpdateWord(key, { validity, updatedAt: ts() }).catch(() => {
+      // Fallback local uniquement
+      if (state.words[key]) {
+        state.words[key].validity  = validity;
+        state.words[key].updatedAt = ts();
+        save(); render();
+      }
+    });
   }
 }
 

@@ -2,6 +2,16 @@
 
 // ════════════════════════════════════════════════════════════════
 //  STATE & PERSISTENCE
+//
+//  Rôle de ce fichier :
+//    - Contenir le runtime state (lecture rapide dans l'UI)
+//    - Persister en localStorage (fallback offline)
+//
+//  Ce fichier NE déclenche PLUS de sync cloud.
+//  La sync est gérée exclusivement par firebase.js (onSnapshot).
+//
+//  ⚠️  SUPPRIMÉ : installSyncProxy() — il déclenchait des push
+//      en double et interférait avec les listeners onSnapshot.
 // ════════════════════════════════════════════════════════════════
 
 // ── localStorage abstraction ──────────────────────────────────
@@ -17,19 +27,10 @@ const Storage = {
   writeState(appState) {
     try {
       localStorage.setItem(LS_KEY_STATE, JSON.stringify(appState));
-    } catch { /* quota exceeded — silent fail */ }
-  },
-
-  /**
-   * Monkey-patch localStorage.setItem so that writes to sync-relevant
-   * keys automatically schedule a cloud push.
-   */
-  installSyncProxy() {
-    const native = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = (key, value) => {
-      native(key, value);
-      if (LS_SYNC_KEYS.includes(key)) CloudSync.schedule();
-    };
+    } catch (e) {
+      // Quota exceeded : tenter un nettoyage partiel
+      console.warn('[Storage] localStorage plein :', e);
+    }
   },
 };
 
@@ -69,6 +70,8 @@ function load() {
 }
 
 function save() {
+  // ✅ Sauvegarde locale uniquement.
+  // La sync Firestore est gérée par onSnapshot dans firebase.js.
   Storage.writeState(state);
 }
 
@@ -93,12 +96,21 @@ function migrate() {
     } catch { /* ignore corrupted data */ }
   });
 
-  // Ensure all words have required fields
-  Object.values(state.words).forEach(w => {
+  // ✅ Guard défensif sur tous les mots
+  // Assure qu'aucun mot corrompu ne génère "undefined" dans l'UI
+  Object.keys(state.words).forEach(key => {
+    const w = state.words[key];
+    if (!w || typeof w.label !== 'string' || !w.label.trim()) {
+      // Document corrompu : supprimer silencieusement du state local
+      console.warn('[migrate] Mot corrompu supprimé localement :', key, w);
+      delete state.words[key];
+      return;
+    }
     w.validity ??= 'unknown';
     w.ankiDone ??= false;
-    // Guard: occurrences must always be an array
     if (!Array.isArray(w.occurrences)) w.occurrences = [];
+    w.updatedAt ??= Date.now();
+    w.createdAt ??= Date.now();
   });
 
   // Ensure all tasks have required fields
