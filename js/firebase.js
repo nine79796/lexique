@@ -1,14 +1,8 @@
 'use strict';
 
 // ════════════════════════════════════════════════════════════════
-//  FIREBASE CLOUD SYNC — v2 (onSnapshot architecture)
-//
-//  ARCHITECTURE :
-//    Firestore → onSnapshot → state{} → UI   (lecture temps réel)
-//    UI action → deleteWord/addWord → Firestore directement (écriture atomique)
-//
-//  ❌ SUPPRIMÉ : modèle push/pull (était la cause de tous les bugs)
-//  ✅ AJOUTÉ   : onSnapshot comme unique source de vérité
+//  FIREBASE CLOUD SYNC
+//  ⚠️  Ne pas modifier sans tester la synchronisation complète.
 // ════════════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
@@ -20,377 +14,225 @@ const FIREBASE_CONFIG = {
   appId:             '1:32359120766:web:91b8b664b4bbf67a717d2f',
 };
 
-// ── Références globales ────────────────────────────────────────
-
 let db         = null;
 let currentUid = null;
+let isSyncing  = false;
 let fbReady    = false;
-
-// Unsubscribe handles — pour nettoyer les listeners au logout
-let _unsubWords = null;
-let _unsubTasks = null;
-
-// ── Helpers références ─────────────────────────────────────────
+let syncTimer  = null;
 
 const CloudSync = {
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
   wordsRef() { const u = this.userRef(); return u ? u.collection('words') : null; },
   tasksRef() { const u = this.userRef(); return u ? u.collection('tasks') : null; },
 
-  // ── Sync badge ──────────────────────────────────────────────
   showStatus(status) {
     const badge = document.getElementById('syncBadge');
     if (!badge) return;
     const map = {
-      syncing: { icon: '↻', color: 'var(--accent)',    title: 'Synchronisation…'  },
-      synced:  { icon: '✓', color: 'var(--valid)',     title: 'Synchronisé'        },
-      offline: { icon: '⊘', color: 'var(--text-dim)', title: 'Hors ligne'         },
-      error:   { icon: '⚠', color: 'var(--danger)',   title: 'Erreur de sync'     },
+      syncing: { icon: '↻', color: 'var(--accent)',    title: t('sync.syncing') },
+      synced:  { icon: '✓', color: 'var(--valid)',     title: t('sync.synced')  },
+      offline: { icon: '⊘', color: 'var(--text-dim)', title: t('sync.offline') },
+      error:   { icon: '⚠', color: 'var(--danger)',   title: t('sync.error')   },
     };
     const c = map[status] || { icon: '', color: '', title: '' };
-    badge.textContent = c.icon;
-    badge.style.color = c.color;
-    badge.title       = c.title;
+    badge.textContent  = c.icon;
+    badge.style.color  = c.color;
+    badge.title        = c.title;
+  },
+
+  schedule(delayMs = 2000) {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      if (navigator.onLine) this.pushToCloud();
+      else this.showStatus('offline');
+    }, delayMs);
+  },
+
+  // ── PUSH ────────────────────────────────────────────────────
+
+  async pushToCloud() {
+    if (!fbReady || !db || !currentUid || isSyncing) {
+      // BUG FIX #4 : log de garde pour diagnostiquer les push avortés
+      console.debug('[Sync↑] Push ignoré —', { fbReady, db: !!db, currentUid, isSyncing });
+      return;
+    }
+    isSyncing = true;
+    this.showStatus('syncing');
+    console.debug('[Sync↑] Début push vers Firestore…');
+
+    try {
+      const st    = Storage.readState();
+      const words = st.words || {};
+      const tasks = Array.isArray(st.tasks) ? st.tasks : [];
+      const now   = Date.now();
+      const BATCH = 400;
+
+      // ── Mots ──────────────────────────────────────────────
+      const wRef = this.wordsRef();
+      if (wRef) {
+        const entries = Object.entries(words);
+        console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
+
+        for (let i = 0; i < entries.length; i += BATCH) {
+          const batch = db.batch();
+          entries.slice(i, i + BATCH).forEach(([id, w]) => {
+            // BUG FIX #1 + #3 : utiliser les bons noms de champs (label, catKey, createdAt)
+            // BUG FIX #2 : propager updatedAt correctement
+            batch.set(wRef.doc(String(id)), {
+              label:       w.label       ?? '',          // ✅ était w.text (undefined)
+              catKey:      w.catKey      ?? null,        // ✅ était w.category (undefined)
+              occurrences: Array.isArray(w.occurrences) ? w.occurrences : [],
+              note:        w.note        ?? '',
+              ankiDone:    w.ankiDone    ?? false,
+              validity:    w.validity    ?? 'unknown',
+              createdAt:   w.createdAt   ?? now,         // ✅ était w.addedAt (undefined)
+              updatedAt:   w.updatedAt   ?? now,
+            }, { merge: true });
+          });
+          await batch.commit();
+          console.debug(`[Sync↑] Batch mots ${i}–${i + BATCH} commité ✓`);
+        }
+      }
+
+      // ── Tâches ────────────────────────────────────────────
+      const tRef = this.tasksRef();
+      if (tRef && tasks.length > 0) {
+        console.debug(`[Sync↑] ${tasks.length} tâche(s) à pousser`);
+        for (let i = 0; i < tasks.length; i += BATCH) {
+          const batch = db.batch();
+          tasks.slice(i, i + BATCH).forEach(task => {
+            if (!task.id) return;
+            batch.set(tRef.doc(String(task.id)), {
+              id:            task.id,
+              title:         task.title         ?? '',
+              note:          task.note          ?? '',
+              cat:           task.cat           ?? '',  // ✅ champ correct (était task.category)
+              dueDate:       task.dueDate        ?? '',
+              done:          task.done           ?? false,
+              doneAt:        task.doneAt         ?? null,
+              recurType:     task.recurType      ?? 'once',
+              recurDays:     task.recurDays      ?? [],
+              recurStart:    task.recurStart     ?? '',
+              recurEnd:      task.recurEnd       ?? '',
+              recurInterval: task.recurInterval  ?? 1,
+              deadline:      task.deadline       ?? '',
+              history:       task.history        ?? {},
+              reportHistory: task.reportHistory  ?? [],
+              createdAt:     task.createdAt      ?? now,
+              updatedAt:     task.updatedAt      ?? now,
+            }, { merge: true });
+          });
+          await batch.commit();
+          console.debug(`[Sync↑] Batch tâches ${i}–${i + BATCH} commité ✓`);
+        }
+      }
+
+      const u = this.userRef();
+      if (u) await u.set({ lastSync: Date.now(), appVersion: 'lexique-v6' }, { merge: true });
+
+      this.showStatus('synced');
+      console.debug('[Sync↑] ✅ Push terminé');
+    } catch (err) {
+      console.error('[Sync↑] ❌ Erreur push :', err);
+      this.showStatus('error');
+    } finally {
+      isSyncing = false;
+    }
+  },
+
+  // ── PULL ────────────────────────────────────────────────────
+
+  async pullFromCloud() {
+    if (!fbReady || !db || !currentUid) {
+      console.debug('[Sync↓] Pull ignoré —', { fbReady, db: !!db, currentUid });
+      return;
+    }
+    this.showStatus('syncing');
+    console.debug('[Sync↓] Début pull depuis Firestore…');
+
+    try {
+      const appState   = Storage.readState();
+      const localWords = appState.words || {};
+      const localTasks = {};
+      (Array.isArray(appState.tasks) ? appState.tasks : []).forEach(task => {
+        if (task.id) localTasks[String(task.id)] = task;
+      });
+
+      // ── Mots ──────────────────────────────────────────────
+      const wRef = this.wordsRef();
+      if (wRef) {
+        const snap = await wRef.get();
+        console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
+        snap.forEach(doc => {
+          const cloud = doc.data();
+          const local = localWords[doc.id];
+          // Garde la version la plus récente (updatedAt)
+          if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+            localWords[doc.id] = { ...local, ...cloud, id: doc.id };
+          }
+        });
+      }
+
+      // ── Tâches ────────────────────────────────────────────
+      const tRef = this.tasksRef();
+      if (tRef) {
+        const snap = await tRef.get();
+        console.debug(`[Sync↓] ${snap.size} tâche(s) reçues depuis Firestore`);
+        snap.forEach(doc => {
+          const cloud = doc.data();
+          const local = localTasks[String(cloud.id)];
+          if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+            localTasks[String(cloud.id)] = { ...local, ...cloud };
+          }
+        });
+      }
+
+      appState.words = localWords;
+      appState.tasks = Object.values(localTasks);
+      Storage.writeState(appState);
+
+      this.showStatus('synced');
+      console.debug('[Sync↓] ✅ Pull terminé');
+    } catch (err) {
+      if (err.code === 'unavailable') this.showStatus('offline');
+      else { console.error('[Sync↓] ❌ Erreur pull :', err); this.showStatus('error'); }
+    }
   },
 };
 
-// ════════════════════════════════════════════════════════════════
-//  LISTENERS TEMPS RÉEL (onSnapshot)
-//
-//  Règle absolue :
-//    → onSnapshot est la SEULE fonction qui écrit dans state.words
-//    → Les fonctions CRUD (addWord, deleteWord…) n'écrivent JAMAIS
-//      dans state.words — elles écrivent dans Firestore, et
-//      onSnapshot propage automatiquement le changement dans l'UI.
-// ════════════════════════════════════════════════════════════════
+// Trigger sync on connectivity changes
+window.addEventListener('online',  () => CloudSync.pushToCloud());
+window.addEventListener('offline', () => CloudSync.showStatus('offline'));
 
-function startWordListener() {
-  if (_unsubWords) { _unsubWords(); _unsubWords = null; }
-
-  const wRef = CloudSync.wordsRef();
-  if (!wRef) return;
-
-  _unsubWords = wRef.onSnapshot(
-    snapshot => {
-      // Reconstruction complète depuis Firestore (source de vérité)
-      const words = {};
-      snapshot.forEach(doc => {
-        const data = doc.data();
-
-        // ✅ Guard défensif : ignore les documents sans label valide
-        if (!data || typeof data.label !== 'string' || !data.label.trim()) {
-          console.warn('[onSnapshot] Doc ignoré (label manquant) :', doc.id, data);
-          return;
-        }
-
-        words[doc.id] = {
-          id:          doc.id,
-          label:       data.label,
-          catKey:      data.catKey      ?? null,
-          occurrences: Array.isArray(data.occurrences) ? data.occurrences : [],
-          note:        data.note        ?? '',
-          ankiDone:    data.ankiDone    ?? false,
-          validity:    data.validity    ?? 'unknown',
-          createdAt:   data.createdAt   ?? Date.now(),
-          updatedAt:   data.updatedAt   ?? Date.now(),
-        };
-      });
-
-      // ✅ Écrase le state local avec la vérité Firestore
-      state.words = words;
-      // ✅ Persiste en localStorage pour usage offline
-      save();
-
-      // ✅ Met à jour l'UI depuis la nouvelle source de vérité
-      updateStats();
-      render();
-      rebuildNgrams();
-
-      CloudSync.showStatus('synced');
-      console.debug('[onSnapshot] ✅ words mis à jour —', Object.keys(words).length, 'mots');
-    },
-    err => {
-      console.error('[onSnapshot] ❌ Erreur listener words :', err);
-      if (err.code === 'unavailable') CloudSync.showStatus('offline');
-      else CloudSync.showStatus('error');
-    }
-  );
-}
-
-function startTaskListener() {
-  if (_unsubTasks) { _unsubTasks(); _unsubTasks = null; }
-
-  const tRef = CloudSync.tasksRef();
-  if (!tRef) return;
-
-  _unsubTasks = tRef.onSnapshot(
-    snapshot => {
-      const tasks = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (!data || !data.id) return; // doc corrompu → ignoré
-        tasks.push({ ...data, _docId: doc.id });
-      });
-
-      state.tasks = tasks;
-      save();
-      renderTasks();
-      updateTaskStats();
-      console.debug('[onSnapshot] ✅ tasks mis à jour —', tasks.length, 'tâches');
-    },
-    err => {
-      console.error('[onSnapshot] ❌ Erreur listener tasks :', err);
-    }
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-//  CRUD FIRESTORE — Mots
-//
-//  Ces fonctions :
-//    1. Écrivent dans Firestore
-//    2. Ne touchent JAMAIS state.words directement
-//    3. Ne rappellent JAMAIS render() directement
-//    → onSnapshot propage tout automatiquement
-// ════════════════════════════════════════════════════════════════
-
-/**
- * Ajoute ou incrémente un mot dans Firestore.
- * Utilise un runTransaction pour garantir l'atomicité du compteur.
- */
-async function firestoreAddWord(wordData) {
-  const wRef = CloudSync.wordsRef();
-  if (!wRef) {
-    console.warn('[firestoreAddWord] Firestore non prêt — sauvegarde locale uniquement');
-    return;
-  }
-
-  CloudSync.showStatus('syncing');
-
-  try {
-    const docRef = wRef.doc(wordData.key);
-
-    await db.runTransaction(async tx => {
-      const snap = await tx.get(docRef);
-
-      if (snap.exists) {
-        const existing = snap.data();
-        const occurrences = Array.isArray(existing.occurrences)
-          ? [...existing.occurrences, wordData.now]
-          : [wordData.now];
-
-        tx.update(docRef, {
-          occurrences,
-          updatedAt: wordData.now,
-          // Met à jour catKey si fourni
-          ...(wordData.catKey !== undefined && { catKey: wordData.catKey }),
-        });
-      } else {
-        tx.set(docRef, {
-          label:       wordData.label,
-          catKey:      wordData.catKey ?? null,
-          occurrences: [wordData.now],
-          note:        '',
-          ankiDone:    false,
-          validity:    'unknown',
-          createdAt:   wordData.now,
-          updatedAt:   wordData.now,
-        });
-      }
-    });
-
-    // ✅ Pas de render() ici — onSnapshot s'en charge
-    console.debug('[firestoreAddWord] ✅ Transaction OK —', wordData.key);
-
-  } catch (err) {
-    console.error('[firestoreAddWord] ❌ Erreur :', err);
-    CloudSync.showStatus('error');
-    throw err; // remonter pour gestion dans addWord()
-  }
-}
-
-/**
- * Supprime définitivement un document Firestore.
- *
- * ⚠️  CORRECTION DU BUG PRINCIPAL :
- *   - Avant : deleteWord() faisait `delete state.words[key]` + save()
- *     → Firestore n'était jamais supprimé → réapparaissait au prochain pull
- *   - Maintenant : suppression atomique dans Firestore
- *     → onSnapshot reçoit l'event "removed" → reconstruit state.words
- *     → le mot disparaît de l'UI et ne peut plus revenir
- */
-async function firestoreDeleteWord(key) {
-  const wRef = CloudSync.wordsRef();
-  if (!wRef) {
-    // Fallback offline : suppression locale uniquement
-    console.warn('[firestoreDeleteWord] Offline — suppression locale uniquement');
-    delete state.words[key];
-    save(); updateStats(); render(); rebuildNgrams();
-    return;
-  }
-
-  CloudSync.showStatus('syncing');
-
-  try {
-    await wRef.doc(key).delete();
-    // ✅ Pas de `delete state.words[key]` ici — onSnapshot s'en charge
-    console.debug('[firestoreDeleteWord] ✅ Supprimé dans Firestore —', key);
-
-  } catch (err) {
-    console.error('[firestoreDeleteWord] ❌ Erreur :', err);
-    CloudSync.showStatus('error');
-    throw err;
-  }
-}
-
-/**
- * Met à jour des champs spécifiques d'un mot.
- */
-async function firestoreUpdateWord(key, fields) {
-  const wRef = CloudSync.wordsRef();
-  if (!wRef) {
-    // Fallback offline : mise à jour locale
-    if (state.words[key]) {
-      Object.assign(state.words[key], fields);
-      save(); render();
-    }
-    return;
-  }
-
-  try {
-    await wRef.doc(key).update({
-      ...fields,
-      updatedAt: Date.now(),
-    });
-  } catch (err) {
-    console.error('[firestoreUpdateWord] ❌ Erreur :', err);
-    CloudSync.showStatus('error');
-    throw err;
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-//  CRUD FIRESTORE — Tâches
-// ════════════════════════════════════════════════════════════════
-
-async function firestoreSaveTask(task) {
-  const tRef = CloudSync.tasksRef();
-  if (!tRef) { save(); return; }
-
-  try {
-    await tRef.doc(String(task.id)).set({
-      id:            task.id,
-      title:         task.title         ?? '',
-      note:          task.note          ?? '',
-      cat:           task.cat           ?? '',
-      dueDate:       task.dueDate       ?? '',
-      done:          task.done          ?? false,
-      doneAt:        task.doneAt        ?? null,
-      recurType:     task.recurType     ?? 'once',
-      recurDays:     task.recurDays     ?? [],
-      recurStart:    task.recurStart    ?? '',
-      recurEnd:      task.recurEnd      ?? '',
-      recurInterval: task.recurInterval ?? 1,
-      deadline:      task.deadline      ?? '',
-      history:       task.history       ?? {},
-      reportHistory: task.reportHistory ?? [],
-      createdAt:     task.createdAt     ?? Date.now(),
-      updatedAt:     Date.now(),
-    }, { merge: true });
-  } catch (err) {
-    console.error('[firestoreSaveTask] ❌ Erreur :', err);
-    throw err;
-  }
-}
-
-async function firestoreDeleteTask(taskId) {
-  const tRef = CloudSync.tasksRef();
-  if (!tRef) {
-    state.tasks = state.tasks.filter(t => t.id !== taskId);
-    save(); renderTasks();
-    return;
-  }
-
-  try {
-    await tRef.doc(String(taskId)).delete();
-  } catch (err) {
-    console.error('[firestoreDeleteTask] ❌ Erreur :', err);
-    throw err;
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-//  AUTH — Gestion de session
-// ════════════════════════════════════════════════════════════════
-
-function stopListeners() {
-  if (_unsubWords) { _unsubWords(); _unsubWords = null; }
-  if (_unsubTasks) { _unsubTasks(); _unsubTasks = null; }
-}
-
-function initAuth() {
-  firebase.auth().onAuthStateChanged(user => {
-    if (user) {
-      currentUid = user.uid;
-      fbReady    = true;
-      console.debug('[Firebase] ✅ Auth OK — uid :', currentUid);
-
-      // Charger l'état local en premier (pour l'affichage immédiat offline)
-      load();
-      render();
-      renderTasks();
-      updateStats();
-      updateTaskStats();
-
-      // Puis démarrer les listeners temps réel
-      // → onSnapshot va écraser/compléter avec les données Firestore
-      startWordListener();
-      startTaskListener();
-
-    } else {
-      console.debug('[Firebase] Pas de session — connexion anonyme…');
-      stopListeners();
-      currentUid = null;
-      fbReady    = false;
-      firebase.auth().signInAnonymously().catch(err => {
-        console.error('[Firebase] signInAnonymously failed :', err);
-      });
-    }
-  });
-}
-
-// Gestion de la connectivité
-window.addEventListener('online',  () => { CloudSync.showStatus('syncing'); });
-window.addEventListener('offline', () => { CloudSync.showStatus('offline'); });
-
-// ════════════════════════════════════════════════════════════════
-//  INITIALISATION
-// ════════════════════════════════════════════════════════════════
+// ── Firebase initialisation ───────────────────────────────────
 
 (function initFirebase() {
   try {
     if (typeof firebase === 'undefined') {
-      console.warn('[Firebase] SDK non chargé — mode local uniquement');
-      load(); render(); renderTasks(); updateStats(); updateTaskStats();
+      console.warn('[Firebase] SDK non chargé — sync désactivé');
       return;
     }
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
+    console.debug('[Firebase] ✅ Firestore initialisé');
 
-    // Activer la persistance offline (Firestore met en cache localement)
-    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-      // FAILED_PRECONDITION = plusieurs onglets ouverts (normal)
-      // UNIMPLEMENTED = navigateur ne supporte pas (Safari private)
-      if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-        console.warn('[Firebase] enablePersistence :', err.code);
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        currentUid = user.uid;
+        fbReady    = true;
+        console.debug('[Firebase] ✅ Auth anonyme OK — uid :', currentUid);
+        CloudSync.pullFromCloud().then(() => {
+          load();
+          render(); renderTasks(); updateStats(); updateTaskStats();
+        });
+      } else {
+        console.debug('[Firebase] Pas de session — connexion anonyme…');
+        firebase.auth().signInAnonymously().catch(err => {
+          console.error('[Firebase] signInAnonymously failed :', err);
+        });
       }
     });
-
-    console.debug('[Firebase] ✅ Firestore initialisé');
-    initAuth();
-
   } catch (err) {
-    console.warn('[Firebase] Init error — mode local uniquement :', err);
-    load(); render(); renderTasks(); updateStats(); updateTaskStats();
+    console.warn('[Firebase] Init error:', err);
   }
 })();
