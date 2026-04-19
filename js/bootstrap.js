@@ -9,11 +9,9 @@
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeTaskModal(); hideSuggestions(); }
 
-  // Skip shortcuts when typing
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
 
-  // 'F' → focus search
   if (e.key === 'f' || e.key === 'F') document.getElementById('searchInput').focus();
 });
 
@@ -33,6 +31,11 @@ window.addEventListener('offline', updateOnlineStatus);
 // ── Bootstrap ─────────────────────────────────────────────────
 
 (function bootstrap() {
+  // BUG FIX #4 : installSyncProxy() DOIT être appelé en premier,
+  // avant load() et avant que Firebase auth callback puisse déclencher
+  // un Storage.writeState() → localStorage.setItem() non patché.
+  Storage.installSyncProxy();
+
   currentLang = detectLang();
   load();
   initTheme();
@@ -49,12 +52,8 @@ window.addEventListener('offline', updateOnlineStatus);
   renderTasks();
   updateTaskStats();
   checkNotifBanner();
-  // Replanifie la notification quotidienne si la permission est déjà accordée
-  // (session suivante — évite de notifier à chaque reload)
   if (typeof NotificationService !== 'undefined') NotificationService.scheduleDaily();
   updateOnlineStatus();
-  Storage.installSyncProxy();
 
-  // Attach suggestions after initial render to catch dynamic inputs
   setTimeout(attachSuggestions, 100);
 })();

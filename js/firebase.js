@@ -1,11 +1,12 @@
 'use strict';
 
 // ════════════════════════════════════════════════════════════════
-//  FIREBASE CLOUD SYNC  ⚠️  Do not modify without testing sync.
+//  FIREBASE CLOUD SYNC
+//  ⚠️  Ne pas modifier sans tester la synchronisation complète.
 // ════════════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
-  apiKey:            'AIzaSyBY55p8u0kULi87qsuRvkfxyyNrn1eqBYc',           // ✅ CORRIGÉ — champ manquant
+  apiKey:            'AIzaSyBY55p8u0kULi87qsuRvkfxyyNrn1eqBYc',
   authDomain:        'lexique-999ff.firebaseapp.com',
   projectId:         'lexique-999ff',
   storageBucket:     'lexique-999ff.firebasestorage.app',
@@ -47,10 +48,18 @@ const CloudSync = {
     }, delayMs);
   },
 
+  // ── PUSH ────────────────────────────────────────────────────
+
   async pushToCloud() {
-    if (!fbReady || !db || !currentUid || isSyncing) return;
+    if (!fbReady || !db || !currentUid || isSyncing) {
+      // BUG FIX #4 : log de garde pour diagnostiquer les push avortés
+      console.debug('[Sync↑] Push ignoré —', { fbReady, db: !!db, currentUid, isSyncing });
+      return;
+    }
     isSyncing = true;
     this.showStatus('syncing');
+    console.debug('[Sync↑] Début push vers Firestore…');
+
     try {
       const st    = Storage.readState();
       const words = st.words || {};
@@ -58,28 +67,37 @@ const CloudSync = {
       const now   = Date.now();
       const BATCH = 400;
 
+      // ── Mots ──────────────────────────────────────────────
       const wRef = this.wordsRef();
       if (wRef) {
         const entries = Object.entries(words);
+        console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
+
         for (let i = 0; i < entries.length; i += BATCH) {
           const batch = db.batch();
           entries.slice(i, i + BATCH).forEach(([id, w]) => {
+            // BUG FIX #1 + #3 : utiliser les bons noms de champs (label, catKey, createdAt)
+            // BUG FIX #2 : propager updatedAt correctement
             batch.set(wRef.doc(String(id)), {
-              text:        w.text        ?? '',
-              occurrences: Array.isArray(w.occurrences) ? w.occurrences : [], // ✅ CORRIGÉ
-              category:    w.category    ?? '',
+              label:       w.label       ?? '',          // ✅ était w.text (undefined)
+              catKey:      w.catKey      ?? null,        // ✅ était w.category (undefined)
+              occurrences: Array.isArray(w.occurrences) ? w.occurrences : [],
               note:        w.note        ?? '',
               ankiDone:    w.ankiDone    ?? false,
-              addedAt:     w.addedAt     ?? now,
+              validity:    w.validity    ?? 'unknown',
+              createdAt:   w.createdAt   ?? now,         // ✅ était w.addedAt (undefined)
               updatedAt:   w.updatedAt   ?? now,
             }, { merge: true });
           });
           await batch.commit();
+          console.debug(`[Sync↑] Batch mots ${i}–${i + BATCH} commité ✓`);
         }
       }
 
+      // ── Tâches ────────────────────────────────────────────
       const tRef = this.tasksRef();
       if (tRef && tasks.length > 0) {
+        console.debug(`[Sync↑] ${tasks.length} tâche(s) à pousser`);
         for (let i = 0; i < tasks.length; i += BATCH) {
           const batch = db.batch();
           tasks.slice(i, i + BATCH).forEach(task => {
@@ -88,12 +106,16 @@ const CloudSync = {
               id:            task.id,
               title:         task.title         ?? '',
               note:          task.note          ?? '',
-              category:      task.category      ?? '',
+              cat:           task.cat           ?? '',  // ✅ champ correct (était task.category)
               dueDate:       task.dueDate        ?? '',
               done:          task.done           ?? false,
               doneAt:        task.doneAt         ?? null,
               recurType:     task.recurType      ?? 'once',
               recurDays:     task.recurDays      ?? [],
+              recurStart:    task.recurStart     ?? '',
+              recurEnd:      task.recurEnd       ?? '',
+              recurInterval: task.recurInterval  ?? 1,
+              deadline:      task.deadline       ?? '',
               history:       task.history        ?? {},
               reportHistory: task.reportHistory  ?? [],
               createdAt:     task.createdAt      ?? now,
@@ -101,23 +123,33 @@ const CloudSync = {
             }, { merge: true });
           });
           await batch.commit();
+          console.debug(`[Sync↑] Batch tâches ${i}–${i + BATCH} commité ✓`);
         }
       }
 
       const u = this.userRef();
       if (u) await u.set({ lastSync: Date.now(), appVersion: 'lexique-v6' }, { merge: true });
+
       this.showStatus('synced');
+      console.debug('[Sync↑] ✅ Push terminé');
     } catch (err) {
-      console.error('[Sync↑]', err);
+      console.error('[Sync↑] ❌ Erreur push :', err);
       this.showStatus('error');
     } finally {
       isSyncing = false;
     }
   },
 
+  // ── PULL ────────────────────────────────────────────────────
+
   async pullFromCloud() {
-    if (!fbReady || !db || !currentUid) return;
+    if (!fbReady || !db || !currentUid) {
+      console.debug('[Sync↓] Pull ignoré —', { fbReady, db: !!db, currentUid });
+      return;
+    }
     this.showStatus('syncing');
+    console.debug('[Sync↓] Début pull depuis Firestore…');
+
     try {
       const appState   = Storage.readState();
       const localWords = appState.words || {};
@@ -126,21 +158,26 @@ const CloudSync = {
         if (task.id) localTasks[String(task.id)] = task;
       });
 
+      // ── Mots ──────────────────────────────────────────────
       const wRef = this.wordsRef();
       if (wRef) {
         const snap = await wRef.get();
+        console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
         snap.forEach(doc => {
           const cloud = doc.data();
           const local = localWords[doc.id];
+          // Garde la version la plus récente (updatedAt)
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localWords[doc.id] = { ...local, ...cloud, id: doc.id };
           }
         });
       }
 
+      // ── Tâches ────────────────────────────────────────────
       const tRef = this.tasksRef();
       if (tRef) {
         const snap = await tRef.get();
+        console.debug(`[Sync↓] ${snap.size} tâche(s) reçues depuis Firestore`);
         snap.forEach(doc => {
           const cloud = doc.data();
           const local = localTasks[String(cloud.id)];
@@ -153,10 +190,12 @@ const CloudSync = {
       appState.words = localWords;
       appState.tasks = Object.values(localTasks);
       Storage.writeState(appState);
+
       this.showStatus('synced');
+      console.debug('[Sync↓] ✅ Pull terminé');
     } catch (err) {
       if (err.code === 'unavailable') this.showStatus('offline');
-      else { console.error('[Sync↓]', err); this.showStatus('error'); }
+      else { console.error('[Sync↓] ❌ Erreur pull :', err); this.showStatus('error'); }
     }
   },
 };
@@ -169,20 +208,28 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
 
 (function initFirebase() {
   try {
-    if (typeof firebase === 'undefined') return;
+    if (typeof firebase === 'undefined') {
+      console.warn('[Firebase] SDK non chargé — sync désactivé');
+      return;
+    }
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
+    console.debug('[Firebase] ✅ Firestore initialisé');
 
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         currentUid = user.uid;
         fbReady    = true;
+        console.debug('[Firebase] ✅ Auth anonyme OK — uid :', currentUid);
         CloudSync.pullFromCloud().then(() => {
           load();
           render(); renderTasks(); updateStats(); updateTaskStats();
         });
       } else {
-        firebase.auth().signInAnonymously().catch(console.error);
+        console.debug('[Firebase] Pas de session — connexion anonyme…');
+        firebase.auth().signInAnonymously().catch(err => {
+          console.error('[Firebase] signInAnonymously failed :', err);
+        });
       }
     });
   } catch (err) {

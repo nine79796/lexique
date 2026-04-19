@@ -24,6 +24,8 @@ async function addWord() {
   const label = inp.value.trim();
   if (!label) return;
 
+  console.debug('[addWord] Ajout :', label);
+
   const key    = label.toLowerCase().replace(/\s+/g, '_');
   const catKey = sel.value || null;
   const now    = ts();
@@ -32,11 +34,13 @@ async function addWord() {
     state.words[key] = {
       label,
       createdAt:   now,
+      updatedAt:   now,   // BUG FIX #2 : requis pour le merge cloud
       catKey,
       occurrences: [now],
       ankiDone:    false,
       validity:    'unknown',
     };
+    console.debug('[addWord] Nouveau mot créé :', key);
   } else {
     if (isMaxReached(state.words[key])) {
       notify('max', label);
@@ -44,7 +48,9 @@ async function addWord() {
       return;
     }
     state.words[key].occurrences.push(now);
+    state.words[key].updatedAt = now;   // BUG FIX #2 : mise à jour du timestamp
     if (catKey) state.words[key].catKey = catKey;
+    console.debug('[addWord] Occurrence ajoutée :', key, '→', state.words[key].occurrences.length, 'fois');
   }
 
   inp.value = '';
@@ -65,6 +71,7 @@ function clickWord(key) {
 
   const prev = w.occurrences.length;
   w.occurrences.push(ts());
+  w.updatedAt = ts();   // BUG FIX #2 : mise à jour du timestamp
   if (prev + 1 === ANKI_THRESHOLD) notify('anki', w.label);
 
   save(); updateStats(); render();
@@ -77,7 +84,8 @@ function deleteWord(key) {
 
 function markAnkiDone(key) {
   if (!state.words[key]) return;
-  state.words[key].ankiDone = true;
+  state.words[key].ankiDone  = true;
+  state.words[key].updatedAt = ts();  // BUG FIX #2 : mise à jour du timestamp
   save(); updateStats(); render();
 }
 
@@ -127,7 +135,8 @@ function renderValidationStrip(strip, word, result) {
   // Persist validity on the stored word
   const key = word.toLowerCase().replace(/\s+/g, '_');
   if (state.words[key]) {
-    state.words[key].validity = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    state.words[key].validity  = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
+    state.words[key].updatedAt = ts();  // BUG FIX #2 : on a modifié le mot
     save(); render();
   }
 }
