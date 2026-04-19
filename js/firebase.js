@@ -19,6 +19,7 @@ let currentUid = null;
 let isSyncing  = false;
 let fbReady    = false;
 let syncTimer  = null;
+let firstPull  = true;   // BUG FIX : le pull initial ne doit s'exécuter qu'une seule fois
 
 const CloudSync = {
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
@@ -72,6 +73,21 @@ const CloudSync = {
       if (wRef) {
         const entries = Object.entries(words);
         console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
+
+        // BUG FIX : supprimer dans Firestore les mots absents du state local.
+        // Sans ça, deleteWord() efface le mot en local mais Firestore le garde,
+        // et le pull suivant le réinjecte dans state.
+        const remoteSnap = await wRef.get();
+        const remoteDeletions = [];
+        remoteSnap.forEach(doc => {
+          if (!words[doc.id]) remoteDeletions.push(doc.id);
+        });
+        if (remoteDeletions.length) {
+          const delBatch = db.batch();
+          remoteDeletions.forEach(id => delBatch.delete(wRef.doc(id)));
+          await delBatch.commit();
+          console.debug(`[Sync↑] ${remoteDeletions.length} mot(s) supprimé(s) de Firestore ✓`);
+        }
 
         for (let i = 0; i < entries.length; i += BATCH) {
           const batch = db.batch();
@@ -165,6 +181,11 @@ const CloudSync = {
         console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
         snap.forEach(doc => {
           const cloud = doc.data();
+          // BUG FIX : ignorer les docs cloud sans label (cause des "undefined" dans l'UI)
+          if (!cloud.label) {
+            console.warn('[Sync↓] Doc ignoré — label manquant :', doc.id);
+            return;
+          }
           const local = localWords[doc.id];
           // Garde la version la plus récente (updatedAt)
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
@@ -221,6 +242,16 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
         currentUid = user.uid;
         fbReady    = true;
         console.debug('[Firebase] ✅ Auth anonyme OK — uid :', currentUid);
+
+        // BUG FIX : onAuthStateChanged se re-déclenche à chaque refresh token.
+        // Sans ce garde, un pull après une suppression recharge les données
+        // depuis Firestore et remet le mot supprimé dans state + localStorage.
+        if (!firstPull) {
+          console.debug('[Firebase] Re-auth ignoré — pas de pull (firstPull=false)');
+          return;
+        }
+        firstPull = false;
+
         CloudSync.pullFromCloud().then(() => {
           load();
           render(); renderTasks(); updateStats(); updateTaskStats();

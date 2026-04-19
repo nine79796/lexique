@@ -78,6 +78,7 @@ function clickWord(key) {
 }
 
 function deleteWord(key) {
+  if (!state.words[key]) return;  // BUG FIX : guard si déjà supprimé
   delete state.words[key];
   save(); updateStats(); render(); rebuildNgrams();
 }
