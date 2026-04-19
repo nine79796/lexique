@@ -77,6 +77,8 @@ function clickWord(key) {
   save(); updateStats(); render();
 }
 
+import { doc, deleteDoc } from "firebase/firestore";
+
 async function deleteWord(key) {
   if (!state.words[key]) return;
 
@@ -87,13 +89,10 @@ async function deleteWord(key) {
   render(); 
   rebuildNgrams();
 
-  // 2. Suppression Firestore (SANS condition online)
+  // 2. Suppression Firestore
   try {
-    const wRef = CloudSync.wordsRef();
-    if (wRef) {
-      await wRef.doc(String(key)).delete();
-      console.debug('[deleteWord] Firestore supprimé :', key);
-    }
+    await deleteDoc(doc(db, "words", String(key)));
+    console.debug('[deleteWord] Firestore supprimé :', key);
   } catch (err) {
     console.error('[deleteWord] erreur Firestore :', err);
   }
@@ -101,9 +100,13 @@ async function deleteWord(key) {
 
 function markAnkiDone(key) {
   if (!state.words[key]) return;
-  state.words[key].ankiDone  = true;
-  state.words[key].updatedAt = ts();  // BUG FIX #2 : mise à jour du timestamp
-  save(); updateStats(); render();
+
+  state.words[key].ankiDone = true;
+  state.words[key].updatedAt = Date.now(); // plus standard que ts()
+
+  save();
+  updateStats();
+  render();
 }
 
 // ── Wordnik validation ────────────────────────────────────────
