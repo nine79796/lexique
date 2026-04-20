@@ -86,58 +86,32 @@ function clickWord(key) {
 async function deleteWord(key) {
   if (!state.words[key]) return;
 
-  // Sauvegarde le label AVANT de supprimer (sinon state.words[key] est undefined)
-  const label = state.words[key].label;
-
   delete state.words[key];
   save();
   updateStats();
   render();
   rebuildNgrams();
 
-  console.debug('[deleteWord] Supprimé localement :', key, '—', label);
-
-  // Suppression Firestore avec retry si pas encore prêt
-  deleteFromFirestore(key);
+  try {
+    const wRef = CloudSync.wordsRef();
+    if (wRef) {
+      await wRef.doc(String(key)).delete();
+      console.debug('[deleteWord] Firestore supprimé :', key);
+    }
+  } catch (err) {
+    console.error('[deleteWord] erreur Firestore :', err);
+  }
 }
 
 function markAnkiDone(key) {
   if (!state.words[key]) return;
 
-  // Supprime le mot localement immédiatement
-  delete state.words[key];
+  state.words[key].ankiDone  = true;
+  state.words[key].updatedAt = Date.now();
+
   save();
   updateStats();
-  render();
-
-  console.debug('[markAnkiDone] Supprimé localement :', key);
-
-  // Suppression Firestore avec retry si pas encore prêt
-  deleteFromFirestore(key);
-}
-
-/**
- * Supprime un doc Firestore de manière robuste.
- * Réessaie toutes les 500ms pendant 10s si Firebase n'est pas encore prêt.
- */
-function deleteFromFirestore(key, attempts = 0) {
-  const MAX_ATTEMPTS = 20; // 10 secondes max
-  try {
-    const wRef = CloudSync.wordsRef();
-    if (wRef) {
-      wRef.doc(String(key)).delete()
-        .then(() => console.debug('[Firestore] Supprimé :', key))
-        .catch(err => console.error('[Firestore] Erreur suppression :', err));
-    } else if (attempts < MAX_ATTEMPTS) {
-      // Firebase pas encore prêt — on réessaie dans 500ms
-      console.debug('[Firestore] Pas encore prêt, retry dans 500ms (' + (attempts + 1) + '/' + MAX_ATTEMPTS + ')');
-      setTimeout(() => deleteFromFirestore(key, attempts + 1), 500);
-    } else {
-      console.warn('[Firestore] Abandon suppression après ' + MAX_ATTEMPTS + ' tentatives :', key);
-    }
-  } catch (err) {
-    console.error('[Firestore] Erreur deleteFromFirestore :', err);
-  }
+  refreshWordCard(key);
 }
 
 // ── Wordnik validation ────────────────────────────────────────

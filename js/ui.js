@@ -121,15 +121,11 @@ function render() {
   list.innerHTML = keys.map(key => renderWordCard(key)).join('');
 }
 
-// Met à jour une seule carte sans reconstruire toute la liste.
-// Fallback sur render() complet si la carte n'est pas trouvée dans le DOM
-// (sélecteur qui échoue, clé avec caractères spéciaux, etc.)
+// FIX : met à jour une seule carte sans reconstruire toute la liste
 function refreshWordCard(key) {
-  const safeKey  = CSS.escape(key);
-  const existing = document.querySelector(`[data-word-key="${safeKey}"]`);
+  const existing = document.querySelector(`[data-word-key="${key}"]`);
   if (!existing) {
-    // Carte absente du DOM → render complet pour être sûr
-    render();
+    // La carte n'est pas visible (filtre actif, etc.) — rien à faire
     return;
   }
   const tmp = document.createElement('div');
