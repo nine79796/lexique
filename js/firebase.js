@@ -179,19 +179,33 @@ const CloudSync = {
       if (wRef) {
         const snap = await wRef.get();
         console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
+        const ankiDeletions = [];
         snap.forEach(doc => {
           const cloud = doc.data();
-          // BUG FIX : ignorer les docs cloud sans label (cause des "undefined" dans l'UI)
           if (!cloud.label) {
-            console.warn('[Sync↓] Doc ignoré — label manquant :', doc.id);
+            console.warn('[Sync\u2193] Doc ignoré — label manquant :', doc.id);
+            return;
+          }
+          // Si ankiDone=true dans Firestore → supprimer localement et du cloud
+          if (cloud.ankiDone === true) {
+            delete localWords[doc.id];
+            ankiDeletions.push(doc.id);
+            console.debug('[Sync\u2193] Mot ankiDone supprimé :', doc.id);
             return;
           }
           const local = localWords[doc.id];
-          // Garde la version la plus récente (updatedAt)
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localWords[doc.id] = { ...local, ...cloud, id: doc.id };
           }
         });
+
+        // Nettoie Firestore pour éviter qu'ils reviennent au prochain pull
+        if (ankiDeletions.length) {
+          const delBatch = db.batch();
+          ankiDeletions.forEach(id => delBatch.delete(wRef.doc(id)));
+          await delBatch.commit();
+          console.debug('[Sync\u2193] ' + ankiDeletions.length + ' mot(s) ankiDone supprimé(s) de Firestore');
+        }
       }
 
       // ── Tâches ────────────────────────────────────────────

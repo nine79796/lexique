@@ -106,12 +106,23 @@ async function deleteWord(key) {
 function markAnkiDone(key) {
   if (!state.words[key]) return;
 
-  state.words[key].ankiDone  = true;
-  state.words[key].updatedAt = Date.now();
-
+  // Supprime le mot localement immédiatement
+  delete state.words[key];
   save();
   updateStats();
-  refreshWordCard(key);
+  render();
+
+  // Supprime aussi dans Firestore
+  try {
+    const wRef = CloudSync.wordsRef();
+    if (wRef) {
+      wRef.doc(String(key)).delete()
+        .then(() => console.debug('[markAnkiDone] Firestore supprimé :', key))
+        .catch(err => console.error('[markAnkiDone] erreur Firestore :', err));
+    }
+  } catch (err) {
+    console.error('[markAnkiDone] erreur :', err);
+  }
 }
 
 // ── Wordnik validation ────────────────────────────────────────
