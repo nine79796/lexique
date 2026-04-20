@@ -7,7 +7,8 @@
 // ── Helpers ───────────────────────────────────────────────────
 
 const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
-const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS;
+// FIX : était >= MAX_CLICKS, ce qui bloquait le 3e clic avant qu'il soit enregistré
+const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length > MAX_CLICKS;
 
 // ── Category colour ───────────────────────────────────────────
 
@@ -34,7 +35,7 @@ async function addWord() {
     state.words[key] = {
       label,
       createdAt:   now,
-      updatedAt:   now,   // BUG FIX #2 : requis pour le merge cloud
+      updatedAt:   now,
       catKey,
       occurrences: [now],
       ankiDone:    false,
@@ -48,7 +49,7 @@ async function addWord() {
       return;
     }
     state.words[key].occurrences.push(now);
-    state.words[key].updatedAt = now;   // BUG FIX #2 : mise à jour du timestamp
+    state.words[key].updatedAt = now;
     if (catKey) state.words[key].catKey = catKey;
     console.debug('[addWord] Occurrence ajoutée :', key, '→', state.words[key].occurrences.length, 'fois');
   }
@@ -69,27 +70,28 @@ function clickWord(key) {
   if (!w) return;
   if (isMaxReached(w)) { notify('max', w.label); return; }
 
-  const prev = w.occurrences.length;
-  w.occurrences.push(ts());
-  w.updatedAt = ts();   // BUG FIX #2 : mise à jour du timestamp
-  if (prev + 1 === ANKI_THRESHOLD) notify('anki', w.label);
+  const now = Date.now();
+  w.occurrences.push(now);
+  w.updatedAt = now;
 
-  save(); updateStats(); render();
+  const count = w.occurrences.length;
+  if (count === ANKI_THRESHOLD) notify('anki', w.label);
+
+  save();
+  updateStats();
+  // FIX : on ne recrée QUE la carte du mot cliqué, pas tout le DOM
+  refreshWordCard(key);
 }
-
-import { doc, deleteDoc } from "firebase/firestore";
 
 async function deleteWord(key) {
   if (!state.words[key]) return;
 
-  // 1. Suppression locale immédiate
   delete state.words[key];
-  save(); 
-  updateStats(); 
-  render(); 
+  save();
+  updateStats();
+  render();
   rebuildNgrams();
 
-  // 2. Suppression Firestore (SANS condition online)
   try {
     const wRef = CloudSync.wordsRef();
     if (wRef) {
@@ -104,12 +106,12 @@ async function deleteWord(key) {
 function markAnkiDone(key) {
   if (!state.words[key]) return;
 
-  state.words[key].ankiDone = true;
-  state.words[key].updatedAt = Date.now(); // plus standard que ts()
+  state.words[key].ankiDone  = true;
+  state.words[key].updatedAt = Date.now();
 
   save();
   updateStats();
-  render();
+  refreshWordCard(key);
 }
 
 // ── Wordnik validation ────────────────────────────────────────
@@ -130,7 +132,7 @@ async function checkWordnik(word) {
 
 async function validateWord(word) {
   const strip = document.getElementById('validationStrip');
-  if (!word)                              { strip.innerHTML = ''; return; }
+  if (!word)                               { strip.innerHTML = ''; return; }
   if (validationCache[word] !== undefined) {
     renderValidationStrip(strip, word, validationCache[word]);
     return;
@@ -155,12 +157,12 @@ function renderValidationStrip(strip, word, result) {
     strip.innerHTML = `<span class="val-badge ${cls}">${icon} Wordnik · ${label}</span>`;
   }
 
-  // Persist validity on the stored word
   const key = word.toLowerCase().replace(/\s+/g, '_');
   if (state.words[key]) {
     state.words[key].validity  = result === true ? 'valid' : result === false ? 'invalid' : 'unknown';
-    state.words[key].updatedAt = ts();  // BUG FIX #2 : on a modifié le mot
-    save(); render();
+    state.words[key].updatedAt = ts();
+    save();
+    refreshWordCard(key);
   }
 }
 

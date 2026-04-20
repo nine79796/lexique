@@ -121,6 +121,18 @@ function render() {
   list.innerHTML = keys.map(key => renderWordCard(key)).join('');
 }
 
+// FIX : met à jour une seule carte sans reconstruire toute la liste
+function refreshWordCard(key) {
+  const existing = document.querySelector(`[data-word-key="${key}"]`);
+  if (!existing) {
+    // La carte n'est pas visible (filtre actif, etc.) — rien à faire
+    return;
+  }
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderWordCard(key);
+  existing.replaceWith(tmp.firstElementChild);
+}
+
 function renderWordCard(key) {
   const w        = state.words[key];
   const anki     = isAnkiReady(w);
@@ -129,18 +141,20 @@ function renderWordCard(key) {
   const col      = w.catKey ? getCatColor(w.catKey) : null;
   const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : null;
 
-  const badge     = catLabel && col
+  const badge      = catLabel && col
     ? `<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${escHtml(catLabel)}</span>` : '';
-  const ankiBadge = anki ? `<span class="anki-badge">Anki</span>` : '';
-  const ankiBtn   = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
-  const maxBadge  = maxed && !done ? `<span class="val-badge invalid" style="font-size:9px">${t('words.max_occ')}</span>` : '';
-  const dates     = w.occurrences.map(occ => `<span class="date-tag" title="${fmtFull(occ)}">${fmtShort(occ)}</span>`).join('');
+  const ankiBadge  = anki ? `<span class="anki-badge">Anki</span>` : '';
+  const ankiBtn    = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
+  const maxBadge   = maxed && !done ? `<span class="val-badge invalid" style="font-size:9px">${t('words.max_occ')}</span>` : '';
+  const dates      = w.occurrences.map(occ => `<span class="date-tag" title="${fmtFull(occ)}">${fmtShort(occ)}</span>`).join('');
   const validBadge = w.validity === 'valid'
     ? `<span class="word-valid-badge valid">✓</span>`
     : w.validity === 'invalid'
     ? `<span class="word-valid-badge invalid">✗</span>` : '';
 
-  return `<div class="word-card${anki ? ' anki-ready' : ''}${done ? ' anki-done' : ''}${maxed && !done ? ' max-reached' : ''}">
+  // FIX : data-word-key permet à refreshWordCard() de cibler cette carte
+  return `<div class="word-card${anki ? ' anki-ready' : ''}${done ? ' anki-done' : ''}${maxed && !done ? ' max-reached' : ''}"
+               data-word-key="${key}">
     <div class="word-card-top">
       <button class="word-btn" onclick="clickWord('${key}')" ${maxed ? 'disabled' : ''}>${escHtml(w.label)}</button>
       ${badge}${validBadge}${maxBadge}${ankiBadge}
