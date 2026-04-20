@@ -19,6 +19,7 @@ function toggleTaskDone(id, dateStr) {
     task.history[d] = current === 'done' ? null : 'done';
     if (task.history[d] === null) delete task.history[d];
   }
+  task.updatedAt = ts();
   save(); renderTasks(); updateTaskStats();
 }
 
@@ -42,6 +43,7 @@ function autoReportTasks() {
         task.reportHistory.push(task.dueDate);
         task.reportCount   = (task.reportCount || 0) + 1;
         task.dueDate       = today;
+        task.updatedAt     = ts();
         changed = true;
       }
     } else {
@@ -49,13 +51,14 @@ function autoReportTasks() {
         if (!task.history[d]) {
           task.history[d]  = 'missed';
           task.reportCount = (task.reportCount || 0) + 1;
+          task.updatedAt   = ts();
           changed = true;
         }
       });
     }
   });
 
-  if (changed) { save(); }
+  if (changed) save();
 }
 
 // ── Task modal ────────────────────────────────────────────────
@@ -64,8 +67,8 @@ function openTaskModal(editId, defaultType) {
   modalEditId = editId;
   const today = todayStr();
 
-  document.getElementById('modalTitle').textContent   = editId ? t('modal.edit_task')   : t('modal.new_task');
-  document.getElementById('modalSaveBtn').textContent = editId ? t('modal.save_task')    : t('modal.create_task');
+  document.getElementById('modalTitle').textContent   = editId ? t('modal.edit_task')  : t('modal.new_task');
+  document.getElementById('modalSaveBtn').textContent = editId ? t('modal.save_task')   : t('modal.create_task');
 
   if (editId) {
     const task = state.tasks.find(x => x.id === editId);
@@ -142,7 +145,6 @@ function saveTaskFromModal() {
     const picker = document.querySelector('.day-picker');
     if (picker) {
       picker.classList.add('day-picker--error');
-      // Affiche un message d'erreur inline sous le picker
       let errMsg = picker.nextElementSibling;
       if (!errMsg || !errMsg.classList.contains('day-picker-error-msg')) {
         errMsg = document.createElement('div');
@@ -178,11 +180,12 @@ function saveTaskFromModal() {
     state.tasks.push(task);
   }
 
-  task.title    = title;
-  task.desc     = document.getElementById('mTaskDesc').value.trim();
-  task.cat      = document.getElementById('mTaskCat').value;
-  task.deadline = document.getElementById('mDeadline').value || null;
-  task.recurType = modalRecurType;
+  task.title      = title;
+  task.desc       = document.getElementById('mTaskDesc').value.trim();
+  task.cat        = document.getElementById('mTaskCat').value;
+  task.deadline   = document.getElementById('mDeadline').value || null;
+  task.recurType  = modalRecurType;
+  task.updatedAt  = ts();
 
   switch (modalRecurType) {
     case 'once':
@@ -232,15 +235,21 @@ function updateTaskStats() {
     return task.history[today] === 'done';
   }).length;
 
+  // FIX: the previous logic counted recurring tasks that were active-today-but-not-yet-done
+  // as "late", which was wrong — those are simply pending for the current day.
+  // "Late" for a once task = past due date and not done.
+  // "Late" for a recurring task = has missed entries in history (i.e. past days marked missed).
   const lateCount = state.tasks.filter(task => {
-    if (task.recurType === 'once') return !task.done && task.dueDate < today;
-    return isTaskActiveOnDate(task, today) && task.history[today] !== 'done';
+    if (task.recurType === 'once') {
+      return !task.done && task.dueDate < today;
+    }
+    return Object.entries(task.history || {}).some(([d, v]) => d < today && v === 'missed');
   }).length;
 
   const recurActive = state.tasks.filter(task =>
     task.recurType !== 'once'
-    && (!task.recurEnd || task.recurEnd   >= today)
-    && (!task.deadline || task.deadline   >= today)
+    && (!task.recurEnd  || task.recurEnd  >= today)
+    && (!task.deadline  || task.deadline  >= today)
   ).length;
 
   const allDue  = state.tasks.reduce((a, task) => a + getPastDueDates(task).length, 0);
@@ -329,7 +338,7 @@ function buildTaskItems(today) {
         if (i < 0 && done) continue;
         items.push({
           task, id: task.id + '_' + d, date: d,
-          done, isLate: !done && d <= today, occurrence: occ,
+          done, isLate: !done && d < today, occurrence: occ,
         });
       }
     }
@@ -418,7 +427,6 @@ function recurTypeLabel(task) {
     return '↻ ' + (task.recurDays || []).sort().map(d => t('day.' + d)).join('/');
   }
   if (task.recurType === 'interval') {
-    // t('modal.days') = "jours" / "days" / "días" — on prend la 1re lettre
     return `↻ /${task.recurInterval}${t('modal.days').slice(0, 1)}`;
   }
   return '';

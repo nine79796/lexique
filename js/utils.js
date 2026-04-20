@@ -9,26 +9,26 @@ const DateUtils = {
   todayStr() { return this.fmtDay(Date.now()); },
 
   /** Format timestamp as YYYY-MM-DD */
-  fmtDay(ts) {
-    const d = new Date(ts);
+  fmtDay(timestamp) {
+    const d = new Date(timestamp);
     return d.getFullYear() + '-'
       + String(d.getMonth() + 1).padStart(2, '0') + '-'
       + String(d.getDate()).padStart(2, '0');
   },
 
   /** Format timestamp as DD/MM/YYYY */
-  fmtShort(ts) {
-    const d = new Date(ts);
+  fmtShort(timestamp) {
+    const d = new Date(timestamp);
     return String(d.getDate()).padStart(2, '0') + '/'
       + String(d.getMonth() + 1).padStart(2, '0') + '/'
       + d.getFullYear();
   },
 
   /** Format timestamp as DD/MM/YYYY HH:MM */
-  fmtFull(ts) {
-    return this.fmtShort(ts) + ' '
-      + String(new Date(ts).getHours()).padStart(2, '0') + ':'
-      + String(new Date(ts).getMinutes()).padStart(2, '0');
+  fmtFull(timestamp) {
+    return this.fmtShort(timestamp) + ' '
+      + String(new Date(timestamp).getHours()).padStart(2, '0') + ':'
+      + String(new Date(timestamp).getMinutes()).padStart(2, '0');
   },
 
   /** Add N days to a YYYY-MM-DD string, return YYYY-MM-DD */
@@ -55,20 +55,23 @@ const DateUtils = {
   },
 };
 
-// Convenience aliases kept for call-site compatibility
-const ts            = ()         => DateUtils.ts();
-const todayStr      = ()         => DateUtils.todayStr();
-const fmtDay        = ts         => DateUtils.fmtDay(ts);
-const fmtShort      = ts         => DateUtils.fmtShort(ts);
-const fmtFull       = ts         => DateUtils.fmtFull(ts);
-const addDays       = (d, n)     => DateUtils.addDays(d, n);
-const daysBetween   = (a, b)     => DateUtils.daysBetween(a, b);
-const getDowFromStr = d          => DateUtils.getDow(d);
+// FIX: Convenience aliases — renamed the parameter in fmtDay/fmtShort/fmtFull
+// aliases from `ts` to `stamp` to avoid shadowing the ts() function in the
+// enclosing scope, which caused confusing behaviour when aliases were called
+// in contexts where `ts` was also in scope.
+const ts            = ()            => DateUtils.ts();
+const todayStr      = ()            => DateUtils.todayStr();
+const fmtDay        = stamp         => DateUtils.fmtDay(stamp);
+const fmtShort      = stamp         => DateUtils.fmtShort(stamp);
+const fmtFull       = stamp         => DateUtils.fmtFull(stamp);
+const addDays       = (d, n)        => DateUtils.addDays(d, n);
+const daysBetween   = (a, b)        => DateUtils.daysBetween(a, b);
+const getDowFromStr = d             => DateUtils.getDow(d);
 
 /** Safe HTML escaping — prevents XSS in user-supplied strings. */
 function escHtml(s) {
   return String(s)
-    .replace(/&/g, '&amp;')
+    .replace(/&/g,  '&amp;')
     .replace(/</g,  '&lt;')
     .replace(/>/g,  '&gt;')
     .replace(/"/g,  '&quot;');

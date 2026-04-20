@@ -3,6 +3,11 @@
 // ════════════════════════════════════════════════════════════════
 //  FIREBASE CLOUD SYNC
 //  ⚠️  Ne pas modifier sans tester la synchronisation complète.
+//
+//  SÉCURITÉ : La clé API Firebase ci-dessous est publique par nature
+//  (elle identifie le projet côté client) mais les règles Firestore
+//  doivent impérativement restreindre l'accès par UID.
+//  Ne pas commettre de clé de service (Admin SDK) dans ce fichier.
 // ════════════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
@@ -19,7 +24,7 @@ let currentUid = null;
 let isSyncing  = false;
 let fbReady    = false;
 let syncTimer  = null;
-let firstPull  = true;   // BUG FIX : le pull initial ne doit s'exécuter qu'une seule fois
+let firstPull  = true;
 
 const CloudSync = {
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
@@ -36,9 +41,9 @@ const CloudSync = {
       error:   { icon: '⚠', color: 'var(--danger)',   title: t('sync.error')   },
     };
     const c = map[status] || { icon: '', color: '', title: '' };
-    badge.textContent  = c.icon;
-    badge.style.color  = c.color;
-    badge.title        = c.title;
+    badge.textContent = c.icon;
+    badge.style.color = c.color;
+    badge.title       = c.title;
   },
 
   schedule(delayMs = 2000) {
@@ -53,7 +58,6 @@ const CloudSync = {
 
   async pushToCloud() {
     if (!fbReady || !db || !currentUid || isSyncing) {
-      // BUG FIX #4 : log de garde pour diagnostiquer les push avortés
       console.debug('[Sync↑] Push ignoré —', { fbReady, db: !!db, currentUid, isSyncing });
       return;
     }
@@ -74,9 +78,7 @@ const CloudSync = {
         const entries = Object.entries(words);
         console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
 
-        // BUG FIX : supprimer dans Firestore les mots absents du state local.
-        // Sans ça, deleteWord() efface le mot en local mais Firestore le garde,
-        // et le pull suivant le réinjecte dans state.
+        // Supprimer dans Firestore les mots absents du state local
         const remoteSnap = await wRef.get();
         const remoteDeletions = [];
         remoteSnap.forEach(doc => {
@@ -92,16 +94,14 @@ const CloudSync = {
         for (let i = 0; i < entries.length; i += BATCH) {
           const batch = db.batch();
           entries.slice(i, i + BATCH).forEach(([id, w]) => {
-            // BUG FIX #1 + #3 : utiliser les bons noms de champs (label, catKey, createdAt)
-            // BUG FIX #2 : propager updatedAt correctement
             batch.set(wRef.doc(String(id)), {
-              label:       w.label       ?? '',          // ✅ était w.text (undefined)
-              catKey:      w.catKey      ?? null,        // ✅ était w.category (undefined)
+              label:       w.label       ?? '',
+              catKey:      w.catKey      ?? null,
               occurrences: Array.isArray(w.occurrences) ? w.occurrences : [],
               note:        w.note        ?? '',
               ankiDone:    w.ankiDone    ?? false,
               validity:    w.validity    ?? 'unknown',
-              createdAt:   w.createdAt   ?? now,         // ✅ était w.addedAt (undefined)
+              createdAt:   w.createdAt   ?? now,
               updatedAt:   w.updatedAt   ?? now,
             }, { merge: true });
           });
@@ -121,8 +121,9 @@ const CloudSync = {
             batch.set(tRef.doc(String(task.id)), {
               id:            task.id,
               title:         task.title         ?? '',
-              note:          task.note          ?? '',
-              cat:           task.cat           ?? '',  // ✅ champ correct (était task.category)
+              // FIX: field was `task.note` but tasks.js uses `task.desc` — aligned to `desc`
+              desc:          task.desc          ?? '',
+              cat:           task.cat           ?? '',
               dueDate:       task.dueDate        ?? '',
               done:          task.done           ?? false,
               doneAt:        task.doneAt         ?? null,
@@ -134,6 +135,7 @@ const CloudSync = {
               deadline:      task.deadline       ?? '',
               history:       task.history        ?? {},
               reportHistory: task.reportHistory  ?? [],
+              reportCount:   task.reportCount    ?? 0,
               createdAt:     task.createdAt      ?? now,
               updatedAt:     task.updatedAt      ?? now,
             }, { merge: true });
@@ -181,13 +183,11 @@ const CloudSync = {
         console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
         snap.forEach(doc => {
           const cloud = doc.data();
-          // BUG FIX : ignorer les docs cloud sans label (cause des "undefined" dans l'UI)
           if (!cloud.label) {
             console.warn('[Sync↓] Doc ignoré — label manquant :', doc.id);
             return;
           }
           const local = localWords[doc.id];
-          // Garde la version la plus récente (updatedAt)
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localWords[doc.id] = { ...local, ...cloud, id: doc.id };
           }
@@ -243,9 +243,8 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
         fbReady    = true;
         console.debug('[Firebase] ✅ Auth anonyme OK — uid :', currentUid);
 
-        // BUG FIX : onAuthStateChanged se re-déclenche à chaque refresh token.
-        // Sans ce garde, un pull après une suppression recharge les données
-        // depuis Firestore et remet le mot supprimé dans state + localStorage.
+        // Guard: onAuthStateChanged re-fires on every token refresh.
+        // Without this, a pull after a deletion would restore deleted data.
         if (!firstPull) {
           console.debug('[Firebase] Re-auth ignoré — pas de pull (firstPull=false)');
           return;

@@ -75,18 +75,23 @@ function save() {
 // ── Migration ─────────────────────────────────────────────────
 
 function migrate() {
+  // FIX: track whether anything actually changed so we don't
+  // trigger an unnecessary save() (and cloud sync) on every boot.
+  let changed = false;
+
   // Carry forward data from older storage keys
   ['lexique_v5', 'lexique_v4'].forEach(key => {
     try {
       const raw = localStorage.getItem(key);
       if (raw && !localStorage.getItem(key + '_migrated')) {
         const old = JSON.parse(raw);
-        if (old.words)      Object.assign(state.words,      old.words);
-        if (old.categories) Object.assign(state.categories, old.categories);
+        if (old.words)      { Object.assign(state.words,      old.words);      changed = true; }
+        if (old.categories) { Object.assign(state.categories, old.categories); changed = true; }
         if (old.tasks) {
           state.tasks.push(
             ...old.tasks.filter(t => !state.tasks.find(x => x.id === t.id))
           );
+          changed = true;
         }
         localStorage.setItem(key + '_migrated', '1');
       }
@@ -95,20 +100,19 @@ function migrate() {
 
   // Ensure all words have required fields
   Object.values(state.words).forEach(w => {
-    w.validity ??= 'unknown';
-    w.ankiDone ??= false;
-    // Guard: occurrences must always be an array
-    if (!Array.isArray(w.occurrences)) w.occurrences = [];
+    if (w.validity === undefined)  { w.validity  = 'unknown'; changed = true; }
+    if (w.ankiDone === undefined)  { w.ankiDone  = false;     changed = true; }
+    if (!Array.isArray(w.occurrences)) { w.occurrences = [];  changed = true; }
   });
 
   // Ensure all tasks have required fields
   state.tasks.forEach(task => {
-    task.id            ??= 'task_' + Math.random().toString(36).slice(2);
-    task.recurType     ??= 'once';
-    task.reportHistory ??= [];
-    task.reportCount   ??= 0;
-    task.history       ??= {};
+    if (!task.id)                    { task.id            = 'task_' + Math.random().toString(36).slice(2); changed = true; }
+    if (!task.recurType)             { task.recurType     = 'once'; changed = true; }
+    if (!task.reportHistory)         { task.reportHistory = [];     changed = true; }
+    if (task.reportCount === undefined) { task.reportCount = 0;     changed = true; }
+    if (!task.history)               { task.history       = {};     changed = true; }
   });
 
-  save();
+  if (changed) save();
 }
