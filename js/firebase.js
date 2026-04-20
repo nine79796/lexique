@@ -253,8 +253,14 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
         firstPull = false;
 
         CloudSync.pullFromCloud().then(() => {
+          // FIX : load() relit le localStorage (source de vérité) avant render.
+          // Le setTimeout(50ms) laisse les refreshWordCard() en cours se terminer
+          // avant que le render() global ne reconstruise toute la liste —
+          // ce qui évitait que le badge Anki disparaisse juste après être apparu.
           load();
-          render(); renderTasks(); updateStats(); updateTaskStats();
+          setTimeout(() => {
+            render(); renderTasks(); updateStats(); updateTaskStats();
+          }, 50);
         });
       } else {
         console.debug('[Firebase] Pas de session — connexion anonyme…');
