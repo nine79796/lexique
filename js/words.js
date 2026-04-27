@@ -79,8 +79,18 @@ function clickWord(key) {
 
   save();
   updateStats();
-  // FIX : on ne recrée QUE la carte du mot cliqué, pas tout le DOM
-  refreshWordCard(key);
+
+  // Push immédiat vers Firestore pour éviter qu'un pull ultérieur
+  // écrase le clic avec une version moins récente
+  if (navigator.onLine) CloudSync.schedule(300);
+
+  // Si on vient d'atteindre le seuil Anki ou le max, on force un render()
+  // complet car la carte change d'apparence (badge, bouton désactivé, etc.)
+  if (count === ANKI_THRESHOLD || count === MAX_CLICKS || count > MAX_CLICKS) {
+    render();
+  } else {
+    refreshWordCard(key);
+  }
 }
 
 async function deleteWord(key) {
