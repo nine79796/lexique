@@ -6,7 +6,12 @@
 
 const ANKI_THRESHOLD = 3;
 const MAX_CLICKS     = 3;
-const WORDNIK_API_KEY = 'VOTRE_CLE_WORDNIK'; // TODO: replace with env var or config
+// La clé est injectée par /config.js (généré par Vercel au build, jamais commité).
+// En local : créer un fichier config.js à la racine contenant :
+//   const __WORDNIK_KEY__ = 'ta_clé_ici';
+const WORDNIK_API_KEY = (typeof __WORDNIK_KEY__ !== 'undefined' && __WORDNIK_KEY__)
+  ? __WORDNIK_KEY__
+  : '';
 
 /** Colour palette for user-defined word categories */
 const PALETTE = [
