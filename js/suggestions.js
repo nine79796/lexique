@@ -111,10 +111,32 @@ function getNgramSuggestions(prefix, max) {
     .map(([text]) => ({ text, source: 'ngram' }));
 }
 
-function mergeSuggestions(hist, ngram, max) {
+/**
+ * Fetches autocomplete suggestions from Wordnik.
+ * Only triggered when the active language is English and the API key is set.
+ */
+async function getWordnikSuggestions(prefix, max) {
+  if (!WORDNIK_API_KEY || !prefix || prefix.length < 3) return [];
+  if (typeof currentLang !== 'undefined' && currentLang !== 'en') return [];
+  try {
+    const res = await fetch(
+      `https://api.wordnik.com/v4/words.json/search/${encodeURIComponent(prefix)}?includePartOfSpeech=noun,verb,adjective,adverb&limit=${max}&api_key=${WORDNIK_API_KEY}`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.searchResults || [])
+      .map(r => r.word)
+      .filter(w => w && w.toLowerCase().startsWith(prefix.toLowerCase()) && w.toLowerCase() !== prefix.toLowerCase())
+      .slice(0, max)
+      .map(text => ({ text: text.toLowerCase(), source: 'wordnik' }));
+  } catch { return []; }
+}
+
+function mergeSuggestions(hist, ngram, wordnik, max) {
   const seen = new Set();
   const out  = [];
-  for (const s of [...hist, ...ngram]) {
+  for (const s of [...hist, ...ngram, ...wordnik]) {
     const key = s.text.toLowerCase();
     if (!seen.has(key)) { seen.add(key); out.push(s); }
     if (out.length >= max) break;
@@ -125,11 +147,39 @@ function mergeSuggestions(hist, ngram, max) {
 function computeSuggestions(text) {
   const { current } = getTokenContext(text);
   if (current.length < suggPrefs.minChars) return [];
+  // Wordnik est appelé de façon asynchrone séparément — ici on retourne
+  // uniquement les sources locales pour un affichage immédiat.
   return mergeSuggestions(
     getHistorySuggestions(current, suggPrefs.maxItems),
     getNgramSuggestions(current,   suggPrefs.maxItems),
+    [],
     suggPrefs.maxItems,
   );
+}
+
+/**
+ * Version asynchrone : affiche d'abord les suggestions locales,
+ * puis enrichit avec Wordnik si la langue est l'anglais.
+ */
+async function computeSuggestionsAsync(text, targetEl) {
+  const { current } = getTokenContext(text);
+  if (current.length < suggPrefs.minChars) { hideSuggestions(); return; }
+
+  // 1. Affichage immédiat des sources locales
+  const local = mergeSuggestions(
+    getHistorySuggestions(current, suggPrefs.maxItems),
+    getNgramSuggestions(current,   suggPrefs.maxItems),
+    [],
+    suggPrefs.maxItems,
+  );
+  if (local.length) showSuggestions(local, targetEl);
+
+  // 2. Enrichissement Wordnik en arrière-plan
+  const wnik = await getWordnikSuggestions(current, suggPrefs.maxItems);
+  if (!wnik.length) return;
+
+  const merged = mergeSuggestions(local, [], wnik, suggPrefs.maxItems);
+  showSuggestions(merged, targetEl);
 }
 
 // ── Suggestions UI ────────────────────────────────────────────
@@ -161,9 +211,9 @@ function showSuggestions(items, targetEl) {
          role="option"
          onmousedown="acceptSuggestion(${i})"
          onmouseenter="setSuggActive(${i})">
-      <span class="sugg-icon">${s.source === 'hist' ? '⏱' : '◦'}</span>
+      <span class="sugg-icon">${s.source === 'hist' ? '⏱' : s.source === 'wordnik' ? '📖' : '◦'}</span>
       <span class="sugg-text">${escHtml(s.text)}</span>
-      <span class="sugg-source src-${s.source}">${s.source === 'hist' ? 'hist' : 'auto'}</span>
+      <span class="sugg-source src-${s.source}">${s.source === 'hist' ? 'hist' : s.source === 'wordnik' ? 'wordnik' : 'auto'}</span>
     </div>`).join('');
 
   suggContainer.classList.add('visible');
@@ -229,7 +279,7 @@ function attachSuggestions() {
       suggTarget = el;
       const val  = el.value;
       // N-gram index is only rebuilt on word add/delete, not here
-      suggTimer  = setTimeout(() => showSuggestions(computeSuggestions(val), el), 180);
+      suggTimer  = setTimeout(() => computeSuggestionsAsync(val, el), 180);
     });
     el.addEventListener('keydown', e => {
       if (!suggList.length) return;
