@@ -8,7 +8,7 @@
 
 const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
 // FIX : était >= MAX_CLICKS, ce qui bloquait le 3e clic avant qu'il soit enregistré
-const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length > MAX_CLICKS;
+const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS;
 
 // ── Category colour ───────────────────────────────────────────
 
@@ -84,9 +84,9 @@ function clickWord(key) {
   // écrase le clic avec une version moins récente
   if (navigator.onLine) CloudSync.schedule(300);
 
-  // Si on vient d'atteindre le seuil Anki ou le max, on force un render()
-  // complet car la carte change d'apparence (badge, bouton désactivé, etc.)
-  if (count === ANKI_THRESHOLD || count === MAX_CLICKS || count > MAX_CLICKS) {
+  // À partir du seuil Anki, on force render() complet car
+  // la carte change d'apparence (badge Anki, bouton désactivé)
+  if (count >= ANKI_THRESHOLD) {
     render();
   } else {
     refreshWordCard(key);
