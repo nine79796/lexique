@@ -39,6 +39,7 @@ const TRANSLATIONS = {
     'words.wordnik_na':          'Wordnik: N/D',
     'words.checking':            'Wordnik…',
     'words.offline':             'Hors ligne',
+    'words.undo_click':          'Annuler le clic',
     'revision.words_today':      'Mots du jour',
     'revision.tasks_today':      'Tâches du jour',
     'revision.recurring':        'Récurrentes',
@@ -183,7 +184,8 @@ const TRANSLATIONS = {
     'words.wordnik_na':          'Wordnik: N/A',
     'words.checking':            'Wordnik…',
     'words.offline':             'Offline',
-    'revision.words_today':      'Words today',
+    'words.undo_click':          'Undo click',
+    'revision.words_today':
     'revision.tasks_today':      'Tasks today',
     'revision.recurring':        'Recurring',
     'revision.late':             'Late',
@@ -327,7 +329,8 @@ const TRANSLATIONS = {
     'words.wordnik_na':          'Wordnik: N/D',
     'words.checking':            'Wordnik…',
     'words.offline':             'Sin conexión',
-    'revision.words_today':      'Palabras de hoy',
+    'words.undo_click':          'Deshacer clic',
+    'revision.words_today':
     'revision.tasks_today':      'Tareas de hoy',
     'revision.recurring':        'Recurrentes',
     'revision.late':             'Atrasadas',

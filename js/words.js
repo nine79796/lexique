@@ -7,8 +7,8 @@
 // ── Helpers ───────────────────────────────────────────────────
 
 const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
-// FIX : était >= MAX_CLICKS, ce qui bloquait le 3e clic avant qu'il soit enregistré
-const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS;
+// Un mot ankiDone ne peut plus être bloqué par MAX_CLICKS — il peut continuer à être rencontré
+const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS && !w.ankiDone;
 
 // ── Category colour ───────────────────────────────────────────
 
@@ -18,6 +18,32 @@ function getCatColor(key) {
 }
 
 // ── CRUD ──────────────────────────────────────────────────────
+
+/**
+ * Logique centrale d'enregistrement d'une occurrence.
+ * Utilisée par addWord() et clickWord() pour éviter la duplication.
+ * Retourne false si le clic est bloqué (max atteint), true sinon.
+ */
+function recordOccurrence(key) {
+  const w = state.words[key];
+  if (!w) return false;
+
+  if (isMaxReached(w)) {
+    notify('max', w.label);
+    return false;
+  }
+
+  // Utilise un timestamp normalisé à midi pour éviter les dérives
+  // entre fuseaux horaires lors de l'affichage par jour
+  const now = Date.now();
+  w.occurrences.push(now);
+  w.updatedAt = now;
+
+  const count = w.occurrences.length;
+  if (count === ANKI_THRESHOLD) notify('anki', w.label);
+
+  return true;
+}
 
 async function addWord() {
   const inp   = document.getElementById('wordInput');
@@ -37,22 +63,19 @@ async function addWord() {
       createdAt:   now,
       updatedAt:   now,
       catKey,
-      occurrences: [now],
+      occurrences: [],
       ankiDone:    false,
       validity:    'unknown',
     };
     console.debug('[addWord] Nouveau mot créé :', key);
   } else {
-    if (isMaxReached(state.words[key])) {
-      notify('max', label);
-      inp.value = '';
-      return;
-    }
-    state.words[key].occurrences.push(now);
-    state.words[key].updatedAt = now;
     if (catKey) state.words[key].catKey = catKey;
-    console.debug('[addWord] Occurrence ajoutée :', key, '→', state.words[key].occurrences.length, 'fois');
   }
+
+  const ok = recordOccurrence(key);
+  if (!ok) { inp.value = ''; return; }
+
+  console.debug('[addWord] Occurrence ajoutée :', key, '→', state.words[key].occurrences.length, 'fois');
 
   inp.value = '';
   document.getElementById('validationStrip').innerHTML = '';
@@ -61,21 +84,17 @@ async function addWord() {
   render();
   rebuildNgrams();
 
-  if (state.words[key].occurrences.length === ANKI_THRESHOLD) notify('anki', label);
   if (navigator.onLine) await validateWord(label);
 }
 
 function clickWord(key) {
   const w = state.words[key];
   if (!w) return;
-  if (isMaxReached(w)) { notify('max', w.label); return; }
 
-  const now = Date.now();
-  w.occurrences.push(now);
-  w.updatedAt = now;
+  const ok = recordOccurrence(key);
+  if (!ok) return;
 
   const count = w.occurrences.length;
-  if (count === ANKI_THRESHOLD) notify('anki', w.label);
 
   save();
   updateStats();
@@ -84,6 +103,9 @@ function clickWord(key) {
   // écrase le clic avec une version moins récente
   if (navigator.onLine) CloudSync.schedule(300);
 
+  // Affiche le bouton undo après chaque clic
+  showUndoBtn(key);
+
   // À partir du seuil Anki, on force render() complet car
   // la carte change d'apparence (badge Anki, bouton désactivé)
   if (count >= ANKI_THRESHOLD) {
@@ -91,6 +113,61 @@ function clickWord(key) {
   } else {
     refreshWordCard(key);
   }
+}
+
+/**
+ * Annule le dernier clic enregistré sur un mot.
+ * Supprime la dernière occurrence et met à jour l'UI.
+ */
+function undoLastClick(key) {
+  const w = state.words[key];
+  if (!w || !w.occurrences.length) return;
+
+  w.occurrences.pop();
+  w.updatedAt = ts();
+
+  save();
+  updateStats();
+  hideUndoBtn();
+
+  if (navigator.onLine) CloudSync.schedule(300);
+
+  // Forcer render() complet si on repasse sous le seuil Anki
+  if (w.occurrences.length < ANKI_THRESHOLD) {
+    render();
+  } else {
+    refreshWordCard(key);
+  }
+}
+
+// ── Undo UI ───────────────────────────────────────────────────
+
+let undoTimer = null;
+
+function showUndoBtn(key) {
+  clearTimeout(undoTimer);
+
+  let btn = document.getElementById('undoClickBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id        = 'undoClickBtn';
+    btn.className = 'undo-click-btn';
+    document.body.appendChild(btn);
+  }
+
+  const w = state.words[key];
+  btn.textContent = `↩ ${t('words.undo_click')} "${escHtml(w?.label ?? '')}"`;
+  btn.onclick     = () => undoLastClick(key);
+  btn.classList.add('visible');
+
+  // Disparaît automatiquement après 5 secondes
+  undoTimer = setTimeout(hideUndoBtn, 5000);
+}
+
+function hideUndoBtn() {
+  const btn = document.getElementById('undoClickBtn');
+  if (btn) btn.classList.remove('visible');
+  clearTimeout(undoTimer);
 }
 
 async function deleteWord(key) {

@@ -403,3 +403,32 @@ body {
 .install-banner-info { flex: 1; }
 .install-banner-title { font-weight: 500; font-size: 13px; }
 .install-banner-desc  { font-size: 11px; color: var(--text-muted); }
+
+
+/* ── Undo last click button ───────────────────── */
+.undo-click-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  border: 0.5px solid var(--accent);
+  color: var(--accent);
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  z-index: 500;
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  white-space: nowrap;
+}
+.undo-click-btn.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.undo-click-btn:hover {
+  background: var(--accent-dim);
+}
