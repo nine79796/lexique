@@ -12,6 +12,7 @@ function renderCharts() {
   renderRecurConsistTable();
   renderTasksBarChart();
   renderAnkiPie();
+  renderWorkChart();
 }
 
 /** Returns theme-aware colours for Chart.js axes and grid lines. */
@@ -328,6 +329,57 @@ function renderAnkiPie() {
       maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right', labels: { color: text, font: { size: 11 }, padding: 12 } },
+      },
+    },
+  });
+}
+
+// ── Work time bar chart (30 days) ─────────────────────────────
+
+function renderWorkChart() {
+  const days   = 30;
+  const now    = new Date();
+  const labels = [];
+  const data   = [];
+  const { text, grid } = chartColors();
+
+  const workData = getWorkDataByDay(days);
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d   = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = fmtDay(d.getTime());
+    labels.push(
+      String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+    );
+    data.push(Math.round((workData[key] || 0) / 60)); // secondes → minutes
+  }
+
+  const ctx = document.getElementById('chartWorkTime')?.getContext('2d');
+  if (!ctx) return;
+  if (typeof chartWorkTime !== 'undefined' && chartWorkTime) chartWorkTime.destroy();
+  chartWorkTime = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: 'rgba(110,180,200,0.45)',
+        borderColor: '#6eb4c8',
+        borderWidth: 1,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: text, font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: grid } },
+        y: {
+          ticks: { color: text, font: { size: 10 }, callback: v => v + ' min' },
+          grid: { color: grid },
+        },
       },
     },
   });

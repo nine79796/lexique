@@ -120,6 +120,7 @@
     <button class="tab active"  onclick="switchTab('mots')"     data-i18n="tabs.words">Mots</button>
     <button class="tab"         onclick="switchTab('revision')" data-i18n="tabs.revision">Révision</button>
     <button class="tab"         onclick="switchTab('taches')"   data-i18n="tabs.tasks">Tâches</button>
+    <button class="tab"         onclick="switchTab('timer')"    data-i18n="tabs.timer">Chrono</button>
     <button class="tab"         onclick="switchTab('stats')"    data-i18n="tabs.stats">Statistiques</button>
   </div>
 
@@ -210,6 +211,31 @@
     <div class="task-list" id="taskList"></div>
   </div>
 
+  <!-- ══════════ TAB TIMER ══════════ -->
+  <div class="tab-content" id="tab-timer">
+
+    <!-- Chrono principal -->
+    <div class="timer-card">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+
+      <div class="timer-task-row">
+        <select class="timer-task-select" id="timerTaskSelect" onchange="onTimerTaskChange()"></select>
+        <input  class="timer-task-input"  id="timerTaskInput"  type="text"
+                placeholder="Nom de la tâche…" oninput="onTimerTaskInput()" style="display:none">
+      </div>
+
+      <div class="timer-controls">
+        <button class="timer-btn btn-start" id="timerBtnStart" onclick="timerToggle()">▶ Démarrer</button>
+        <button class="timer-btn btn-stop"  id="timerBtnStop"  onclick="timerStop()" style="display:none">■ Terminer</button>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="section-divider" style="margin:20px 0 12px" data-i18n="timer.history">Historique</div>
+    <div id="timerHistory"></div>
+
+  </div>
+
   <!-- ══════════ TAB STATS ══════════ -->
   <div class="tab-content" id="tab-stats">
     <div class="chart-section">
@@ -251,6 +277,10 @@
     <div class="chart-section">
       <div class="chart-title" data-i18n="stats_tab.top10">Top 10 mots les plus fréquents</div>
       <div id="topWords"></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title" data-i18n="stats_tab.work_time">Temps de travail — 30 derniers jours</div>
+      <div class="chart-wrap"><canvas id="chartWorkTime"></canvas></div>
     </div>
   </div>
 
@@ -389,6 +419,7 @@
 <script src="js/ui.js"></script>
 <script src="js/revision.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/timer.js"></script>
 <script src="js/suggestions.js"></script>
 <script src="js/firebase.js"></script>
 <script src="js/pwa.js"></script>

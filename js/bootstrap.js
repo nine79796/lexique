@@ -54,6 +54,7 @@ window.addEventListener('offline', updateOnlineStatus);
   checkNotifBanner();
   if (typeof NotificationService !== 'undefined') NotificationService.scheduleDaily();
   updateOnlineStatus();
+  initTimer();
 
   setTimeout(attachSuggestions, 100);
 })();

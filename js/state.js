@@ -47,7 +47,7 @@ let modalRecurType = 'once';
 let selectedDays   = new Set();
 
 // Chart references (for destroy-before-redraw)
-let chartTimeline = null, chartCats = null, chartAnkiPie = null, chartTasksBar = null;
+let chartTimeline = null, chartCats = null, chartAnkiPie = null, chartTasksBar = null, chartWorkTime = null;
 
 // PWA install prompt
 let deferredInstallPrompt = null;

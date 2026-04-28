@@ -22,7 +22,7 @@ function toggleTheme() {
 
 // ── Tab navigation ────────────────────────────────────────────
 
-const TAB_NAMES = ['mots', 'revision', 'taches', 'stats'];
+const TAB_NAMES = ['mots', 'revision', 'taches', 'timer', 'stats'];
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((tab, i) => {
@@ -34,6 +34,7 @@ function switchTab(name) {
   if (name === 'stats')    renderCharts();
   if (name === 'revision') renderRevision();
   if (name === 'taches')   { autoReportTasks(); renderTasks(); updateTaskStats(); }
+  if (name === 'timer')    { renderTimerTaskSelect(); renderTimerHistory(); }
 }
 
 function toggleSection(bodyId, iconId) {
