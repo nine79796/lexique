@@ -185,7 +185,7 @@ const TRANSLATIONS = {
     'words.checking':            'Wordnik…',
     'words.offline':             'Offline',
     'words.undo_click':          'Undo click',
-    'revision.words_today':
+    'revision.words_today':      'Words today',
     'revision.tasks_today':      'Tasks today',
     'revision.recurring':        'Recurring',
     'revision.late':             'Late',
@@ -330,7 +330,7 @@ const TRANSLATIONS = {
     'words.checking':            'Wordnik…',
     'words.offline':             'Sin conexión',
     'words.undo_click':          'Deshacer clic',
-    'revision.words_today':
+    'revision.words_today':      'Palabras de hoy',
     'revision.tasks_today':      'Tareas de hoy',
     'revision.recurring':        'Recurrentes',
     'revision.late':             'Atrasadas',
