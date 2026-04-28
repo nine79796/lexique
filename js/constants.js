@@ -4,8 +4,8 @@
 //  CONSTANTS
 // ════════════════════════════════════════════════════════════════
 
-const ANKI_THRESHOLD = 3;   // Seuil pour marquer un mot comme Anki-ready
-const MAX_CLICKS     = 10;  // Limite absolue d'occurrences par mot
+const ANKI_THRESHOLD = 3;
+const MAX_CLICKS     = 3;
 // La clé est injectée par /config.js (généré par Vercel au build, jamais commité).
 // En local : créer un fichier config.js à la racine contenant :
 //   const __WORDNIK_KEY__ = 'ta_clé_ici';
