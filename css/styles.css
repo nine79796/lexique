@@ -566,3 +566,69 @@ body {
   transition: color 0.15s;
 }
 .timer-session-del:hover { color: var(--danger); }
+
+/* ── Bouton drapeau & undo ───────────────────── */
+.timer-btn.btn-flag {
+  background: var(--surface2);
+  border-color: var(--border2);
+  color: var(--text-muted);
+  padding: 10px 18px;
+  font-size: 16px;
+}
+.timer-btn.btn-flag:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.timer-btn.btn-undo {
+  background: var(--surface2);
+  border-color: var(--border2);
+  color: var(--text-dim);
+  padding: 10px 14px;
+  font-size: 15px;
+}
+.timer-btn.btn-undo:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ── Millisecondes dans le chrono ────────────── */
+.timer-ms {
+  font-size: 0.45em;
+  font-weight: 300;
+  color: var(--text-dim);
+  vertical-align: baseline;
+  letter-spacing: 0.02em;
+}
+.timer-display.running .timer-ms { color: rgba(200,169,110,0.55); }
+
+/* ── Milestone / drapeau ─────────────────────── */
+.timer-milestone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(200,169,110,0.06);
+  border-left: 2px solid rgba(200,169,110,0.35);
+  margin-bottom: 3px;
+  transition: background 0.15s;
+}
+.timer-milestone-row:hover { background: rgba(200,169,110,0.12); }
+.timer-milestone-flag { font-size: 14px; flex-shrink: 0; }
+.timer-milestone-task {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.timer-milestone-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.timer-milestone-lap {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}

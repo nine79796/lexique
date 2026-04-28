@@ -14,17 +14,20 @@ const Timer = {
   load() {
     try {
       const raw = localStorage.getItem(LS_KEY_TIMER);
-      return raw ? JSON.parse(raw) : this.defaultState();
+      const st  = raw ? JSON.parse(raw) : this.defaultState();
+      st.milestones ??= [];
+      return st;
     } catch { return this.defaultState(); }
   },
 
   defaultState() {
     return {
-      running:    false,
-      startedAt:  null,   // timestamp ms du dernier start
-      elapsed:    0,       // ms accumulées avant la pause en cours
-      currentTask: '',     // label de la tâche en cours
-      sessions:   [],      // historique { date, task, duration, startedAt }
+      running:     false,
+      startedAt:   null,  // timestamp ms du dernier start
+      elapsed:     0,     // ms accumulées avant la pause en cours
+      currentTask: '',    // label de la tâche en cours
+      sessions:    [],    // historique { date, task, duration, startedAt }
+      milestones:  [],    // drapeaux { date, task, totalMs, lapMs, ts }
     };
   },
 
@@ -123,6 +126,46 @@ const Timer = {
     this.save(st);
     renderTimerHistory();
   },
+
+  /**
+   * Pose un drapeau : enregistre un milestone "tâche terminée"
+   * avec le temps total et le temps depuis le dernier drapeau (lap),
+   * puis remet le compteur de lap à zéro.
+   */
+  flag() {
+    const st  = this.load();
+    if (!st.running && st.elapsed === 0) return;
+
+    const now     = Date.now();
+    const totalMs = this.currentMs(st);
+
+    // Calcule le lapMs depuis le dernier drapeau (ou le début)
+    const lastFlagTotalMs = st.milestones.length > 0 ? st.milestones[0].totalMs : 0;
+    const lapMs = totalMs - lastFlagTotalMs;
+
+    const milestone = {
+      date:    fmtDay(now),
+      task:    st.currentTask || '—',
+      totalMs,
+      lapMs,
+      ts:      now,
+    };
+
+    st.milestones.unshift(milestone);
+    if (st.milestones.length > 200) st.milestones = st.milestones.slice(0, 200);
+
+    this.save(st);
+    renderTimerHistory();
+  },
+
+  /** Annule le dernier drapeau (missclick) */
+  undoFlag() {
+    const st = this.load();
+    if (!st.milestones.length) return;
+    st.milestones.shift();
+    this.save(st);
+    renderTimerHistory();
+  },
 };
 
 // ── Tick ─────────────────────────────────────────────────────
@@ -137,7 +180,7 @@ function timerTick() {
     timerInterval = setInterval(() => {
       Timer.checkAutoStop();
       renderTimerDisplay();
-    }, 1000);
+    }, 10); // 10ms pour les millisecondes
   }
 }
 
@@ -153,37 +196,55 @@ function fmtDuration(seconds) {
 }
 
 function fmtChrono(ms) {
+  const cs    = Math.floor(ms / 10) % 100; // centisecondes (2 chiffres)
   const total = Math.floor(ms / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
+  const h  = Math.floor(total / 3600);
+  const m  = Math.floor((total % 3600) / 60);
+  const s  = total % 60;
   const mm = String(m).padStart(2,'0');
   const ss = String(s).padStart(2,'0');
-  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  const cc = String(cs).padStart(2,'0');
+  return h > 0
+    ? `${h}:${mm}:${ss}<span class="timer-ms">.${cc}</span>`
+    : `${mm}:${ss}<span class="timer-ms">.${cc}</span>`;
 }
 
-// ── Rendering ────────────────────────────────────────────────
+/** Format compact pour les laps de milestone : 1h23:45 ou 12:34 ou 5s */
+function fmtChronoMs(ms) {
+  if (!ms || ms < 0) return '0s';
+  const total = Math.floor(ms / 1000);
+  const h  = Math.floor(total / 3600);
+  const m  = Math.floor((total % 3600) / 60);
+  const s  = total % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}min`;
+  if (m > 0) return `${m}min ${String(s).padStart(2,'0')}s`;
+  return `${s}s`;
+}
+
+
 
 function renderTimerDisplay() {
-  const st  = Timer.load();
-  const ms  = Timer.currentMs(st);
-  const el  = document.getElementById('timerDisplay');
-  if (el) el.textContent = fmtChrono(ms);
+  const st = Timer.load();
+  const ms = Timer.currentMs(st);
+  const el = document.getElementById('timerDisplay');
+  if (el) el.innerHTML = fmtChrono(ms);
 }
 
 function renderTimerUI() {
-  const st      = Timer.load();
-  const ms      = Timer.currentMs(st);
-  const display = document.getElementById('timerDisplay');
+  const st       = Timer.load();
+  const ms       = Timer.currentMs(st);
+  const display  = document.getElementById('timerDisplay');
   const btnStart = document.getElementById('timerBtnStart');
   const btnStop  = document.getElementById('timerBtnStop');
+  const btnFlag  = document.getElementById('timerBtnFlag');
+  const btnUndo  = document.getElementById('timerBtnUndo');
   const taskSel  = document.getElementById('timerTaskSelect');
   const taskInp  = document.getElementById('timerTaskInput');
 
   if (!display) return;
 
-  display.textContent = fmtChrono(ms);
-  display.className   = 'timer-display' + (st.running ? ' running' : ms > 0 ? ' paused' : '');
+  display.innerHTML = fmtChrono(ms);
+  display.className = 'timer-display' + (st.running ? ' running' : ms > 0 ? ' paused' : '');
 
   if (btnStart) {
     btnStart.textContent = st.running ? t('timer.pause') : ms > 0 ? t('timer.resume') : t('timer.start');
@@ -191,6 +252,12 @@ function renderTimerUI() {
   }
   if (btnStop) {
     btnStop.style.display = ms > 0 ? 'inline-flex' : 'none';
+  }
+  if (btnFlag) {
+    btnFlag.style.display = (st.running || ms > 0) ? 'inline-flex' : 'none';
+  }
+  if (btnUndo) {
+    btnUndo.style.display = st.milestones.length > 0 ? 'inline-flex' : 'none';
   }
 
   // Sync le select et l'input avec la tâche courante
@@ -229,22 +296,35 @@ function renderTimerHistory() {
   if (!container) return;
 
   const st = Timer.load();
-  if (!st.sessions.length) {
+  const hasSessions   = st.sessions.length > 0;
+  const hasMilestones = st.milestones.length > 0;
+
+  if (!hasSessions && !hasMilestones) {
     container.innerHTML = `<div class="empty"><span class="empty-icon">◷</span>${t('timer.no_sessions')}</div>`;
     return;
   }
 
-  // Grouper par date
+  // Fusionner sessions et milestones par date
   const byDate = {};
+
   st.sessions.forEach((s, idx) => {
-    if (!byDate[s.date]) byDate[s.date] = [];
-    byDate[s.date].push({ ...s, idx });
+    if (!byDate[s.date]) byDate[s.date] = { sessions: [], milestones: [] };
+    byDate[s.date].sessions.push({ ...s, idx });
   });
+
+  st.milestones.forEach((m, idx) => {
+    if (!byDate[m.date]) byDate[m.date] = { sessions: [], milestones: [] };
+    byDate[m.date].milestones.push({ ...m, idx });
+  });
+
+  // Trier les dates du plus récent au plus ancien
+  const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
 
   const locale = DateUtils.getLocale();
   let html = '';
 
-  Object.entries(byDate).forEach(([date, sessions]) => {
+  sortedDates.forEach(date => {
+    const { sessions, milestones } = byDate[date];
     const total    = sessions.reduce((a, s) => a + s.duration, 0);
     const dateDisp = new Date(date + 'T12:00:00').toLocaleDateString(locale, {
       weekday: 'long', day: 'numeric', month: 'long',
@@ -253,9 +333,23 @@ function renderTimerHistory() {
     html += `<div class="timer-day-group">
       <div class="timer-day-header">
         <span class="timer-day-label">${dateDisp}</span>
-        <span class="timer-day-total">${fmtDuration(total)}</span>
+        ${total > 0 ? `<span class="timer-day-total">${fmtDuration(total)}</span>` : ''}
       </div>`;
 
+    // Milestones (drapeaux)
+    milestones.forEach(m => {
+      const timeStr = new Date(m.ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+      const lapStr  = fmtChronoMs(m.lapMs);
+      html += `<div class="timer-milestone-row">
+        <span class="timer-milestone-flag">🚩</span>
+        <span class="timer-milestone-task">${escHtml(m.task)}</span>
+        <span class="timer-milestone-time">${timeStr}</span>
+        <span class="timer-milestone-lap">${lapStr}</span>
+        <button class="timer-session-del" onclick="Timer.undoFlag()" title="${t('timer.undo_flag')}">↩</button>
+      </div>`;
+    });
+
+    // Sessions
     sessions.forEach(s => {
       html += `<div class="timer-session-row">
         <span class="timer-session-task">${escHtml(s.task)}</span>
@@ -302,6 +396,16 @@ function timerToggle() {
   else            Timer.start();
 }
 
+function timerFlag() {
+  Timer.flag();
+  renderTimerUI();
+}
+
+function timerUndoFlag() {
+  Timer.undoFlag();
+  renderTimerUI();
+}
+
 function timerStop() {
   Timer.stop();
   renderTimerHistory();
@@ -337,6 +441,6 @@ function initTimer() {
     timerInterval = setInterval(() => {
       Timer.checkAutoStop();
       renderTimerDisplay();
-    }, 1000);
+    }, 10);
   }
 }
