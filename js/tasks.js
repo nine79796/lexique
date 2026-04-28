@@ -25,7 +25,21 @@ function toggleTaskDone(id, dateStr) {
 
 function deleteTask(id) {
   state.tasks = state.tasks.filter(t => t.id !== id);
-  save(); renderTasks(); updateTaskStats();
+  save();
+  renderTasks();
+  updateTaskStats();
+
+  // Supprime aussi dans Firestore pour éviter la résurrection au pull
+  try {
+    const tRef = CloudSync.tasksRef();
+    if (tRef) {
+      tRef.doc(String(id)).delete().catch(err =>
+        console.error('[deleteTask] Firestore delete error:', err)
+      );
+    }
+  } catch (err) {
+    console.error('[deleteTask] Firestore error:', err);
+  }
 }
 
 /**
@@ -321,7 +335,7 @@ function renderTasks() {
 
 function buildTaskItems(today) {
   const items    = [];
-  const lookback = 7;
+  const lookback = 30; // aligne avec la fenêtre "en retard" de updateTaskStats
 
   state.tasks.forEach(task => {
     if (task.recurType === 'once') {
@@ -335,7 +349,10 @@ function buildTaskItems(today) {
         if (!isTaskActiveOnDate(task, d)) continue;
         const occ  = task.history[d] || null;
         const done = occ === 'done';
-        if (i < 0 && done) continue;
+        // N'affiche les anciennes occurrences que si elles sont en retard (missed)
+        // Pour les occurrences terminées dans le passé, on les cache après 7 jours
+        if (i < -7 && done) continue;
+        if (i < 0 && !done && occ !== 'missed') continue;
         items.push({
           task, id: task.id + '_' + d, date: d,
           done, isLate: !done && d < today, occurrence: occ,
@@ -436,3 +453,29 @@ function getTaskCatLabel(cat) {
   const key = TASK_CAT_LABELS_KEY[cat] || '';
   return key ? t(key) : '';
 }
+
+// ── Midnight scheduler ────────────────────────────────────────
+
+/**
+ * Planifie un auto-report à minuit pile, sans rechargement.
+ * Si l'app reste ouverte pendant la nuit, les tâches de la veille
+ * passent automatiquement à "missed" dès le changement de jour.
+ */
+(function scheduleMidnightAutoReport() {
+  function msUntilMidnight() {
+    const now   = new Date();
+    const next  = new Date(now);
+    next.setHours(24, 0, 0, 0); // minuit suivant
+    return next.getTime() - now.getTime();
+  }
+
+  function tick() {
+    autoReportTasks();
+    renderTasks();
+    updateTaskStats();
+    // Re-planifie pour le prochain minuit
+    setTimeout(tick, msUntilMidnight());
+  }
+
+  setTimeout(tick, msUntilMidnight());
+})();

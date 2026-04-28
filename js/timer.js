@@ -4,18 +4,23 @@
 //  TIMER — Chrono de travail avec historique par tâche
 // ════════════════════════════════════════════════════════════════
 
-const LS_KEY_TIMER = 'lexique_timer';
+const LS_KEY_TIMER   = 'lexique_timer';
 const MAX_SESSION_MS = 3 * 60 * 60 * 1000; // 3h auto-stop
+
+// Cache mémoire — évite de parser localStorage à chaque tick (100×/s)
+let _timerCache = null;
 
 const Timer = {
   // ── State ────────────────────────────────────────────────────
 
-  /** Charge l'état depuis localStorage */
+  /** Charge l'état — depuis le cache mémoire si disponible */
   load() {
+    if (_timerCache) return _timerCache;
     try {
       const raw = localStorage.getItem(LS_KEY_TIMER);
       const st  = raw ? JSON.parse(raw) : this.defaultState();
       st.milestones ??= [];
+      _timerCache = st;
       return st;
     } catch { return this.defaultState(); }
   },
@@ -32,6 +37,7 @@ const Timer = {
   },
 
   save(st) {
+    _timerCache = st; // met à jour le cache avant l'écriture
     try { localStorage.setItem(LS_KEY_TIMER, JSON.stringify(st)); } catch { /* quota */ }
   },
 
@@ -133,15 +139,20 @@ const Timer = {
    * puis remet le compteur de lap à zéro.
    */
   flag() {
-    const st  = this.load();
-    if (!st.running && st.elapsed === 0) return;
-
-    const now     = Date.now();
+    const st      = this.load();
     const totalMs = this.currentMs(st);
 
-    // Calcule le lapMs depuis le dernier drapeau (ou le début)
+    // Ignorer si aucun temps écoulé (< 1 seconde)
+    if (totalMs < 1000) return;
+
+    const now = Date.now();
+
+    // lapMs = temps depuis le dernier drapeau (ou depuis le début)
     const lastFlagTotalMs = st.milestones.length > 0 ? st.milestones[0].totalMs : 0;
     const lapMs = totalMs - lastFlagTotalMs;
+
+    // Ignorer les double-clics (lap < 1 seconde)
+    if (lapMs < 1000) return;
 
     const milestone = {
       date:    fmtDay(now),
@@ -317,11 +328,14 @@ function renderTimerHistory() {
     byDate[m.date].milestones.push({ ...m, idx });
   });
 
-  // Trier les dates du plus récent au plus ancien
-  const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  // Tri explicite : YYYY-MM-DD est comparable lexicographiquement, desc = plus récent en premier
+  const sortedDates = Object.keys(byDate).sort((a, b) => (a < b ? 1 : -1));
 
   const locale = DateUtils.getLocale();
   let html = '';
+
+  // Le drapeau le plus récent = st.milestones[0] (unshift)
+  const newestMilestoneTs = st.milestones.length > 0 ? st.milestones[0].ts : null;
 
   sortedDates.forEach(date => {
     const { sessions, milestones } = byDate[date];
@@ -338,14 +352,15 @@ function renderTimerHistory() {
 
     // Milestones (drapeaux)
     milestones.forEach(m => {
-      const timeStr = new Date(m.ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-      const lapStr  = fmtChronoMs(m.lapMs);
+      const timeStr  = new Date(m.ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+      const lapStr   = fmtChronoMs(m.lapMs);
+      const isNewest = m.ts === newestMilestoneTs;
       html += `<div class="timer-milestone-row">
         <span class="timer-milestone-flag">🚩</span>
         <span class="timer-milestone-task">${escHtml(m.task)}</span>
         <span class="timer-milestone-time">${timeStr}</span>
         <span class="timer-milestone-lap">${lapStr}</span>
-        <button class="timer-session-del" onclick="Timer.undoFlag()" title="${t('timer.undo_flag')}">↩</button>
+        ${isNewest ? `<button class="timer-session-del" onclick="Timer.undoFlag()" title="${t('timer.undo_flag')}">↩</button>` : '<span style="width:24px"></span>'}
       </div>`;
     });
 
@@ -371,18 +386,26 @@ function renderTimerHistory() {
  * Utilisé par renderWorkChart() dans charts.js.
  */
 function getWorkDataByDay(days = 30) {
-  const st      = Timer.load();
-  const result  = {};
-  const now     = new Date();
+  const st     = Timer.load();
+  const result = {};
+  const now    = new Date();
 
   for (let i = 0; i < days; i++) {
-    const d   = new Date(now);
+    const d = new Date(now);
     d.setDate(d.getDate() - i);
     result[fmtDay(d.getTime())] = 0;
   }
 
+  // Sessions terminées (stop)
   st.sessions.forEach(s => {
     if (result[s.date] !== undefined) result[s.date] += s.duration;
+  });
+
+  // Milestones (drapeaux) — ajoute le lapMs converti en secondes
+  st.milestones.forEach(m => {
+    if (result[m.date] !== undefined && m.lapMs > 0) {
+      result[m.date] += Math.round(m.lapMs / 1000);
+    }
   });
 
   return result;
@@ -433,14 +456,6 @@ function onTimerTaskInput() {
 
 function initTimer() {
   renderTimerTaskSelect();
-  timerTick();
+  timerTick();         // gère déjà la reprise du tick si running
   renderTimerHistory();
-  // Reprendre le tick si le chrono tournait avant le rechargement
-  const st = Timer.load();
-  if (st.running) {
-    timerInterval = setInterval(() => {
-      Timer.checkAutoStop();
-      renderTimerDisplay();
-    }, 10);
-  }
 }

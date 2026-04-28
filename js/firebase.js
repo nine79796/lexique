@@ -251,10 +251,18 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
         }
         firstPull = false;
 
-        CloudSync.pullFromCloud().then(() => {
+        const afterPull = () => {
           load();
+          rebuildNgrams();
           render(); renderTasks(); updateStats(); updateTaskStats();
-        });
+        };
+
+        CloudSync.pullFromCloud()
+          .then(afterPull)
+          .catch(err => {
+            console.warn('[Firebase] Premier pull échoué, retry dans 5s…', err);
+            setTimeout(() => CloudSync.pullFromCloud().then(afterPull).catch(() => {}), 5000);
+          });
       } else {
         console.debug('[Firebase] Pas de session — connexion anonyme…');
         firebase.auth().signInAnonymously().catch(err => {
