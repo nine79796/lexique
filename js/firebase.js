@@ -292,17 +292,31 @@ const CloudSync = {
       if (wRef) {
         const snap = await wRef.get();
         console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
+
+        // Construire l'index des mots présents dans Firestore
+        const remoteWordIds = new Set();
         snap.forEach(doc => {
           const cloud = doc.data();
           if (!cloud.label) {
             console.warn('[Sync↓] Doc ignoré — label manquant :', doc.id);
             return;
           }
+          remoteWordIds.add(doc.id);
           const local = localWords[doc.id];
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localWords[doc.id] = { ...local, ...cloud, id: doc.id };
           }
         });
+
+        // Supprimer les mots locaux absents de Firestore
+        const deletedWords = Object.keys(localWords).filter(id => !remoteWordIds.has(id));
+        deletedWords.forEach(id => {
+          console.debug('[Sync↓] Suppression locale du mot absent de Firestore :', id);
+          delete localWords[id];
+        });
+        if (deletedWords.length) {
+          console.debug(`[Sync↓] ${deletedWords.length} mot(s) supprimé(s) localement`);
+        }
       }
 
       // ── Tâches ────────────────────────────────────────────
@@ -310,11 +324,23 @@ const CloudSync = {
       if (tRef) {
         const snap = await tRef.get();
         console.debug(`[Sync↓] ${snap.size} tâche(s) reçues depuis Firestore`);
+
+        // Construire l'index des tâches présentes dans Firestore
+        const remoteTaskIds = new Set();
         snap.forEach(doc => {
           const cloud = doc.data();
+          if (cloud.id) remoteTaskIds.add(String(cloud.id));
           const local = localTasks[String(cloud.id)];
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localTasks[String(cloud.id)] = { ...local, ...cloud };
+          }
+        });
+
+        // Supprimer les tâches locales absentes de Firestore
+        Object.keys(localTasks).forEach(id => {
+          if (!remoteTaskIds.has(id)) {
+            console.debug('[Sync↓] Suppression locale de la tâche absente de Firestore :', id);
+            delete localTasks[id];
           }
         });
       }
