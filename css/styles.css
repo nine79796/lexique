@@ -91,6 +91,57 @@ body {
 .theme-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ── Auth button ─────────────────────────────── */
+.auth-btn {
+  background: var(--surface);
+  border: 0.5px solid var(--border2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.auth-btn:hover { border-color: var(--anki); color: var(--anki); }
+.auth-btn.signed-in { border-color: var(--valid); color: var(--valid); }
+.auth-btn.signed-in:hover { border-color: var(--accent); color: var(--accent); }
+.auth-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.auth-avatar-initials {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--anki); color: #0f0f0d;
+  font-size: 11px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.auth-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Auth contextual menu ────────────────────── */
+.auth-menu {
+  position: absolute;
+  z-index: 1000;
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  border-radius: 10px;
+  padding: 8px 0;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.auth-menu-name  { padding: 8px 14px 2px; font-size: 13px; font-weight: 500; color: var(--text); }
+.auth-menu-email { padding: 0 14px 8px; font-size: 11px; color: var(--text-dim); word-break: break-all; }
+.auth-menu-divider { border: none; border-top: 0.5px solid var(--border2); margin: 4px 0; }
+.auth-menu-item {
+  width: 100%; padding: 8px 14px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+.auth-menu-item:hover { background: var(--surface3, var(--surface)); color: var(--danger); }
+
 /* ── Language selector ───────────────────────── */
 .lang-btn {
   background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px;

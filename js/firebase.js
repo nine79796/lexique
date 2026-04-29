@@ -26,6 +26,119 @@ let fbReady    = false;
 let syncTimer  = null;
 let firstPull  = true;
 
+// ── Auth UI ───────────────────────────────────────────────────
+
+const AuthUI = {
+  /** Met à jour le bouton login dans le header selon l'état auth */
+  update(user) {
+    const btn = document.getElementById('authBtn');
+    if (!btn) return;
+
+    if (user && !user.isAnonymous) {
+      // Connecté avec Google
+      const name  = user.displayName || user.email || 'Compte';
+      const photo = user.photoURL;
+      btn.title   = name;
+      btn.innerHTML = photo
+        ? `<img src="${photo}" alt="" class="auth-avatar"> <span class="auth-name">${escHtml(name.split(' ')[0])}</span>`
+        : `<span class="auth-avatar-initials">${escHtml(name[0].toUpperCase())}</span> <span class="auth-name">${escHtml(name.split(' ')[0])}</span>`;
+      btn.classList.add('signed-in');
+      btn.onclick = () => AuthUI.showMenu(user);
+    } else {
+      // Anonyme ou déconnecté
+      btn.innerHTML = `<span class="auth-icon">👤</span> <span data-i18n="auth.sign_in">${t('auth.sign_in')}</span>`;
+      btn.title     = t('auth.sign_in_title');
+      btn.classList.remove('signed-in');
+      btn.onclick = () => AuthService.signInWithGoogle();
+    }
+  },
+
+  showMenu(user) {
+    // Petit menu contextuel : nom + déconnexion
+    let menu = document.getElementById('authMenu');
+    if (menu) { menu.remove(); return; } // toggle
+
+    menu = document.createElement('div');
+    menu.id        = 'authMenu';
+    menu.className = 'auth-menu';
+    menu.innerHTML = `
+      <div class="auth-menu-name">${escHtml(user.displayName || user.email || 'Compte')}</div>
+      <div class="auth-menu-email">${escHtml(user.email || '')}</div>
+      <hr class="auth-menu-divider">
+      <button class="auth-menu-item" onclick="AuthService.signOut()">
+        <span>⎋</span> <span data-i18n="auth.sign_out">${t('auth.sign_out')}</span>
+      </button>`;
+
+    const btn  = document.getElementById('authBtn');
+    const rect = btn.getBoundingClientRect();
+    menu.style.top   = (rect.bottom + window.scrollY + 6) + 'px';
+    menu.style.right = (window.innerWidth - rect.right)   + 'px';
+    document.body.appendChild(menu);
+
+    // Fermer au clic extérieur
+    setTimeout(() => {
+      document.addEventListener('click', function close(e) {
+        if (!menu.contains(e.target) && e.target !== btn) {
+          menu.remove();
+          document.removeEventListener('click', close);
+        }
+      });
+    }, 0);
+  },
+};
+
+// ── Auth Service ──────────────────────────────────────────────
+
+const AuthService = {
+  async signInWithGoogle() {
+    if (typeof firebase === 'undefined') return;
+    const provider  = new firebase.auth.GoogleAuthProvider();
+    const anonUser  = firebase.auth().currentUser;
+
+    try {
+      // Si l'utilisateur est anonyme, on tente de lier son compte Google
+      // pour migrer ses données → linkWithPopup conserve le même UID
+      if (anonUser && anonUser.isAnonymous) {
+        try {
+          await anonUser.linkWithPopup(provider);
+          console.debug('[Auth] ✅ Compte anonyme lié à Google — UID conservé :', anonUser.uid);
+          // onAuthStateChanged se re-déclenche avec le même UID et isAnonymous=false
+          return;
+        } catch (linkErr) {
+          // credential-already-in-use → ce compte Google existe déjà
+          // On signe directement avec Google (ses données cloud seront récupérées)
+          if (linkErr.code === 'auth/credential-already-in-use') {
+            console.debug('[Auth] Compte Google déjà existant — connexion directe');
+            await firebase.auth().signInWithPopup(provider);
+            return;
+          }
+          throw linkErr;
+        }
+      }
+
+      // Pas de session anonyme — connexion directe
+      await firebase.auth().signInWithPopup(provider);
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        console.error('[Auth] Erreur connexion Google :', err);
+      }
+    }
+  },
+
+  async signOut() {
+    const menu = document.getElementById('authMenu');
+    if (menu) menu.remove();
+    try {
+      await firebase.auth().signOut();
+      console.debug('[Auth] Déconnecté');
+    } catch (err) {
+      console.error('[Auth] Erreur déconnexion :', err);
+    }
+  },
+};
+
+// ── CloudSync ────────────────────────────────────────────────
+
 const CloudSync = {
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
   wordsRef() { const u = this.userRef(); return u ? u.collection('words') : null; },
@@ -78,7 +191,6 @@ const CloudSync = {
         const entries = Object.entries(words);
         console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
 
-        // Supprimer dans Firestore les mots absents du state local
         const remoteSnap = await wRef.get();
         const remoteDeletions = [];
         remoteSnap.forEach(doc => {
@@ -121,7 +233,6 @@ const CloudSync = {
             batch.set(tRef.doc(String(task.id)), {
               id:            task.id,
               title:         task.title         ?? '',
-              // FIX: field was `task.note` but tasks.js uses `task.desc` — aligned to `desc`
               desc:          task.desc          ?? '',
               cat:           task.cat           ?? '',
               dueDate:       task.dueDate        ?? '',
@@ -238,13 +349,16 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
     console.debug('[Firebase] ✅ Firestore initialisé');
 
     firebase.auth().onAuthStateChanged(user => {
+      // Met à jour le bouton header dans tous les cas
+      AuthUI.update(user);
+
       if (user) {
         currentUid = user.uid;
         fbReady    = true;
-        console.debug('[Firebase] ✅ Auth anonyme OK — uid :', currentUid);
+        const type = user.isAnonymous ? 'anonyme' : 'Google';
+        console.debug(`[Firebase] ✅ Auth ${type} — uid :`, currentUid);
 
         // Guard: onAuthStateChanged re-fires on every token refresh.
-        // Without this, a pull after a deletion would restore deleted data.
         if (!firstPull) {
           console.debug('[Firebase] Re-auth ignoré — pas de pull (firstPull=false)');
           return;
