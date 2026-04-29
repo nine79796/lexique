@@ -70,6 +70,7 @@ function load() {
 
 function save() {
   Storage.writeState(state);
+  if (typeof CloudSync !== 'undefined') CloudSync.schedule();
 }
 
 // ── Migration ─────────────────────────────────────────────────
