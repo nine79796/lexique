@@ -139,6 +139,14 @@ const AuthService = {
 
 // ── CloudSync ────────────────────────────────────────────────
 
+/** Fusionne deux tableaux sur une clé unique, le cloud l'emporte en cas de doublon */
+function mergeById(local, cloud, key) {
+  const map = new Map();
+  local.forEach(item => { if (item[key] != null) map.set(item[key], item); });
+  cloud.forEach(item => { if (item[key] != null) map.set(item[key], item); }); // cloud wins
+  return [...map.values()].sort((a, b) => (b[key] || 0) - (a[key] || 0));
+}
+
 const CloudSync = {
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
   wordsRef() { const u = this.userRef(); return u ? u.collection('words') : null; },
@@ -256,8 +264,27 @@ const CloudSync = {
         }
       }
 
-      const u = this.userRef();
-      if (u) await u.set({ lastSync: Date.now(), appVersion: 'lexique-v6' }, { merge: true });
+      // ── Catégories + Timer + métadonnées ─────────────────
+      const cats = st.categories || {};
+
+      // Timer : sessions et milestones (drapeaux)
+      let timerData = {};
+      try {
+        const rawTimer = localStorage.getItem('lexique_timer');
+        if (rawTimer) timerData = JSON.parse(rawTimer);
+      } catch { /* ignore */ }
+
+      const uRef = this.userRef();
+      if (uRef) {
+        await uRef.set({
+          lastSync:        Date.now(),
+          appVersion:      'lexique-v6',
+          categories:      cats,
+          timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
+          timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
+        }, { merge: true });
+        console.debug('[Sync↑] Catégories + Timer poussés ✓');
+      }
 
       this.showStatus('synced');
       console.debug('[Sync↑] ✅ Push terminé');
@@ -345,6 +372,45 @@ const CloudSync = {
         });
       }
 
+      // ── Catégories ────────────────────────────────────────
+      const uRef2 = this.userRef();
+      if (uRef2) {
+        const uDoc = await uRef2.get();
+        if (uDoc.exists) {
+          const data = uDoc.data();
+
+          // Catégories
+          const cloudCats = data.categories;
+          if (cloudCats && typeof cloudCats === 'object') {
+            appState.categories = { ...(appState.categories || {}), ...cloudCats };
+            console.debug('[Sync↓] Catégories reçues :', Object.keys(cloudCats).length);
+          }
+
+          // Timer
+          const cloudSessions   = data.timerSessions;
+          const cloudMilestones = data.timerMilestones;
+          if (cloudSessions || cloudMilestones) {
+            let localTimer = {};
+            try {
+              const rawTimer = localStorage.getItem('lexique_timer');
+              if (rawTimer) localTimer = JSON.parse(rawTimer);
+            } catch { /* ignore */ }
+
+            // Fusion : on prend le plus grand ensemble (pas de suppression pour le timer)
+            const localSessions   = Array.isArray(localTimer.sessions)   ? localTimer.sessions   : [];
+            const localMilestones = Array.isArray(localTimer.milestones) ? localTimer.milestones : [];
+
+            const mergedSessions = mergeById(localSessions, cloudSessions || [], 'startedAt');
+            const mergedMilestones = mergeById(localMilestones, cloudMilestones || [], 'ts');
+
+            localTimer.sessions   = mergedSessions.slice(0, 200);
+            localTimer.milestones = mergedMilestones.slice(0, 200);
+            try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
+            console.debug('[Sync↓] Timer reçu : ' + mergedSessions.length + ' sessions');
+          }
+        }
+      }
+
       appState.words = localWords;
       appState.tasks = Object.values(localTasks);
       Storage.writeState(appState);
@@ -395,6 +461,8 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
           load();
           rebuildNgrams();
           render(); renderTasks(); updateStats(); updateTaskStats();
+          renderCatManager(); renderCatSelect(); renderFilters();
+          renderTimerHistory();
         };
 
         CloudSync.pullFromCloud()
@@ -414,3 +482,4 @@ window.addEventListener('offline', () => CloudSync.showStatus('offline'));
     console.warn('[Firebase] Init error:', err);
   }
 })();
+
