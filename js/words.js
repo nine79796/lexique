@@ -106,12 +106,14 @@ function clickWord(key) {
   // Affiche le bouton undo après chaque clic
   showUndoBtn(key);
 
-  // À partir du seuil Anki, on force render() complet car
-  // la carte change d'apparence (badge Anki, bouton désactivé)
-  if (count >= ANKI_THRESHOLD) {
-    render();
+  // Forcer render() complet dès que la carte change d'apparence
+  // (badge Anki, bouton désactivé, etc.)
+  // Sur mobile, on utilise requestAnimationFrame pour laisser le touch
+  // se terminer proprement avant de reconstruire le DOM.
+  if (count >= ANKI_THRESHOLD || count >= MAX_CLICKS) {
+    requestAnimationFrame(() => render());
   } else {
-    refreshWordCard(key);
+    requestAnimationFrame(() => refreshWordCard(key));
   }
 }
 
