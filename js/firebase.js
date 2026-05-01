@@ -428,6 +428,32 @@ const CloudSync = {
 window.addEventListener('online',  () => CloudSync.pushToCloud());
 window.addEventListener('offline', () => CloudSync.showStatus('offline'));
 
+// Pull quand la fenêtre reprend le focus (ex : retour sur l'onglet PC après avoir modifié sur mobile)
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && fbReady && navigator.onLine) {
+    CloudSync.pullFromCloud().then(() => {
+      load();
+      rebuildNgrams();
+      render(); renderTasks(); updateStats(); updateTaskStats();
+      renderCatManager(); renderCatSelect(); renderFilters();
+      renderTimerHistory();
+    }).catch(() => {});
+  }
+});
+
+// Pull périodique toutes les 60 secondes si la page est visible
+setInterval(() => {
+  if (document.visibilityState === 'visible' && fbReady && navigator.onLine && !isSyncing) {
+    CloudSync.pullFromCloud().then(() => {
+      load();
+      rebuildNgrams();
+      render(); renderTasks(); updateStats(); updateTaskStats();
+      renderCatManager(); renderCatSelect(); renderFilters();
+      renderTimerHistory();
+    }).catch(() => {});
+  }
+}, 60_000);
+
 // ── Firebase initialisation ───────────────────────────────────
 
 (function initFirebase() {
