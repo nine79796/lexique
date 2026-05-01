@@ -207,13 +207,22 @@ async function checkWordnik(word) {
   if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
   try {
     const res = await fetch(
-      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&useCanonical=false&api_key=${WORDNIK_API_KEY}`,
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=3&useCanonical=false&api_key=${WORDNIK_API_KEY}`,
       { signal: AbortSignal.timeout(5000) }
     );
     if (res.status === 404) return false;
     if (!res.ok)            return null;
     const data = await res.json();
-    return Array.isArray(data) && data.length > 0;
+    if (!Array.isArray(data) || !data.length) return false;
+
+    // Vérifier que le mot retourné correspond exactement au mot saisi
+    // (Wordnik peut retourner des définitions pour des variantes proches)
+    const wordLow = word.toLowerCase();
+    const hasExactMatch = data.some(d => {
+      const w = (d.word || '').toLowerCase();
+      return w === wordLow;
+    });
+    return hasExactMatch;
   } catch { return null; }
 }
 
