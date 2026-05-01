@@ -379,10 +379,10 @@ const CloudSync = {
         if (uDoc.exists) {
           const data = uDoc.data();
 
-          // Catégories
+          // Catégories — remplacement complet (le cloud fait foi)
           const cloudCats = data.categories;
           if (cloudCats && typeof cloudCats === 'object') {
-            appState.categories = { ...(appState.categories || {}), ...cloudCats };
+            appState.categories = cloudCats;
             console.debug('[Sync↓] Catégories reçues :', Object.keys(cloudCats).length);
           }
 
