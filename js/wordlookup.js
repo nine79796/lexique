@@ -19,20 +19,31 @@ const WordLookup = {
   async fetchWordnik(word) {
     if (!WORDNIK_API_KEY) return null;
     try {
-      const [defRes, audioRes, exRes] = await Promise.allSettled([
-        fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/definitions?limit=3&includeRelated=false&useCanonical=true&includeTags=false&api_key=${WORDNIK_API_KEY}`, { signal: AbortSignal.timeout(5000) }),
+      const [defRes, audioRes] = await Promise.allSettled([
+        fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/definitions?limit=3&includeRelated=false&useCanonical=false&includeTags=false&api_key=${WORDNIK_API_KEY}`, { signal: AbortSignal.timeout(5000) }),
         fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/pronunciations?limit=1&api_key=${WORDNIK_API_KEY}`, { signal: AbortSignal.timeout(5000) }),
-        fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/examples?limit=2&api_key=${WORDNIK_API_KEY}`, { signal: AbortSignal.timeout(5000) }),
       ]);
 
       const defs  = defRes.status  === 'fulfilled' && defRes.value.ok  ? await defRes.value.json()  : [];
       const audio = audioRes.status === 'fulfilled' && audioRes.value.ok ? await audioRes.value.json() : [];
-      const exs   = exRes.status   === 'fulfilled' && exRes.value.ok   ? await exRes.value.json()   : { examples: [] };
 
-      console.debug('[WordLookup] defs:', JSON.stringify(defs.slice(0,2)));
-      console.debug('[WordLookup] audio:', JSON.stringify(audio.slice(0,2)));
-
-      if (!defs.length) return null;
+      // Mot introuvable → chercher une suggestion orthographique
+      if (!defs.length) {
+        try {
+          const sugRes = await fetch(
+            `https://api.wordnik.com/v4/words.json/search/${encodeURIComponent(word)}?limit=1&api_key=${WORDNIK_API_KEY}`,
+            { signal: AbortSignal.timeout(4000) }
+          );
+          if (sugRes.ok) {
+            const sugData = await sugRes.json();
+            const suggestion = (sugData.searchResults || [])[0]?.word || null;
+            if (suggestion && suggestion.toLowerCase() !== word.toLowerCase()) {
+              return { source: 'wordnik', definitions: [], pronunciation: '', suggestion };
+            }
+          }
+        } catch { /* ignore */ }
+        return null;
+      }
 
       const mappedDefs = defs
         .map(d => ({
@@ -156,6 +167,24 @@ const WordLookup = {
       return;
     }
 
+    // Mot introuvable mais suggestion disponible
+    if (result.suggestion && !result.definitions.length) {
+      popup.innerHTML = `
+        <div class="wl-header">
+          <span class="wl-word wl-word-invalid">${escHtml(word)}</span>
+          <button class="wl-close" onclick="WordLookup.close()">×</button>
+        </div>
+        <div class="wl-suggestion">
+          <span class="wl-suggestion-label">${t('lookup.did_you_mean') || 'Vouliez-vous dire'} :</span>
+          <button class="wl-suggestion-word" onclick="WordLookup.openSuggestion('${escHtml(result.suggestion)}', this)">
+            ${escHtml(result.suggestion)}
+          </button>
+        </div>
+        <div class="wl-source">Wordnik</div>`;
+      this._position(popup, anchorEl);
+      return;
+    }
+
     // Rendu
     const sourceLabel = result.source === 'wordnik' ? 'Wordnik' : 'Dictionary API';
     const pronHtml    = result.pronunciation
@@ -185,6 +214,11 @@ const WordLookup = {
     if (this._popup) { this._popup.remove(); this._popup = null; }
     const ov = document.getElementById('wl-overlay');
     if (ov) ov.remove();
+  },
+
+  /** Ouvre le popup avec la suggestion corrigée */
+  openSuggestion(word, anchorEl) {
+    this.open(word, anchorEl);
   },
 
   _position(popup, anchor) {

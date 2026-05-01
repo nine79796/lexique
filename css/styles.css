@@ -841,3 +841,34 @@ body {
   font-size: 13px;
   color: var(--text-dim);
 }
+
+/* Suggestion orthographique dans le popup */
+.wl-word-invalid {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.wl-suggestion {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wl-suggestion-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.wl-suggestion-word {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(200,169,110,0.3);
+  border-radius: 20px;
+  padding: 3px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wl-suggestion-word:hover {
+  background: rgba(200,169,110,0.25);
+}

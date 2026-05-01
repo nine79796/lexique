@@ -207,7 +207,7 @@ async function checkWordnik(word) {
   if (!WORDNIK_API_KEY || WORDNIK_API_KEY.startsWith('VOTRE')) return null;
   try {
     const res = await fetch(
-      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&api_key=${WORDNIK_API_KEY}`,
+      `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word.toLowerCase())}/definitions?limit=1&useCanonical=false&api_key=${WORDNIK_API_KEY}`,
       { signal: AbortSignal.timeout(5000) }
     );
     if (res.status === 404) return false;
