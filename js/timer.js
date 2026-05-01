@@ -271,7 +271,12 @@ function renderTimerUI() {
     btnUndo.style.display = st.milestones.length > 0 ? 'inline-flex' : 'none';
   }
 
-  // Sync le select et l'input avec la tâche courante
+  // Sync le bouton custom avec la tâche courante
+  if (typeof updateTimerSelectBtn === 'function') {
+    updateTimerSelectBtn(st.currentTask || '');
+  }
+
+  // Sync le select et l'input avec la tâche courante (fallback)
   if (taskSel && taskInp) {
     const isCustom = st.currentTask && !getAppTaskLabels().includes(st.currentTask);
     if (isCustom) {

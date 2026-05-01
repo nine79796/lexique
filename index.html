@@ -189,8 +189,16 @@
                data-i18n-placeholder="words.new_word_placeholder"
                placeholder="Nouveau mot..."
                oninput="onWordInputChange()" autocomplete="off" />
-        <select id="catSelect"></select>
-        <select id="sourceSelect"></select>
+        <button class="cselect-btn" id="catSelectBtn" onclick="openCselect('cat')" type="button">
+          <span class="cselect-label" id="catSelectLabel" data-i18n="words.cat_placeholder">— Catégorie —</span>
+          <span class="cselect-arrow">▾</span>
+        </button>
+        <select id="catSelect" style="display:none"></select>
+        <button class="cselect-btn" id="sourceSelectBtn" onclick="openCselect('source')" type="button">
+          <span class="cselect-label" id="sourceSelectLabel" data-i18n="sources.select">— Source —</span>
+          <span class="cselect-arrow">▾</span>
+        </button>
+        <select id="sourceSelect" style="display:none"></select>
         <button class="btn" onclick="addWord()" data-i18n="common.add">Ajouter</button>
       </div>
       <div class="validation-strip" id="validationStrip"></div>
@@ -244,7 +252,11 @@
       <div class="timer-display" id="timerDisplay">00:00</div>
 
       <div class="timer-task-row">
-        <select class="timer-task-select" id="timerTaskSelect" onchange="onTimerTaskChange()"></select>
+        <button class="cselect-btn timer-cselect-btn" id="timerTaskSelectBtn" onclick="openCselect('timer')" type="button">
+          <span class="cselect-label" id="timerTaskSelectLabel" data-i18n="timer.no_task">— Tâche libre —</span>
+          <span class="cselect-arrow">▾</span>
+        </button>
+        <select class="timer-task-select" id="timerTaskSelect" onchange="onTimerTaskChange()" style="display:none"></select>
         <input  class="timer-task-input"  id="timerTaskInput"  type="text"
                 placeholder="Nom de la tâche…" oninput="onTimerTaskInput()" style="display:none">
       </div>
@@ -435,6 +447,17 @@
 <!-- ── APP SCRIPTS (load order matters) ── -->
 <script src="/config.js"></script>
 <script src="js/constants.js"></script>
+<!-- ── Custom Select Overlay ── -->
+<div class="cselect-overlay" id="cselectOverlay" onclick="closeCselect()">
+  <div class="cselect-sheet" id="cselectSheet" onclick="event.stopPropagation()">
+    <div class="cselect-header">
+      <span class="cselect-title" id="cselectTitle"></span>
+      <button class="modal-close" onclick="closeCselect()">×</button>
+    </div>
+    <div class="cselect-list" id="cselectList"></div>
+  </div>
+</div>
+
 <script src="js/i18n.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/state.js"></script>
@@ -449,6 +472,7 @@
 <script src="js/timer.js"></script>
 <script src="js/suggestions.js"></script>
 <script src="js/wordlookup.js"></script>
+<script src="js/cselect.js"></script>
 <script src="js/firebase.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/bootstrap.js"></script>

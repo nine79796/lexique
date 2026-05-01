@@ -44,7 +44,8 @@ function deleteTask(id) {
 
 /**
  * Auto-advance past-due once-tasks to today and mark recurring tasks as missed.
- * Runs once on app boot and each time the Tasks or Revision tab is opened.
+ * Runs AFTER the cloud pull so that tasks already done on another device
+ * are not incorrectly marked as missed.
  */
 function autoReportTasks() {
   const today   = todayStr();
@@ -62,12 +63,22 @@ function autoReportTasks() {
       }
     } else {
       getPastDueDates(task, addDays(today, -1)).forEach(d => {
-        if (!task.history[d]) {
-          task.history[d]  = 'missed';
-          task.reportCount = (task.reportCount || 0) + 1;
-          task.updatedAt   = ts();
-          changed = true;
-        }
+        // Guard: si la tâche a été mise à jour APRÈS minuit du jour d,
+        // on ne touche pas à l'historique — l'état viendra du pull cloud.
+        // On considère qu'une tâche modifiée dans les dernières 12h
+        // est potentiellement en cours de sync depuis un autre appareil.
+        if (task.history[d]) return; // déjà un état (done ou missed)
+
+        const taskUpdatedAt = task.updatedAt || 0;
+        const dayEnd = new Date(d + 'T23:59:59').getTime();
+        // Si la tâche a été modifiée après la fin du jour en question,
+        // on laisse le pull cloud décider plutôt que de marquer missed
+        if (taskUpdatedAt > dayEnd) return;
+
+        task.history[d]  = 'missed';
+        task.reportCount = (task.reportCount || 0) + 1;
+        task.updatedAt   = ts();
+        changed = true;
       });
     }
   });
@@ -312,6 +323,11 @@ function renderTasks() {
 
   let items = buildTaskItems(today).filter(item => {
     const { task } = item;
+    // Par défaut : on masque les tâches "once" cochées aujourd'hui
+    // (elles disparaissent de la liste une fois faites, sauf filtre "done")
+    if (activeTaskFilter !== 'done' && task.recurType === 'once' && item.done && fmtDay(task.doneAt || 0) === today) {
+      return false;
+    }
     if (activeTaskFilter === 'all')   return true;
     if (activeTaskFilter === 'today') return item.date === today && !item.done;
     if (activeTaskFilter === 'recur') return task.recurType !== 'once';
@@ -384,12 +400,6 @@ function renderTaskCard(item, today) {
     ? `<span class="task-badge deadline-b">${t('tasks.deadline')} ${task.deadline}</span>` : '';
   const doneBadge    = done ? `<span class="task-badge done-b">✓</span>` : '';
 
-  let streakBadge = '';
-  if (isRecur) {
-    const streak = getStreak(task, date);
-    if (streak > 1) streakBadge = `<span class="task-badge streak-b">🔥 ×${streak}</span>`;
-  }
-
   const checkFn    = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
   const checkState = done ? ' checked' : '';
 
@@ -418,7 +428,7 @@ function renderTaskCard(item, today) {
       <div class="task-info">
         <div class="task-title">${escHtml(task.title)}</div>
         ${task.desc ? `<div class="task-desc">${escHtml(task.desc)}</div>` : ''}
-        <div class="task-meta">${catBadge}${dateBadge}${recurBadge}${reportBadge}${deadlineBadge}${streakBadge}${doneBadge}</div>
+        <div class="task-meta">${catBadge}${dateBadge}${recurBadge}${reportBadge}${deadlineBadge}${doneBadge}</div>
       </div>
       <div class="task-actions">
         ${expandBtn}

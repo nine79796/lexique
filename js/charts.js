@@ -198,27 +198,25 @@ function renderRecurConsistTable() {
     const done   = past.filter(d => task.history[d] === 'done').length;
     const missed = past.filter(d => task.history[d] !== 'done' && d < today).length;
     const pct    = total > 0 ? Math.round(done / total * 100) : 0;
-    const streak = getStreak(task, today);
     const pctClass = pct >= 80 ? 'pct-good' : pct >= 50 ? 'pct-mid' : 'pct-low';
-    return { task, total, done, missed, pct, pctClass, streak };
+    return { task, total, done, missed, pct, pctClass };
   }).sort((a, b) => b.pct - a.pct);
 
   const th = [
     t('recur.table.task'), t('recur.table.type'), t('recur.table.done'),
-    t('recur.table.missed'), t('recur.table.pct'), t('recur.table.streak'),
+    t('recur.table.missed'), t('recur.table.pct'),
   ];
 
   container.innerHTML = `<table class="recur-stats-table">
     <thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>
-      ${rows.map(({ task, total, done, missed, pct, pctClass, streak }) => `
+      ${rows.map(({ task, total, done, missed, pct, pctClass }) => `
         <tr>
           <td>${escHtml(task.title)}</td>
           <td><span class="task-badge recur-b">${recurTypeLabel(task)}</span></td>
           <td>${done}/${total}</td>
           <td>${missed}</td>
           <td class="${pctClass}">${pct}%</td>
-          <td>${streak > 0 ? `🔥 ×${streak}` : '-'}</td>
         </tr>`
       ).join('')}
     </tbody>

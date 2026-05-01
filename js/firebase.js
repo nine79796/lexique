@@ -444,6 +444,7 @@ window.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && fbReady && navigator.onLine) {
     CloudSync.pullFromCloud().then(() => {
       load();
+      autoReportTasks(); // après pull pour ne pas écraser les actions d'autres appareils
       rebuildNgrams();
       render(); renderTasks(); updateStats(); updateTaskStats();
       renderCatManager(); renderCatSelect(); renderFilters();
@@ -457,6 +458,7 @@ setInterval(() => {
   if (document.visibilityState === 'visible' && fbReady && navigator.onLine && !isSyncing) {
     CloudSync.pullFromCloud().then(() => {
       load();
+      autoReportTasks(); // après pull
       rebuildNgrams();
       render(); renderTasks(); updateStats(); updateTaskStats();
       renderCatManager(); renderCatSelect(); renderFilters();
@@ -496,6 +498,7 @@ setInterval(() => {
 
         const afterPull = () => {
           load();
+          autoReportTasks(); // après le pull — les tâches cochées sur d'autres appareils sont déjà dans state
           rebuildNgrams();
           render(); renderTasks(); updateStats(); updateTaskStats();
           renderCatManager(); renderCatSelect(); renderFilters();

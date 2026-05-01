@@ -42,7 +42,9 @@ window.addEventListener('offline', updateOnlineStatus);
   loadSuggPrefs();
   applyTranslations();
   rebuildNgrams();
-  autoReportTasks();
+  // Note: autoReportTasks() est appelé APRÈS le pull cloud (firebase.js)
+  // pour éviter de marquer "missed" des tâches cochées sur un autre appareil.
+  // En mode hors-ligne, il sera appelé lors de l'ouverture des onglets Tasks/Revision.
   renderCatManager();
   renderCatSelect();
   renderSourceManager();

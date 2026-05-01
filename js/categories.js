@@ -22,6 +22,8 @@ function addCategory() {
   renderCatSelect();
   renderFilters();
   updateStats();
+  // Si la catégorie active dans le popup custom n'existe plus, reset
+  if (typeof _cselectType === 'undefined') return;
 }
 
 function deleteCategory(key) {

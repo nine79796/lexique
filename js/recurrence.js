@@ -64,34 +64,9 @@ const RecurrenceEngine = {
     return results;
   },
 
-  /**
-   * Counts consecutive completed occurrences ending on `upTo`.
-   */
-  getStreak(task, upTo) {
-    let streak = 0;
-    let cursor = upTo;
-    let guard  = 0;
-
-    while (guard < 365) {
-      if (!this.isActiveOnDate(task, cursor)) {
-        cursor = addDays(cursor, -1);
-        guard++;
-        continue;
-      }
-      if (task.history[cursor] === 'done') {
-        streak++;
-        cursor = addDays(cursor, -1);
-        guard++;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  },
 };
 
 // Convenience aliases
 const isTaskActiveOnDate = (task, d) => RecurrenceEngine.isActiveOnDate(task, d);
 const getTaskOccurrence  = (task, d) => RecurrenceEngine.getOccurrence(task, d);
 const getPastDueDates    = (task, d) => RecurrenceEngine.getPastDueDates(task, d);
-const getStreak          = (task, d) => RecurrenceEngine.getStreak(task, d);
