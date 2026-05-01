@@ -96,25 +96,19 @@ function clickWord(key) {
 
   const count = w.occurrences.length;
 
-  save();
-  updateStats();
+  // 1. UI immédiate — juste la carte concernée, pas toute la liste
+  //    requestAnimationFrame laisse le touch se terminer avant le DOM update
+  requestAnimationFrame(() => {
+    refreshWordCard(key);
+    updateStats();
+    showUndoBtn(key);
+  });
 
-  // Push immédiat vers Firestore pour éviter qu'un pull ultérieur
-  // écrase le clic avec une version moins récente
-  if (navigator.onLine) CloudSync.schedule(300);
-
-  // Affiche le bouton undo après chaque clic
-  showUndoBtn(key);
-
-  // Forcer render() complet dès que la carte change d'apparence
-  // (badge Anki, bouton désactivé, etc.)
-  // Sur mobile, on utilise requestAnimationFrame pour laisser le touch
-  // se terminer proprement avant de reconstruire le DOM.
-  if (count >= ANKI_THRESHOLD || count >= MAX_CLICKS) {
-    requestAnimationFrame(() => render());
-  } else {
-    requestAnimationFrame(() => refreshWordCard(key));
-  }
+  // 2. Sauvegarde + sync différées pour ne pas bloquer le thread UI
+  setTimeout(() => {
+    save();
+    if (navigator.onLine) CloudSync.schedule(500);
+  }, 50);
 }
 
 /**
