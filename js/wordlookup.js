@@ -154,11 +154,6 @@ const WordLookup = {
         <span class="wl-def-text">${escHtml(d.text)}</span>
       </div>`).join('');
 
-    const exsHtml = result.examples.length
-      ? `<div class="wl-section-label">${t('lookup.examples') || 'Exemples'}</div>`
-        + result.examples.map(e => `<div class="wl-example">"${escHtml(e)}"</div>`).join('')
-      : '';
-
     popup.innerHTML = `
       <div class="wl-header">
         <span class="wl-word">${escHtml(word)}</span>
@@ -167,7 +162,6 @@ const WordLookup = {
       </div>
       <div class="wl-body">
         ${defsHtml}
-        ${exsHtml}
         <div class="wl-source">${sourceLabel}</div>
       </div>`;
 
@@ -179,26 +173,34 @@ const WordLookup = {
   },
 
   _position(popup, anchor) {
-    // Positionner sous l'ancre, en évitant les bords
     const rect    = anchor.getBoundingClientRect();
     const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
+    const vw      = window.innerWidth;
 
-    popup.style.position = 'absolute';
-    popup.style.top      = (rect.bottom + scrollY + 6) + 'px';
-    popup.style.left     = Math.max(8, rect.left + scrollX) + 'px';
+    // Sur mobile (< 600px) : centré horizontalement, largeur fixe
+    if (vw < 600) {
+      popup.style.position = 'fixed';
+      popup.style.left     = '50%';
+      popup.style.top      = '50%';
+      popup.style.transform = 'translate(-50%, -50%)';
+      popup.style.width    = (vw - 32) + 'px';
+      popup.style.maxWidth = '400px';
+      return;
+    }
 
-    // Ajuster si déborde à droite
+    // Desktop : sous l'ancre, centré sur elle
+    popup.style.position  = 'absolute';
+    popup.style.transform = '';
+    popup.style.top       = (rect.bottom + scrollY + 6) + 'px';
+
     requestAnimationFrame(() => {
-      const pw = popup.offsetWidth;
-      const vw = window.innerWidth;
-      if (rect.left + pw + 8 > vw) {
-        popup.style.left = Math.max(8, vw - pw - 8) + 'px';
-      }
+      const pw   = popup.offsetWidth;
+      const left = rect.left + window.scrollX + rect.width / 2 - pw / 2;
+      popup.style.left = Math.max(8, Math.min(left, vw - pw - 8)) + 'px';
+
       // Ajuster si déborde en bas
-      const ph  = popup.offsetHeight;
-      const vh  = window.innerHeight;
-      const top = rect.bottom + scrollY + 6;
+      const ph = popup.offsetHeight;
+      const vh = window.innerHeight;
       if (rect.bottom + ph + 6 > vh) {
         popup.style.top = (rect.top + scrollY - ph - 6) + 'px';
       }
