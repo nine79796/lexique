@@ -323,16 +323,20 @@ function renderTasks() {
 
   let items = buildTaskItems(today).filter(item => {
     const { task } = item;
-    // Par défaut : on masque les tâches "once" cochées aujourd'hui
-    // (elles disparaissent de la liste une fois faites, sauf filtre "done")
-    if (activeTaskFilter !== 'done' && task.recurType === 'once' && item.done && fmtDay(task.doneAt || 0) === today) {
-      return false;
-    }
+
+    // Filtre "done" explicite : montrer tout ce qui est fait
+    if (activeTaskFilter === 'done') return item.done;
+
+    // Vue par défaut : masquer les tâches "once" déjà cochées
+    if (task.recurType === 'once' && item.done) return false;
+
+    // Vue par défaut : masquer les occurrences récurrentes passées déjà cochées
+    if (task.recurType !== 'once' && item.done && item.date < today) return false;
+
     if (activeTaskFilter === 'all')   return true;
     if (activeTaskFilter === 'today') return item.date === today && !item.done;
     if (activeTaskFilter === 'recur') return task.recurType !== 'once';
     if (activeTaskFilter === 'late')  return item.isLate;
-    if (activeTaskFilter === 'done')  return item.done;
     return task.cat === activeTaskFilter;
   });
 
