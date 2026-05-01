@@ -217,9 +217,11 @@ const CloudSync = {
             batch.set(wRef.doc(String(id)), {
               label:       w.label       ?? '',
               catKey:      w.catKey      ?? null,
+              source:      w.source      ?? null,
               occurrences: Array.isArray(w.occurrences) ? w.occurrences : [],
               note:        w.note        ?? '',
               ankiDone:    w.ankiDone    ?? false,
+              ankiDoneAt:  w.ankiDoneAt  ?? null,
               validity:    w.validity    ?? 'unknown',
               createdAt:   w.createdAt   ?? now,
               updatedAt:   w.updatedAt   ?? now,
@@ -265,7 +267,8 @@ const CloudSync = {
       }
 
       // ── Catégories + Timer + métadonnées ─────────────────
-      const cats = st.categories || {};
+      const cats    = st.categories || {};
+      const sources = st.sources    || {};
 
       // Timer : sessions et milestones (drapeaux)
       let timerData = {};
@@ -280,6 +283,7 @@ const CloudSync = {
           lastSync:        Date.now(),
           appVersion:      'lexique-v6',
           categories:      cats,
+          sources:         sources,
           timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
           timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
         }, { merge: true });
@@ -384,6 +388,13 @@ const CloudSync = {
           if (cloudCats && typeof cloudCats === 'object') {
             appState.categories = cloudCats;
             console.debug('[Sync↓] Catégories reçues :', Object.keys(cloudCats).length);
+          }
+
+          // Sources personnalisées
+          const cloudSources = data.sources;
+          if (cloudSources && typeof cloudSources === 'object') {
+            appState.sources = cloudSources;
+            console.debug('[Sync↓] Sources reçues :', Object.keys(cloudSources).length);
           }
 
           // Timer

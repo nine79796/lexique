@@ -138,34 +138,80 @@ function renderWordCard(key) {
   const w        = state.words[key];
   const anki     = isAnkiReady(w);
   const done     = w.ankiDone;
-  const maxed    = isMaxReached(w);
   const col      = w.catKey ? getCatColor(w.catKey) : null;
   const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : null;
 
-  const badge      = catLabel && col
+  const badge     = catLabel && col
     ? `<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${escHtml(catLabel)}</span>` : '';
-  const ankiBadge  = anki ? `<span class="anki-badge">Anki</span>` : '';
-  const ankiBtn    = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
-  const maxBadge   = maxed && !done ? `<span class="val-badge invalid" style="font-size:9px">${t('words.max_occ')}</span>` : '';
-  const dates      = w.occurrences.map(occ => `<span class="date-tag" title="${fmtFull(occ)}">${fmtShort(occ)}</span>`).join('');
+  const ankiBadge = anki ? `<span class="anki-badge">Anki</span>` : '';
+  const ankiBtn   = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
+
+  // Badge source
+  const srcBadge  = w.source ? renderSourceBadge(w.source) : '';
+
   const validBadge = w.validity === 'valid'
     ? `<span class="word-valid-badge valid">✓</span>`
     : w.validity === 'invalid'
     ? `<span class="word-valid-badge invalid">✗</span>` : '';
 
-  // FIX : data-word-key permet à refreshWordCard() de cibler cette carte
-  return `<div class="word-card${anki ? ' anki-ready' : ''}${done ? ' anki-done' : ''}${maxed && !done ? ' max-reached' : ''}"
+  // Dates en déroulant si > 3 occurrences
+  const occCount = w.occurrences.length;
+  let datesHtml  = '';
+  if (occCount > 0) {
+    const allDates = w.occurrences.map(occ => `<span class="date-tag" title="${fmtFull(occ)}">${fmtShort(occ)}</span>`).join('');
+    if (occCount <= 3) {
+      datesHtml = `<div class="word-dates">${allDates}</div>`;
+    } else {
+      // Afficher seulement les 2 dernières + bouton déroulant
+      const lastTwo = w.occurrences.slice(-2).map(occ => `<span class="date-tag" title="${fmtFull(occ)}">${fmtShort(occ)}</span>`).join('');
+      datesHtml = `
+        <div class="word-dates">
+          ${lastTwo}
+          <button class="dates-toggle-btn" onclick="toggleDates('${key}', this)">
+            +${occCount - 2} ▼
+          </button>
+          <div class="word-dates-all" id="dates-all-${key}" style="display:none">${allDates}</div>
+        </div>`;
+    }
+  }
+
+  return `<div class="word-card${anki ? ' anki-ready' : ''}${done ? ' anki-done' : ''}"
                data-word-key="${key}">
     <div class="word-card-top">
-      <button class="word-btn" onclick="clickWord('${key}')" ${maxed ? 'disabled' : ''}>${escHtml(w.label)}</button>
-      ${badge}${validBadge}${maxBadge}${ankiBadge}
-      <span class="count-badge">${w.occurrences.length}×</span>
+      <button class="word-btn" onclick="clickWord('${key}')">${escHtml(w.label)}</button>
+      ${badge}${srcBadge}${validBadge}${ankiBadge}
+      <span class="count-badge">${occCount}×</span>
       <button class="wl-btn" onclick="WordLookup.open('${escHtml(w.label)}', this)" title="Définition">?</button>
       ${ankiBtn}
       <button class="btn btn-danger" onclick="deleteWord('${key}')">×</button>
     </div>
-    <div class="word-dates">${dates}</div>
+    ${datesHtml}
   </div>`;
+}
+
+/** Affiche le badge de la source d'un mot */
+function renderSourceBadge(sourceKey) {
+  // Source par défaut
+  const def = DEFAULT_SOURCES.find(s => s.key === sourceKey);
+  if (def) {
+    return `<span class="source-badge" title="${t(def.labelKey) || def.key}">${def.emoji}</span>`;
+  }
+  // Source personnalisée
+  const custom = state.sources[sourceKey];
+  if (custom) {
+    return `<span class="source-badge" title="${escHtml(custom.label)}">${custom.emoji || '🔖'}</span>`;
+  }
+  return '';
+}
+
+/** Bascule l'affichage de toutes les dates d'un mot */
+function toggleDates(key, btn) {
+  const allEl = document.getElementById('dates-all-' + key);
+  if (!allEl) return;
+  const open = allEl.style.display !== 'none';
+  allEl.style.display = open ? 'none' : 'block';
+  const w = state.words[key];
+  if (w) btn.textContent = open ? `+${w.occurrences.length - 2} ▼` : '▲ Masquer';
 }
 
 // ── Online / offline status badge ────────────────────────────

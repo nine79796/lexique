@@ -16,7 +16,6 @@ const NotificationService = {
     // They now use the i18n t() function so they respect the active language.
     const map = {
       anki:        [t('notif.anki_title'),       t('notif.anki_body',   `"${payload}" — 3 occurrences`)],
-      max:         [t('notif.max_title'),        t('notif.max_body',    `"${payload}" : 3 clics`)],
       tasks_today: [t('notif.tasks_today_title'), t('notif.tasks_today_body', `${payload}`)],
       tasks_late:  [t('notif.tasks_late_title'),  t('notif.tasks_late_body',  `${payload}`)],
       recur_due:   [t('notif.recur_title'),       `"${payload}"`],

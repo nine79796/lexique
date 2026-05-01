@@ -35,7 +35,7 @@ const Storage = {
 
 // ── Runtime state ─────────────────────────────────────────────
 
-let state = { words: {}, categories: {}, tasks: [] };
+let state = { words: {}, categories: {}, tasks: [], sources: {} };
 
 // UI filter state
 let activeFilter     = 'all';
@@ -65,6 +65,7 @@ function load() {
   state.words      ??= {};
   state.categories ??= {};
   state.tasks      ??= [];
+  state.sources    ??= {};
   migrate();
 }
 
@@ -101,9 +102,11 @@ function migrate() {
 
   // Ensure all words have required fields
   Object.values(state.words).forEach(w => {
-    if (w.validity === undefined)  { w.validity  = 'unknown'; changed = true; }
-    if (w.ankiDone === undefined)  { w.ankiDone  = false;     changed = true; }
-    if (!Array.isArray(w.occurrences)) { w.occurrences = [];  changed = true; }
+    if (w.validity === undefined)      { w.validity   = 'unknown'; changed = true; }
+    if (w.ankiDone === undefined)      { w.ankiDone   = false;     changed = true; }
+    if (!Array.isArray(w.occurrences)) { w.occurrences = [];       changed = true; }
+    if (w.source === undefined)        { w.source     = null;      changed = true; }
+    if (w.ankiDoneAt === undefined)    { w.ankiDoneAt = null;      changed = true; }
   });
 
   // Ensure all tasks have required fields

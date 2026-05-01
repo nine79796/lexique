@@ -872,3 +872,66 @@ body {
 .wl-suggestion-word:hover {
   background: rgba(200,169,110,0.25);
 }
+
+/* ════════════════════════════════════════════════
+   SOURCE BADGE — Badge emoji source sur les cartes
+════════════════════════════════════════════════ */
+.source-badge {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+  cursor: default;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.source-badge:hover { opacity: 1; }
+
+/* ════════════════════════════════════════════════
+   DATES DÉROULANT — Occurrences repliables
+════════════════════════════════════════════════ */
+.dates-toggle-btn {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dates-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.word-dates-all {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 0.5px solid var(--border);
+  animation: fadeSlide 0.15s ease;
+}
+
+/* ════════════════════════════════════════════════
+   SOURCE SELECT — Select source dans add-row
+════════════════════════════════════════════════ */
+#sourceSelect {
+  min-width: 110px;
+  cursor: pointer;
+}
+#sourceSelect option { background: var(--surface); }
+
+/* ════════════════════════════════════════════════
+   SOURCE MANAGER — Emoji input dans cat-row
+════════════════════════════════════════════════ */
+#sourceEmoji {
+  max-width: 48px;
+  text-align: center;
+  font-size: 16px;
+  padding: 8px 6px;
+}

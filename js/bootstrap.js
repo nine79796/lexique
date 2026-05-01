@@ -45,6 +45,8 @@ window.addEventListener('offline', updateOnlineStatus);
   autoReportTasks();
   renderCatManager();
   renderCatSelect();
+  renderSourceManager();
+  renderSourceSelect();
   renderFilters();
   updateStats();
   render();

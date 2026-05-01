@@ -163,6 +163,25 @@
       </div>
     </div>
 
+    <!-- Source manager -->
+    <div class="section-card">
+      <button class="toggle-btn" onclick="toggleSection('sourceBody','sourceIcon')">
+        <span class="toggle-icon" id="sourceIcon">▶</span>
+        <span data-i18n="sources.manage">Gérer les sources</span>
+      </button>
+      <div class="collapsible" id="sourceBody">
+        <div class="cat-list" id="sourceChipList"></div>
+        <div class="cat-row">
+          <input class="cat-input" type="text" id="sourceEmoji"
+                 placeholder="🔖" style="max-width:48px;text-align:center" autocomplete="off" />
+          <input class="cat-input" type="text" id="sourceInput"
+                 data-i18n-placeholder="sources.new_placeholder"
+                 placeholder="Nouvelle source..." autocomplete="off" />
+          <button class="btn btn-sm" onclick="addCustomSource()" data-i18n="common.add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Add word -->
     <div class="add-section">
       <div class="add-row">
@@ -171,6 +190,7 @@
                placeholder="Nouveau mot..."
                oninput="onWordInputChange()" autocomplete="off" />
         <select id="catSelect"></select>
+        <select id="sourceSelect"></select>
         <button class="btn" onclick="addWord()" data-i18n="common.add">Ajouter</button>
       </div>
       <div class="validation-strip" id="validationStrip"></div>

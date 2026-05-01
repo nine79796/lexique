@@ -7,8 +7,7 @@
 // ── Helpers ───────────────────────────────────────────────────
 
 const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
-// Un mot est bloqué seulement après ankiDone ET MAX_CLICKS dépassé
-const isMaxReached = w => Array.isArray(w.occurrences) && w.ankiDone && w.occurrences.length >= MAX_CLICKS;
+// isMaxReached supprimé — plus de blocage après ankiDone.
 
 // ── Category colour ───────────────────────────────────────────
 
@@ -28,13 +27,6 @@ function recordOccurrence(key) {
   const w = state.words[key];
   if (!w) return false;
 
-  if (isMaxReached(w)) {
-    notify('max', w.label);
-    return false;
-  }
-
-  // Utilise un timestamp normalisé à midi pour éviter les dérives
-  // entre fuseaux horaires lors de l'affichage par jour
   const now = Date.now();
   w.occurrences.push(now);
   w.updatedAt = now;
@@ -46,15 +38,17 @@ function recordOccurrence(key) {
 }
 
 async function addWord() {
-  const inp   = document.getElementById('wordInput');
-  const sel   = document.getElementById('catSelect');
-  const label = inp.value.trim();
+  const inp    = document.getElementById('wordInput');
+  const sel    = document.getElementById('catSelect');
+  const srcSel = document.getElementById('sourceSelect');
+  const label  = inp.value.trim();
   if (!label) return;
 
   console.debug('[addWord] Ajout :', label);
 
   const key    = label.toLowerCase().replace(/\s+/g, '_');
   const catKey = sel.value || null;
+  const source = srcSel ? srcSel.value || null : null;
   const now    = ts();
 
   if (!state.words[key]) {
@@ -63,13 +57,16 @@ async function addWord() {
       createdAt:   now,
       updatedAt:   now,
       catKey,
+      source,
       occurrences: [],
       ankiDone:    false,
+      ankiDoneAt:  null,
       validity:    'unknown',
     };
     console.debug('[addWord] Nouveau mot créé :', key);
   } else {
-    if (catKey) state.words[key].catKey = catKey;
+    if (catKey)  state.words[key].catKey = catKey;
+    if (source)  state.words[key].source = source;
   }
 
   const ok = recordOccurrence(key);
@@ -190,7 +187,8 @@ function markAnkiDone(key) {
   if (!state.words[key]) return;
 
   state.words[key].ankiDone  = true;
-  state.words[key].updatedAt = Date.now();
+  state.words[key].ankiDoneAt = Date.now();
+  state.words[key].updatedAt  = Date.now();
 
   save();
   updateStats();

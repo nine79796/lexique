@@ -5,7 +5,16 @@
 // ════════════════════════════════════════════════════════════════
 
 const ANKI_THRESHOLD = 3;
-const MAX_CLICKS     = 10; // Max clics après ankiDone — ne bloque plus avant
+// MAX_CLICKS supprimé — le comptage est illimité après ankiDone.
+// C'est Anki qui gère la répétition espacée, pas cette app.
+
+/** Sources d'exposition par défaut — l'utilisateur peut en créer d'autres */
+const DEFAULT_SOURCES = [
+  { key: 'lecture',      emoji: '📖', labelKey: 'sources.lecture' },
+  { key: 'video',        emoji: '🎬', labelKey: 'sources.video'   },
+  { key: 'audio',        emoji: '🎧', labelKey: 'sources.audio'   },
+  { key: 'conversation', emoji: '💬', labelKey: 'sources.conversation' },
+];
 // La clé est injectée par /config.js (généré par Vercel au build, jamais commité).
 // En local : créer un fichier config.js à la racine contenant :
 //   const __WORDNIK_KEY__ = 'ta_clé_ici';
