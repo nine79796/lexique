@@ -29,16 +29,29 @@ const WordLookup = {
       const audio = audioRes.status === 'fulfilled' && audioRes.value.ok ? await audioRes.value.json() : [];
       const exs   = exRes.status   === 'fulfilled' && exRes.value.ok   ? await exRes.value.json()   : { examples: [] };
 
+      console.debug('[WordLookup] defs:', JSON.stringify(defs.slice(0,2)));
+      console.debug('[WordLookup] audio:', JSON.stringify(audio.slice(0,2)));
+
       if (!defs.length) return null;
+
+      const mappedDefs = defs
+        .map(d => ({
+          partOfSpeech: d.partOfSpeech || '',
+          text: (d.text || d.extendedText || '').replace(/<[^>]+>/g, '').trim(),
+        }))
+        .filter(d => d.text.length > 0)
+        .slice(0, 3);
+
+      if (!mappedDefs.length) return null;
+
+      // Prononciation : chercher dans tous les champs possibles
+      const pronunc = audio[0]?.raw || audio[0]?.rawType || audio[0]?.rawPronounciation || '';
 
       return {
         source: 'wordnik',
-        definitions: defs.slice(0, 3).map(d => ({
-          partOfSpeech: d.partOfSpeech || '',
-          text:         (d.text || '').replace(/<[^>]+>/g, ''),
-        })),
-        pronunciation: audio[0]?.raw || audio[0]?.rawType || '',
-        examples: (exs.examples || []).slice(0, 2).map(e => e.text || ''),
+        definitions: mappedDefs,
+        pronunciation: pronunc,
+        examples: [],
       };
     } catch { return null; }
   },
@@ -73,9 +86,9 @@ const WordLookup = {
 
       return {
         source: 'freedict',
-        definitions: defs.slice(0, 3),
+        definitions: defs.filter(d => d.text && d.text.trim()).slice(0, 3),
         pronunciation: pronunc,
-        examples: exs.slice(0, 2),
+        examples: [],
       };
     } catch { return null; }
   },
@@ -170,25 +183,41 @@ const WordLookup = {
 
   close() {
     if (this._popup) { this._popup.remove(); this._popup = null; }
+    const ov = document.getElementById('wl-overlay');
+    if (ov) ov.remove();
   },
 
   _position(popup, anchor) {
-    const rect    = anchor.getBoundingClientRect();
-    const scrollY = window.scrollY;
-    const vw      = window.innerWidth;
+    const vw = window.innerWidth;
 
-    // Sur mobile (< 600px) : centré horizontalement, largeur fixe
     if (vw < 600) {
-      popup.style.position = 'fixed';
-      popup.style.left     = '50%';
-      popup.style.top      = '50%';
-      popup.style.transform = 'translate(-50%, -50%)';
-      popup.style.width    = (vw - 32) + 'px';
-      popup.style.maxWidth = '400px';
+      // Mobile : overlay sombre + popup centré en position fixed
+      let overlay = document.getElementById('wl-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'wl-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998';
+        overlay.addEventListener('mousedown', () => this.close());
+        overlay.addEventListener('touchstart', () => this.close());
+        document.body.appendChild(overlay);
+      }
+      popup.style.cssText = [
+        'position:fixed',
+        'top:50%',
+        'left:50%',
+        'transform:translate(-50%,-50%)',
+        'width:' + (vw - 32) + 'px',
+        'max-width:400px',
+        'z-index:9999',
+        'max-height:80vh',
+        'overflow-y:auto',
+      ].join(';');
       return;
     }
 
     // Desktop : sous l'ancre, centré sur elle
+    const rect    = anchor.getBoundingClientRect();
+    const scrollY = window.scrollY;
     popup.style.position  = 'absolute';
     popup.style.transform = '';
     popup.style.top       = (rect.bottom + scrollY + 6) + 'px';
@@ -198,7 +227,6 @@ const WordLookup = {
       const left = rect.left + window.scrollX + rect.width / 2 - pw / 2;
       popup.style.left = Math.max(8, Math.min(left, vw - pw - 8)) + 'px';
 
-      // Ajuster si déborde en bas
       const ph = popup.offsetHeight;
       const vh = window.innerHeight;
       if (rect.bottom + ph + 6 > vh) {
