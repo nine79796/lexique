@@ -7,8 +7,8 @@
 // ── Helpers ───────────────────────────────────────────────────
 
 const isAnkiReady  = w => Array.isArray(w.occurrences) && w.occurrences.length >= ANKI_THRESHOLD && !w.ankiDone;
-// Un mot ankiDone ne peut plus être bloqué par MAX_CLICKS — il peut continuer à être rencontré
-const isMaxReached = w => Array.isArray(w.occurrences) && w.occurrences.length >= MAX_CLICKS && !w.ankiDone;
+// Un mot est bloqué seulement après ankiDone ET MAX_CLICKS dépassé
+const isMaxReached = w => Array.isArray(w.occurrences) && w.ankiDone && w.occurrences.length >= MAX_CLICKS;
 
 // ── Category colour ───────────────────────────────────────────
 

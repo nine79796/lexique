@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 
 const ANKI_THRESHOLD = 3;
-const MAX_CLICKS     = 3;
+const MAX_CLICKS     = 10; // Max clics après ankiDone — ne bloque plus avant
 // La clé est injectée par /config.js (généré par Vercel au build, jamais commité).
 // En local : créer un fichier config.js à la racine contenant :
 //   const __WORDNIK_KEY__ = 'ta_clé_ici';
