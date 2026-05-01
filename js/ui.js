@@ -160,6 +160,7 @@ function renderWordCard(key) {
       <button class="word-btn" onclick="clickWord('${key}')" ${maxed ? 'disabled' : ''}>${escHtml(w.label)}</button>
       ${badge}${validBadge}${maxBadge}${ankiBadge}
       <span class="count-badge">${w.occurrences.length}×</span>
+      <button class="wl-btn" onclick="WordLookup.open('${escHtml(w.label)}', this)" title="Définition">?</button>
       ${ankiBtn}
       <button class="btn btn-danger" onclick="deleteWord('${key}')">×</button>
     </div>

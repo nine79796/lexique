@@ -683,3 +683,161 @@ body {
   color: var(--accent);
   white-space: nowrap;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   WORD LOOKUP POPUP
+   ════════════════════════════════════════════════════════════════ */
+
+/* Bouton "?" sur la carte */
+.wl-btn {
+  font-size: 11px;
+  font-weight: 600;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+.wl-btn:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: rgba(200,169,110,0.4);
+}
+
+/* Popup */
+.wl-popup {
+  position: absolute;
+  z-index: 9999;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.04);
+  overflow: hidden;
+  animation: wlFadeIn 0.15s ease;
+}
+@keyframes wlFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.wl-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.wl-word {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+.wl-pronunc {
+  font-size: 12px;
+  color: var(--accent);
+  font-family: monospace;
+  background: var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.wl-close {
+  font-size: 16px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.wl-close:hover { background: var(--surface3); color: var(--text); }
+
+.wl-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-def {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wl-pos {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--anki);
+  background: var(--anki-dim);
+  padding: 1px 7px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+.wl-def-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.wl-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.wl-example {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.45;
+  padding-left: 8px;
+  border-left: 2px solid var(--border2);
+}
+
+.wl-source {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: right;
+  margin-top: 2px;
+}
+
+.wl-loading {
+  padding: 16px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-empty {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
