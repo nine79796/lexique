@@ -127,6 +127,7 @@
     <button class="tab"         onclick="switchTab('taches')"   data-i18n="tabs.tasks">Tâches</button>
     <button class="tab"         onclick="switchTab('timer')"    data-i18n="tabs.timer">Chrono</button>
     <button class="tab"         onclick="switchTab('stats')"    data-i18n="tabs.stats">Statistiques</button>
+    <button class="tab"         onclick="switchTab('spelling')" data-i18n="tabs.spelling">Dictée</button>
   </div>
 
   <!-- ══════════ TAB MOTS ══════════ -->
@@ -323,6 +324,11 @@
     </div>
   </div>
 
+  <!-- ══════════ TAB DICTÉE ══════════ -->
+  <div class="tab-content" id="tab-spelling">
+    <div id="spellingContent"></div>
+  </div>
+
 </div><!-- /.app -->
 
 <!-- ── TASK MODAL ── -->
@@ -473,6 +479,7 @@
 <script src="js/suggestions.js"></script>
 <script src="js/wordlookup.js"></script>
 <script src="js/cselect.js"></script>
+<script src="js/spelling.js"></script>
 <script src="js/firebase.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/bootstrap.js"></script>

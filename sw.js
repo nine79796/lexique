@@ -5,7 +5,7 @@
 //  ⚠️  Ne jamais intercepter les requêtes Firebase/Firestore
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'lexique-v28';
+const CACHE_VERSION = 'lexique-v29';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DYNAMIC = `${CACHE_VERSION}-dynamic`;
 
@@ -31,6 +31,7 @@ const STATIC_ASSETS = [
   '/js/charts.js',
   '/js/ui.js',
   '/js/pwa.js',
+  '/js/spelling.js',
   '/js/bootstrap.js',
 ];
 
