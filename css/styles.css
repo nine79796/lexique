@@ -969,10 +969,11 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.55);
-  z-index: 300;
+  z-index: 10000;
   align-items: flex-end;
   justify-content: center;
   backdrop-filter: blur(2px);
+  touch-action: none;
 }
 .cselect-overlay.open { display: flex; animation: fadeIn 0.15s ease; }
 
@@ -986,6 +987,10 @@ body {
   padding: 1.25rem 1.25rem 2rem;
   box-shadow: var(--shadow);
   animation: slideUp 0.2s ease;
+  position: relative;
+  z-index: 10001;
+  touch-action: auto;
+  pointer-events: auto;
 }
 @keyframes slideUp {
   from { transform: translateY(30px); opacity: 0; }
@@ -1016,13 +1021,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 4px;
+  padding: 15px 4px;
   border-bottom: 0.5px solid var(--border);
   cursor: pointer;
   font-size: 15px;
   color: var(--text);
   transition: color 0.15s;
   gap: 10px;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 52px;
 }
 .cselect-item:last-child { border-bottom: none; }
 .cselect-item:hover { color: var(--accent); }

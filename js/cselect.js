@@ -7,6 +7,20 @@
 var _cselectState = { cat: '', source: '', timer: '' };
 var _cselectType  = null;
 
+function _addTapListener(el, fn) {
+  // Sur mobile, touchend est plus fiable que click sur un div
+  var tapped = false;
+  el.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!tapped) { tapped = true; fn(); setTimeout(function(){ tapped = false; }, 300); }
+  });
+  el.addEventListener('click', function(e) {
+    e.stopPropagation();
+    fn();
+  });
+}
+
 function openCselect(type) {
   try {
     _cselectType = type;
@@ -20,8 +34,8 @@ function openCselect(type) {
     var currentVal = _cselectState[type] || '';
 
     if (type === 'cat') {
-      titleEl.textContent = '— Catégorie —';
-      items.push({ value: '', label: '— Catégorie —' });
+      titleEl.textContent = 'Categories';
+      items.push({ value: '', label: '— Categories —' });
       if (typeof state !== 'undefined' && state.categories) {
         Object.keys(state.categories).forEach(function(k) {
           items.push({ value: k, label: state.categories[k].label });
@@ -45,20 +59,19 @@ function openCselect(type) {
       }
 
     } else if (type === 'timer') {
-      titleEl.textContent = 'Chrono';
+      titleEl.textContent = 'Timer';
       var appLabels = (typeof getAppTaskLabels === 'function') ? getAppTaskLabels() : [];
-      var curTask   = '';
+      var curTask = '';
       if (typeof Timer !== 'undefined') {
         try { curTask = Timer.load().currentTask || ''; } catch(e) {}
       }
       currentVal = curTask;
       _cselectState.timer = curTask;
-      items.push({ value: '', label: '— Tâche libre —' });
+      items.push({ value: '', label: '— Free task —' });
       appLabels.forEach(function(l) { items.push({ value: l, label: l }); });
-      items.push({ value: '__custom__', label: '✏️ Autre tâche...' });
+      items.push({ value: '__custom__', label: '✏️ Other task...' });
     }
 
-    // Construire la liste
     list.innerHTML = '';
     items.forEach(function(item) {
       var div = document.createElement('div');
@@ -73,18 +86,20 @@ function openCselect(type) {
       div.appendChild(spanLabel);
       div.appendChild(spanRadio);
 
-      // Closure pour capturer item.value
       (function(val) {
-        div.addEventListener('click', function() { pickCselect(val); });
+        _addTapListener(div, function() { pickCselect(val); });
       })(item.value);
 
       list.appendChild(div);
     });
 
-    // Si timer custom actif
-    if (type === 'timer' && currentVal && appLabels && !appLabels.includes(currentVal)) {
-      _highlightCustomItem(list);
-      _showCustomInput(currentVal, list);
+    // Timer custom actif
+    if (type === 'timer' && currentVal) {
+      var appLbls = (typeof getAppTaskLabels === 'function') ? getAppTaskLabels() : [];
+      if (!appLbls.includes(currentVal) && currentVal !== '') {
+        _highlightCustomItem(list);
+        _showCustomInput(currentVal, list);
+      }
     }
 
     overlay.classList.add('open');
@@ -108,11 +123,10 @@ function pickCselect(value) {
     _cselectState[type] = value;
 
     if (type === 'cat') {
-      // Sync le <select> caché
       var sel = document.getElementById('catSelect');
       if (sel) sel.value = value;
 
-      var label = '— Catégorie —';
+      var label = '— Categories —';
       if (value && typeof state !== 'undefined' && state.categories && state.categories[value]) {
         label = state.categories[value].label;
       }
@@ -126,12 +140,15 @@ function pickCselect(value) {
       if (ssel) ssel.value = value;
 
       var slabel = '— Source —';
-      if (value && typeof DEFAULT_SOURCES !== 'undefined') {
-        var def = DEFAULT_SOURCES.filter(function(s) { return s.key === value; })[0];
-        if (def) {
-          slabel = def.emoji + ' ' + ((typeof t === 'function' ? t(def.labelKey) : null) || def.key);
-        } else if (typeof state !== 'undefined' && state.sources && state.sources[value]) {
-          slabel = (state.sources[value].emoji || '🔖') + ' ' + state.sources[value].label;
+      if (value) {
+        if (typeof DEFAULT_SOURCES !== 'undefined') {
+          var def = null;
+          DEFAULT_SOURCES.forEach(function(s) { if (s.key === value) def = s; });
+          if (def) {
+            slabel = def.emoji + ' ' + ((typeof t === 'function' ? t(def.labelKey) : null) || def.key);
+          } else if (typeof state !== 'undefined' && state.sources && state.sources[value]) {
+            slabel = (state.sources[value].emoji || '🔖') + ' ' + state.sources[value].label;
+          }
         }
       }
       var slbl = document.getElementById('sourceSelectLabel');
@@ -174,7 +191,7 @@ function _showCustomInput(currentVal, list) {
   inp.id          = 'cselectCustomInput';
   inp.type        = 'text';
   inp.value       = currentVal || '';
-  inp.placeholder = 'Nom de la tâche...';
+  inp.placeholder = 'Task name...';
 
   inp.addEventListener('input', function() {
     var val = inp.value.trim();
@@ -188,7 +205,7 @@ function _showCustomInput(currentVal, list) {
 
   wrap.appendChild(inp);
   list.appendChild(wrap);
-  inp.focus();
+  setTimeout(function() { inp.focus(); }, 100);
 }
 
 function closeCselect() {
@@ -200,11 +217,10 @@ function closeCselect() {
 function _updateTimerBtn(val) {
   var lbl = document.getElementById('timerTaskSelectLabel');
   var btn = document.getElementById('timerTaskSelectBtn');
-  if (lbl) lbl.textContent = val || '— Tâche libre —';
+  if (lbl) lbl.textContent = val || '— Free task —';
   if (btn) btn.classList.toggle('has-value', !!val);
 }
 
-// Alias public pour timer.js
 function updateTimerSelectBtn(val) { _updateTimerBtn(val); }
 
 document.addEventListener('keydown', function(e) {
