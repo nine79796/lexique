@@ -54,4 +54,4 @@ const LS_KEY_LANG  = 'lexique_lang';
 const LS_KEY_SUGG  = 'lexique_sugg_prefs';
 const LS_KEY_HIST  = 'lexique_sugg_hist';
 /** Keys that trigger a cloud sync when written */
-const LS_SYNC_KEYS = [LS_KEY_STATE, LS_KEY_THEME];
+const LS_SYNC_KEYS = [LS_KEY_STATE, LS_KEY_THEME, 'lexique_timer'];

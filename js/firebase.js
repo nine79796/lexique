@@ -448,7 +448,7 @@ window.addEventListener('visibilitychange', () => {
       rebuildNgrams();
       render(); renderTasks(); updateStats(); updateTaskStats();
       renderCatManager(); renderCatSelect(); renderFilters();
-      renderTimerHistory();
+      renderTimerHistory(); timerTick();
     }).catch(() => {});
   }
 });
@@ -462,7 +462,7 @@ setInterval(() => {
       rebuildNgrams();
       render(); renderTasks(); updateStats(); updateTaskStats();
       renderCatManager(); renderCatSelect(); renderFilters();
-      renderTimerHistory();
+      renderTimerHistory(); timerTick();
     }).catch(() => {});
   }
 }, 60_000);
@@ -502,7 +502,7 @@ setInterval(() => {
           rebuildNgrams();
           render(); renderTasks(); updateStats(); updateTaskStats();
           renderCatManager(); renderCatSelect(); renderFilters();
-          renderTimerHistory();
+          renderTimerHistory(); timerTick();
         };
 
         CloudSync.pullFromCloud()

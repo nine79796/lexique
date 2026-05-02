@@ -1283,3 +1283,37 @@ body {
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.1); }
 }
+
+/* Spelling — bouton règle + popup */
+.spelling-ok-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.spelling-rule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.spelling-rule-btn:hover {
+  background: rgba(200,169,110,0.12);
+}
+.spelling-rule-popup {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  overflow: hidden;
+  min-width: 240px;
+}

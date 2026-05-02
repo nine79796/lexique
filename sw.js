@@ -5,7 +5,7 @@
 //  ⚠️  Ne jamais intercepter les requêtes Firebase/Firestore
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'lexique-v29';
+const CACHE_VERSION = 'lexique-v30';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DYNAMIC = `${CACHE_VERSION}-dynamic`;
 
