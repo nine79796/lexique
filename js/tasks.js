@@ -63,18 +63,11 @@ function autoReportTasks() {
       }
     } else {
       getPastDueDates(task, addDays(today, -1)).forEach(d => {
-        // Guard: si la tâche a été mise à jour APRÈS minuit du jour d,
-        // on ne touche pas à l'historique — l'état viendra du pull cloud.
-        // On considère qu'une tâche modifiée dans les dernières 12h
-        // est potentiellement en cours de sync depuis un autre appareil.
         if (task.history[d]) return; // déjà un état (done ou missed)
-
         const taskUpdatedAt = task.updatedAt || 0;
         const dayEnd = new Date(d + 'T23:59:59').getTime();
-        // Si la tâche a été modifiée après la fin du jour en question,
-        // on laisse le pull cloud décider plutôt que de marquer missed
         if (taskUpdatedAt > dayEnd) return;
-
+        // Marquer missed pour les stats, mais sans impact sur le compteur late
         task.history[d]  = 'missed';
         task.reportCount = (task.reportCount || 0) + 1;
         task.updatedAt   = ts();
@@ -264,11 +257,10 @@ function updateTaskStats() {
   // as "late", which was wrong — those are simply pending for the current day.
   // "Late" for a once task = past due date and not done.
   // "Late" for a recurring task = has missed entries in history (i.e. past days marked missed).
+  // Les récurrentes ne comptent plus dans late — elles reviennent d'elles-mêmes.
   const lateCount = state.tasks.filter(task => {
-    if (task.recurType === 'once') {
-      return !task.done && task.dueDate < today;
-    }
-    return Object.entries(task.history || {}).some(([d, v]) => d < today && v === 'missed');
+    if (task.recurType !== 'once') return false;
+    return !task.done && task.dueDate < today;
   }).length;
 
   const recurActive = state.tasks.filter(task =>
@@ -375,7 +367,7 @@ function buildTaskItems(today) {
         if (i < 0 && !done && occ !== 'missed') continue;
         items.push({
           task, id: task.id + '_' + d, date: d,
-          done, isLate: !done && d < today, occurrence: occ,
+          done, isLate: false, occurrence: occ, // récurrentes : jamais late
         });
       }
     }
