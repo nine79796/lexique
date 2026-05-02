@@ -361,10 +361,10 @@ function buildTaskItems(today) {
         if (!isTaskActiveOnDate(task, d)) continue;
         const occ  = task.history[d] || null;
         const done = occ === 'done';
-        // N'affiche les anciennes occurrences que si elles sont en retard (missed)
-        // Pour les occurrences terminées dans le passé, on les cache après 7 jours
+        // Pour les récurrentes : n'afficher que aujourd'hui et les done récents (7j)
+        // Les jours passés non faits (missed) sont dans les stats mais pas dans la liste
+        if (i < 0 && !done) continue;
         if (i < -7 && done) continue;
-        if (i < 0 && !done && occ !== 'missed') continue;
         items.push({
           task, id: task.id + '_' + d, date: d,
           done, isLate: false, occurrence: occ, // récurrentes : jamais late
