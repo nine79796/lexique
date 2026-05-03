@@ -77,8 +77,9 @@ const Timer = {
       this.commitSession(st, duration);
     }
     const fresh = this.defaultState();
-    // Conserver l'historique
-    fresh.sessions = st.sessions;
+    // Conserver l'historique sessions ET milestones
+    fresh.sessions   = st.sessions;
+    fresh.milestones = st.milestones;
     this.save(fresh);
     timerTick();
     renderTimerHistory();
@@ -139,6 +140,9 @@ const Timer = {
    * puis remet le compteur de lap à zéro.
    */
   flag() {
+    // Invalider le cache avant load() pour éviter le bug PC
+    // où _timerCache est périmé après une mise en veille ou un changement d'onglet
+    _timerCache = null;
     const st      = this.load();
     const totalMs = this.currentMs(st);
 
@@ -166,7 +170,46 @@ const Timer = {
     if (st.milestones.length > 200) st.milestones = st.milestones.slice(0, 200);
 
     this.save(st);
+
+    // ── Marquer la tâche courante comme done dans Tasks ──────
+    this._markTaskDone(st.currentTask);
+
     renderTimerHistory();
+  },
+
+  /** Cherche la tâche du timer dans state.tasks et la marque done */
+  _markTaskDone(taskLabel) {
+    if (!taskLabel || taskLabel === '—') return;
+    if (typeof state === 'undefined' || !Array.isArray(state.tasks)) return;
+
+    const today = todayStr();
+    let changed = false;
+
+    state.tasks.forEach(task => {
+      // Correspondance sur le titre (insensible à la casse)
+      if (task.title.toLowerCase() !== taskLabel.toLowerCase()) return;
+
+      if (task.recurType === 'once') {
+        if (!task.done) {
+          task.done      = true;
+          task.doneAt    = Date.now();
+          task.updatedAt = Date.now();
+          changed = true;
+        }
+      } else {
+        if (task.history[today] !== 'done') {
+          task.history[today] = 'done';
+          task.updatedAt      = Date.now();
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      if (typeof save === 'function') save();
+      if (typeof renderTasks === 'function') renderTasks();
+      if (typeof updateTaskStats === 'function') updateTaskStats();
+    }
   },
 
   /** Annule le dernier drapeau (missclick) */
