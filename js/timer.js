@@ -210,6 +210,15 @@ const Timer = {
       if (typeof renderTasks === 'function') renderTasks();
       if (typeof updateTaskStats === 'function') updateTaskStats();
     }
+
+    // Retirer la tâche de la liste du popup cselect et du timer select
+    // pour qu'elle n'apparaisse plus après avoir été validée par le drapeau
+    if (typeof renderTimerTaskSelect === 'function') renderTimerTaskSelect();
+    if (typeof _cselectState !== 'undefined' && _cselectState.timer === taskLabel) {
+      _cselectState.timer = '';
+      if (typeof Timer !== 'undefined') Timer.setTask('');
+      if (typeof updateTimerSelectBtn === 'function') updateTimerSelectBtn('');
+    }
   },
 
   /** Annule le dernier drapeau (missclick) */
@@ -344,8 +353,14 @@ function renderTimerTaskSelect() {
 }
 
 function getAppTaskLabels() {
+  const today = (typeof todayStr === 'function') ? todayStr() : new Date().toISOString().slice(0, 10);
   return (state.tasks || [])
-    .filter(t => !t.done)
+    .filter(t => {
+      if (t.done) return false;
+      // Exclure les récurrentes déjà cochées aujourd'hui (après drapeau)
+      if (t.recurType !== 'once' && t.history && t.history[today] === 'done') return false;
+      return true;
+    })
     .map(t => t.title)
     .slice(0, 30);
 }

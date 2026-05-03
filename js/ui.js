@@ -22,7 +22,7 @@ function toggleTheme() {
 
 // ── Tab navigation ────────────────────────────────────────────
 
-const TAB_NAMES = ['mots', 'revision', 'taches', 'timer', 'stats', 'spelling'];
+const TAB_NAMES = ['mots', 'revision', 'taches', 'timer', 'spelling', 'stats'];
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((tab, i) => {
