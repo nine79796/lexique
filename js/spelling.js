@@ -126,6 +126,7 @@ const SPELLING_RULES = {
 
 const SPELLING_WORDS = {
   debutant: [
+    // Mots courants
     'beaucoup','maintenant','quelque chose',"aujourd'hui",'toujours','souvent',
     'vraiment','jamais','encore','personne','ensemble','seulement','tellement',
     'longtemps','autrement','facilement','simplement','rapidement','lentement',
@@ -135,15 +136,60 @@ const SPELLING_WORDS = {
     'parfois','dorénavant','désormais','auparavant','bientôt','plutôt',
     'surtout','partout','nulle part',"quelqu'un",'peut-être','vis-à-vis',
     "c'est-à-dire",'appeler','jeter','acheter','préférer','espérer',
+    // Doubles lettres fréquentes à l'oral
+    'balle','belle','ville','fille','mille','grille','aiguille','quille',
+    'botte','côtelette','assiette','chaussette','baguette','serviette','tablette',
+    'tasse','masse','classe','caisse','boisson','isson','poisson','mousse',
+    'adresse','resse','vitesse','tendresse','jeunesse','richesse','paresse',
+    'addition','affaire','effet','effort','offrande','offense','officiel',
+    'nettoyage','nettoyer','attendre','attraper','attaque','attacher',
+    'accorder','accepter','accident','accord','acclamer',
+    'correspondre','corriger','corrompre','corridor','correctement',
+    'illusion','illuminer','illimité','illégal','illustrer',
+    'irriter','irriguer','irréel','irresponsable','irrégulier',
+    'immédiat','immeuble','immortel','immense','immigrant',
+    'innocent','innombrable','innovation','innover','inné',
+    // Mots du quotidien qu'on dit mais qu'on écrit mal
+    'maintenant','autrefois','longtemps','pourtant','cependant',
+    'souvent','parfois','jamais','toujours','encore',
+    'dessus','dessous','dehors','dedans','devant','derrière','autour',
+    'environ','alentour','partout','nulle part','quelque part','ailleurs',
+    'peut-être','probablement','certainement','sûrement','forcément',
+    'franchement','sincèrement','clairement','sérieusement','gentiment',
+    'carrément','vachement','vraiment','tellement','tellement',
     'maison','famille','enfant','travail','argent','temps','monde',
     'ville','pays','corps','main','tête','pied','œil','cœur','sœur',
     'voix','nuit','jour','semaine','mois','année','ami','amie','frère',
     'père','mère','fils','fille','homme','femme','grand','petit','heureux','triste',
+    // Homophones courants
+    'a','à','ou','où','et','est','son','sont','on','ont','ces','ses','mais','mes',
+    'leur','leurs','tout','tous','même','mêmes','quelque','quelques',
   ],
   intermediaire: [
+    // Doubles lettres — noms et verbes
     'développement','appartement','gouvernement','environnement','investissement',
     'établissement','renseignement','comportement','changement','traitement',
     'enveloppe','cauchemar','chauffeur','chaussure','chaussée',
+    'appuyer','approuver','approcher','apprendre','appliquer','apporter',
+    'afficher','affirmer','affecter','affranchir','affronter','affilée',
+    'effectuer','effacer','efficace','efficacement','effondrer','effectif',
+    'officier','offenser','offrir','officiel','officieux',
+    'nettement','nettoyage','nettoyer','netteté',
+    'sottise','sottement','botter','bottine','bouteille','bouton',
+    'attentif','attentivement','atteindre','atteint','attirer','attrait',
+    'corriger','correct','correcteur','correction','corridor','correspondre',
+    'commencer','commun','communiquer','commander','commande','commercial',
+    'permettre','permetions','permis','permanence','permanent',
+    'emmener','emmêler','emménager','emmitouflé',
+    'souffrir','souffrance','soufflet','soufflé',
+    'riffler','griffe','griffonner','griffure',
+    'bafouiller','bredouiller','brouillon','bouillir','bouillon',
+    // Mots du quotidien oral — doubles lettres cachées
+    'boulette','roulette','omelette','galette','tartelette','coquillette',
+    'cigarette','maquette','cassette','disquette','pochette','tablette',
+    'sonnette','trompette','baguette','fourchette','serviette','chaussette',
+    'allumer','aller','allez','allée','allocation','allure','alliance',
+    'illusion','illustrer','illustration','illusoire',
     'accueil','écureuil','portefeuille','grenouille','citrouille',
     'paille','bataille','médaille','brouillon','bouillon','tourbillon',
     'appareil','soleil','sommeil','réveil','pareil','conseil',
@@ -160,6 +206,15 @@ const SPELLING_WORDS = {
     'rythme','abîme','symptôme','diplôme','fantôme',
     'île','château','gâteau','fête','bête','fenêtre','ancêtre',
     'forêt','intérêt','arrêt','prêt',
+    // Mots du quotidien oral souvent ratés à l'écrit
+    'appartenir','appartient','apparaître','apparence','apparemment',
+    'différent','différence','différencier','différemment',
+    'occurence','occurrence','occurrent','occasion','occasionnel',
+    'agression','agressif','agresseur','agressivité',
+    'succession','succéder','successeur','successivement',
+    'profession','professionnel','professionnellement',
+    'dimension','dimensionnel','immense','immensément',
+    'suggestion','suggérer','suggestif','suggestible',
   ],
   avance: [
     'chrysanthème','cacahuète','mezzanine',
@@ -168,14 +223,34 @@ const SPELLING_WORDS = {
     'acquis','requis','acquit','acquérir',
     'orgueil','recueillir',
     'oignon','clé','nénuphar',
-    'hôpital','hôtel','honneur','honnête',
-    'héros','héroïne','hypothèse',
+    'hôpital','hôtel','honneur','honnête','honnêtement',
+    'héros','héroïne','hypothèse','hypothétique',
     'ecchymose','psychiatre','psychologie','rhumatisme','mnémotechnique',
     'naïf','naïve','laïque','coïncidence','Noël','maïs','ambiguë',
     'événement','entraînement','connaître','paraître',
     'appât','châtiment','nonchalance','vraisemblance','gaieté',
     'secrétariat','circonstance','indispensable','incompréhensible',
     'irrémédiable','irrécupérable',
+    // Doubles lettres piège niveau avancé
+    'balancement','ballottement','ballotter','ballottage',
+    'effervescence','effervescent','efféminé','effusion',
+    'ossification','ossifier','ossature','osseux',
+    'assassin','assassinat','assassiner','assaillir','assaisonnement',
+    'resserrer','ressembler','ressemblance','ressource','ressortir',
+    'dissoudre','dissimuler','dissimulation','dissidence','dissonance',
+    'innover','innovation','innombrable','innocuité','innocenter',
+    'solliciter','sollicitation','solitude','solliciteur',
+    'immobiliser','immobilisme','immobilité','immoler','immodéré',
+    'irradier','irrationalité','irréversible','irréfutable','irrépressible',
+    'correspondance','correspondant','corrélation','corruption','corroborer',
+    'suggestion','suggestif','suggérer','suppléer','suppression',
+    // Mots du quotidien oral très souvent ratés
+    'vraisemblablement','approximativement','particulièrement','éventuellement',
+    'définitivement','provisoirement','successivement','collectivement',
+    'intuitivement','instinctivement','progressivement','définitivement',
+    'contradictoirement','perpétuellement','éventuellement','fondamentalement',
+    'indépendamment','conjointement','parallèlement','manifestement',
+    'réciproquement','mutuellement','respectivement','alternativement',
   ],
 };
 
@@ -812,7 +887,6 @@ function renderSpelling(forceMenu) {
     const prog     = SpellingSRS.getTodayProgress(level);
     const quota    = SpellingSRS.getQuota(level);
     const met      = prog.done >= quota;
-    const total    = counters.new + counters.learn + counters.review;
     const col      = levelColors[level];
 
     return `
@@ -832,6 +906,50 @@ function renderSpelling(forceMenu) {
         </div>
       </div>`;
   }).join('');
+
+  // Exercices supplémentaires
+  const exoRows = `
+    <div class="anki-exo-section">
+      <div class="anki-deck-header" style="border-radius:12px 12px 0 0">
+        <span>Exercices</span>
+      </div>
+      <div class="anki-deck-row" onclick="Vision.start()">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:#6eb4ff"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">👁 Vision</span>
+            <span class="anki-deck-sub">Choisir la bonne orthographe</span>
+          </div>
+        </div>
+      </div>
+      <div class="anki-deck-row" onclick="Detective.start()">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:#c8a96e"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">🔍 Détective</span>
+            <span class="anki-deck-sub">Trouver et corriger la faute</span>
+          </div>
+        </div>
+      </div>
+      <div class="anki-deck-row" onclick="Morpho.start()">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:#b46ec8"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">🧩 Morpho</span>
+            <span class="anki-deck-sub">Pluriel, accord, conjugaison</span>
+          </div>
+        </div>
+      </div>
+      <div class="anki-deck-row" onclick="showPhraseLevel()">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:#6ec87a"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">📝 Phrase</span>
+            <span class="anki-deck-sub">Dictée de phrase complète</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
 
   // Barre de progrès globale du jour
   const globalPct = totalQuota > 0 ? Math.min(100, Math.round(totalDone / totalQuota * 100)) : 0;
@@ -855,7 +973,7 @@ function renderSpelling(forceMenu) {
 
       <div class="anki-deck-list">
         <div class="anki-deck-header">
-          <span>Niveau</span>
+          <span>Dictée</span>
           <div class="anki-count-labels">
             <span style="color:#6eb4ff">Nvx</span>
             <span style="color:#e87050">App</span>
@@ -864,10 +982,720 @@ function renderSpelling(forceMenu) {
         </div>
         ${deckRows}
       </div>
+      ${exoRows}
 
       ${allMet ? `
         <div class="anki-all-done">
           🎉 Quota du jour atteint ! Reviens demain.
         </div>` : ''}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  VISION — Choisir la bonne orthographe parmi 3
+// ════════════════════════════════════════════════════════════════
+
+const VISION_DATA = [
+  { correct: 'beaucoup',        wrong: ['baucoup','beaucoups'] },
+  { correct: 'maintenant',      wrong: ['maintenan','maintanant'] },
+  { correct: 'développement',   wrong: ['developpement','développement'] },
+  { correct: 'appartement',     wrong: ['apartement','appartment'] },
+  { correct: 'cauchemar',       wrong: ['cauchemare','cochemar'] },
+  { correct: 'chauffeur',       wrong: ['chaufeur','chauffeut'] },
+  { correct: 'accueil',         wrong: ['aceuil','acceuil'] },
+  { correct: 'écureuil',        wrong: ['écureul','écureuille'] },
+  { correct: 'brouillon',       wrong: ['brouyion','brouiyon'] },
+  { correct: 'soixante',        wrong: ['soissante','soixente'] },
+  { correct: 'quatrième',       wrong: ['quatrième','quatriéme'] },
+  { correct: 'rythme',          wrong: ['rithme','rhythme'] },
+  { correct: 'symptôme',        wrong: ['symtome','symptome'] },
+  { correct: 'connaissance',    wrong: ['conaissance','connaisance'] },
+  { correct: 'expression',      wrong: ['expréssion','expresion'] },
+  { correct: 'impression',      wrong: ['inpression','impréssion'] },
+  { correct: 'attention',       wrong: ['atention','attenion'] },
+  { correct: 'différemment',    wrong: ['différament','diferemment'] },
+  { correct: 'évidemment',      wrong: ['éviderment','évidemant'] },
+  { correct: 'malheureusement', wrong: ['malheureusment','malhereusement'] },
+  { correct: 'absolument',      wrong: ['absolument','absoument'] },
+  { correct: 'complètement',    wrong: ['completement','complétement'] },
+  { correct: 'immédiatement',   wrong: ['imédiatement','immediatemment'] },
+  { correct: 'naturellement',   wrong: ['naturelment','naturellement'] },
+  { correct: 'probablement',    wrong: ['probablement','probablement'] },
+  { correct: 'exprès',          wrong: ['expres','éxprès'] },
+  { correct: 'succès',          wrong: ['succes','succées'] },
+  { correct: 'procès',          wrong: ['proces','proccès'] },
+  { correct: 'chrysanthème',    wrong: ['chrisantème','chrysanthéme'] },
+  { correct: 'cacahuète',       wrong: ['cacahouète','cacahuéte'] },
+  { correct: 'psychiatre',      wrong: ['psichiatre','psiquiatre'] },
+  { correct: 'ecchymose',       wrong: ['echimose','ecchimose'] },
+  { correct: 'vraisemblance',   wrong: ['vraisemblence','vraisemblance'] },
+  { correct: 'nonchalance',     wrong: ['nonchalence','nonchallance'] },
+  { correct: 'événement',       wrong: ['évènement','événnement'] },
+  { correct: 'entraînement',    wrong: ['entrainement','entrainnement'] },
+  { correct: 'connaître',       wrong: ['connaitre','conaître'] },
+  { correct: 'oignon',          wrong: ['ognon','oïgnon'] },
+  { correct: 'naïf',            wrong: ['naif','naïff'] },
+  { correct: 'Noël',            wrong: ['Noel','Noëll'] },
+  { correct: 'ambiguë',         wrong: ['ambigue','ambigüe'] },
+  { correct: 'nettement',       wrong: ['netement','nettament'] },
+  { correct: 'carrément',       wrong: ['carément','carèment'] },
+  { correct: 'franchement',     wrong: ['franchement','franchment'] },
+  { correct: 'baguette',        wrong: ['baguete','baguétte'] },
+  { correct: 'serviette',       wrong: ['serviete','serviète'] },
+  { correct: 'chaussette',      wrong: ['chausette','chaussète'] },
+  { correct: 'allumer',         wrong: ['alumer','allumé'] },
+  { correct: 'corriger',        wrong: ['coriger','corriegr'] },
+  { correct: 'attendre',        wrong: ['atendre','attendr'] },
+  { correct: 'approcher',       wrong: ['aprocher','approchet'] },
+  { correct: 'affecter',        wrong: ['afecter','affecté'] },
+  { correct: 'ressembler',      wrong: ['resemble','ressemble'] },
+  { correct: 'dissoudre',       wrong: ['disoudre','dissoudr'] },
+  { correct: 'solliciter',      wrong: ['soliciter','sollicitér'] },
+  { correct: 'occurrence',      wrong: ['ocurrence','occurence'] },
+  { correct: 'agression',       wrong: ['agréssion','agression'] },
+  { correct: 'suggestion',      wrong: ['sugestion','suggesion'] },
+];
+
+const Vision = {
+  queue:   [],
+  current: null,
+  done:    0,
+  correct: 0,
+
+  start() {
+    this.queue   = [...VISION_DATA].sort(() => Math.random() - 0.5).slice(0, 20);
+    this.done    = 0;
+    this.correct = 0;
+    this.current = null;
+    this._renderUI();
+    this._next();
+  },
+
+  _next() {
+    if (!this.queue.length) { this._showFinished(); return; }
+    this.current = this.queue.shift();
+    this._renderQuestion();
+  },
+
+  _renderUI() {
+    const c = document.getElementById('spellingContent');
+    if (!c) return;
+    c.innerHTML = `
+      <div class="spelling-card">
+        <div class="spelling-top-bar">
+          <div class="spelling-level-badge">👁 Vision</div>
+          <div class="spelling-level-badge" id="visionScore">0 / 0</div>
+        </div>
+        <div class="spelling-progress-wrap">
+          <div class="spelling-progress-bar" id="visionProgressBar"></div>
+        </div>
+        <div id="visionQuestion" style="margin-top:16px"></div>
+        <div class="spelling-actions" style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+
+  _renderQuestion() {
+    const q   = this.current;
+    const all = [q.correct, ...q.wrong].sort(() => Math.random() - 0.5);
+    const el  = document.getElementById('visionQuestion');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="vision-prompt">Laquelle est la bonne orthographe ?</div>
+      <div class="vision-choices">
+        ${all.map(w => `
+          <button class="vision-choice" onclick="Vision.pick('${escHtml(w)}')">
+            ${escHtml(w)}
+          </button>`).join('')}
+      </div>
+      <div class="vision-feedback" id="visionFeedback"></div>`;
+
+    this._updateScore();
+  },
+
+  pick(word) {
+    const isOk = word === this.current.correct;
+    if (isOk) this.correct++;
+    this.done++;
+
+    // Colorer les boutons
+    document.querySelectorAll('.vision-choice').forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent.trim() === this.current.correct) btn.classList.add('vision-ok');
+      else if (btn.textContent.trim() === word && !isOk)   btn.classList.add('vision-wrong');
+    });
+
+    const fb = document.getElementById('visionFeedback');
+    if (fb) fb.innerHTML = isOk
+      ? `<span class="spelling-ok">✓ Correct !</span>`
+      : `<span class="spelling-wrong">✗ C'était : <strong>${escHtml(this.current.correct)}</strong></span>`;
+
+    this._updateScore();
+
+    const rule = SPELLING_RULES[this.current.correct];
+    if (!isOk && rule) {
+      setTimeout(() => {
+        if (fb) fb.innerHTML += ` <button class="spelling-rule-btn" onclick="Spelling.showRule('${this.current.correct.replace(/'/g,"\\'")}')">? règle</button>`;
+      }, 300);
+    }
+
+    setTimeout(() => this._next(), isOk ? 900 : 2500);
+  },
+
+  _updateScore() {
+    const bar = document.getElementById('visionProgressBar');
+    const sc  = document.getElementById('visionScore');
+    const total = 20;
+    const pct = Math.round(this.done / total * 100);
+    if (bar) bar.style.width = pct + '%';
+    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+  },
+
+  _showFinished() {
+    const c   = document.getElementById('spellingContent');
+    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    if (c) c.innerHTML = `
+      <div class="spelling-finished">
+        <div class="spelling-finished-icon">👁</div>
+        <div class="spelling-finished-title">Vision — Terminé !</div>
+        <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
+        <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" onclick="Vision.start()">Recommencer</button>
+          <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+};
+
+
+// ════════════════════════════════════════════════════════════════
+//  DÉTECTIVE — Trouver et corriger la faute dans une phrase
+// ════════════════════════════════════════════════════════════════
+
+const DETECTIVE_DATA = [
+  { sentence: 'Il faut faire baucoup attention.', wrong: 'baucoup', correct: 'beaucoup' },
+  { sentence: "Aujourd'hui, j'ai mangé une bonne omelète.", wrong: 'omelète', correct: 'omelette' },
+  { sentence: 'Elle habite dans un aparement au centre-ville.', wrong: 'aparement', correct: 'appartement' },
+  { sentence: 'Le développement de ce projet est trés rapide.', wrong: 'trés', correct: 'très' },
+  { sentence: "Je n'ai pas pu dormir à cause d'un cochemar.", wrong: 'cochemar', correct: 'cauchemar' },
+  { sentence: 'Le soleil se couche derière les montagnes.', wrong: 'derière', correct: 'derrière' },
+  { sentence: "C'est completement faux ce que tu dis.", wrong: 'completement', correct: 'complètement' },
+  { sentence: 'Elle chante vraiment bien, sa voice est magnifique.', wrong: 'voice', correct: 'voix' },
+  { sentence: 'Il a fait une éffort considérable pour réussir.', wrong: 'éffort', correct: 'effort' },
+  { sentence: "L'aceuil dans cet hôtel était parfait.", wrong: 'aceuil', correct: 'accueil' },
+  { sentence: 'Mon rêve est de travailler en équipe eficacement.', wrong: 'eficacement', correct: 'efficacement' },
+  { sentence: "J'ai une atention particulière pour les détails.", wrong: 'atention', correct: 'attention' },
+  { sentence: "Le chauffeur a corrigé sa trajectoire promptement.", wrong: 'promptement', correct: 'promptement' },
+  { sentence: "Elle a besoin d'un renforcement de sa conaisance.", wrong: 'conaisance', correct: 'connaissance' },
+  { sentence: "Le succés de ce film est incroyable.", wrong: 'succés', correct: 'succès' },
+  { sentence: "Il agit toujours avec nonchallance.", wrong: 'nonchallance', correct: 'nonchalance' },
+  { sentence: "Ce médicament peut provoquer des echimoses.", wrong: 'echimoses', correct: 'ecchymoses' },
+  { sentence: "Elle est naïve mais pas du tout niaise.", wrong: 'niaise', correct: 'niaise' },
+  { sentence: "Le quatrieme étage est réservé aux réunions.", wrong: 'quatrieme', correct: 'quatrième' },
+  { sentence: "Ce n'est pas un problème, c'est une ocasion.", wrong: 'ocasion', correct: 'occasion' },
+  { sentence: "Il faut nettoyer régulièrement pour la propreté.", wrong: 'propreté', correct: 'propreté' },
+  { sentence: "Sa performance était vraiment éxceptionnelle.", wrong: 'éxceptionnelle', correct: 'exceptionnelle' },
+  { sentence: "Je dois coriger mon devoir avant demain.", wrong: 'coriger', correct: 'corriger' },
+  { sentence: "Cet evènement a marqué toute la ville.", wrong: 'evènement', correct: 'événement' },
+  { sentence: "Il faut aprendre à gérer ses émotions.", wrong: 'aprendre', correct: 'apprendre' },
+  { sentence: "La difference entre les deux est minime.", wrong: 'difference', correct: 'différence' },
+  { sentence: "Elle a fait preuve d'une grande genérosité.", wrong: 'genérosité', correct: 'générosité' },
+  { sentence: "Son entrainement quotidien porte ses fruits.", wrong: 'entrainement', correct: 'entraînement' },
+  { sentence: "La situaton économique est préoccupante.", wrong: 'situaton', correct: 'situation' },
+  { sentence: "Il a une perception très développé de l'art.", wrong: 'développé', correct: 'développée' },
+];
+
+const Detective = {
+  queue:   [],
+  current: null,
+  done:    0,
+  correct: 0,
+
+  start() {
+    this.queue   = [...DETECTIVE_DATA].sort(() => Math.random() - 0.5).slice(0, 15);
+    this.done    = 0;
+    this.correct = 0;
+    this.current = null;
+    this._renderUI();
+    this._next();
+  },
+
+  _next() {
+    if (!this.queue.length) { this._showFinished(); return; }
+    this.current = this.queue.shift();
+    this._renderQuestion();
+  },
+
+  _renderUI() {
+    const c = document.getElementById('spellingContent');
+    if (!c) return;
+    c.innerHTML = `
+      <div class="spelling-card">
+        <div class="spelling-top-bar">
+          <div class="spelling-level-badge">🔍 Détective</div>
+          <div class="spelling-level-badge" id="detectiveScore">0 / 0</div>
+        </div>
+        <div class="spelling-progress-wrap">
+          <div class="spelling-progress-bar" id="detectiveProgressBar"></div>
+        </div>
+        <div id="detectiveQuestion" style="margin-top:16px"></div>
+        <div class="spelling-actions" style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+
+  _renderQuestion() {
+    const q  = this.current;
+    const el = document.getElementById('detectiveQuestion');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="detective-prompt">Trouve la faute et corrige-la :</div>
+      <div class="detective-sentence">${escHtml(q.sentence)}</div>
+      <div class="spelling-input-row" style="margin-top:14px">
+        <input type="text" id="detectiveInput" class="spelling-input"
+          placeholder="Le mot correct…"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+        <button class="btn spelling-validate-btn" onclick="Detective.validate()">✓</button>
+      </div>
+      <div class="spelling-feedback" id="detectiveFeedback"></div>`;
+
+    setTimeout(() => {
+      const inp = document.getElementById('detectiveInput');
+      if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') Detective.validate(); });
+      inp?.focus();
+    }, 80);
+
+    this._updateScore();
+  },
+
+  validate() {
+    const inp    = document.getElementById('detectiveInput');
+    const answer = (inp?.value || '').trim().toLowerCase();
+    const isOk   = answer === this.current.correct.toLowerCase();
+    this.done++;
+    if (isOk) this.correct++;
+
+    const fb = document.getElementById('detectiveFeedback');
+    if (fb) fb.innerHTML = isOk
+      ? `<span class="spelling-ok">✓ Correct !</span>`
+      : `<span class="spelling-wrong">✗ La faute était <strong>${escHtml(this.current.wrong)}</strong> → <strong>${escHtml(this.current.correct)}</strong></span>`;
+
+    if (inp) inp.disabled = true;
+    this._updateScore();
+    setTimeout(() => this._next(), isOk ? 900 : 2500);
+  },
+
+  _updateScore() {
+    const bar = document.getElementById('detectiveProgressBar');
+    const sc  = document.getElementById('detectiveScore');
+    const total = 15;
+    const pct = Math.round(this.done / total * 100);
+    if (bar) bar.style.width = pct + '%';
+    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+  },
+
+  _showFinished() {
+    const c   = document.getElementById('spellingContent');
+    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    if (c) c.innerHTML = `
+      <div class="spelling-finished">
+        <div class="spelling-finished-icon">🔍</div>
+        <div class="spelling-finished-title">Détective — Terminé !</div>
+        <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
+        <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" onclick="Detective.start()">Recommencer</button>
+          <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+};
+
+
+// ════════════════════════════════════════════════════════════════
+//  MORPHO — Pluriel, accord, conjugaison
+// ════════════════════════════════════════════════════════════════
+
+const MORPHO_DATA = [
+  // Pluriels irréguliers
+  { question: 'Pluriel de : hibou', correct: 'hiboux', hint: 'En -oux' },
+  { question: 'Pluriel de : genou', correct: 'genoux', hint: 'En -oux' },
+  { question: 'Pluriel de : caillou', correct: 'cailloux', hint: 'En -oux' },
+  { question: 'Pluriel de : bijou', correct: 'bijoux', hint: 'En -oux' },
+  { question: 'Pluriel de : joujou', correct: 'joujoux', hint: 'En -oux' },
+  { question: 'Pluriel de : chou', correct: 'choux', hint: 'En -oux' },
+  { question: 'Pluriel de : pou', correct: 'poux', hint: 'En -oux' },
+  { question: 'Pluriel de : vitrail', correct: 'vitraux', hint: '-al → -aux' },
+  { question: 'Pluriel de : journal', correct: 'journaux', hint: '-al → -aux' },
+  { question: 'Pluriel de : animal', correct: 'animaux', hint: '-al → -aux' },
+  { question: 'Pluriel de : cheval', correct: 'chevaux', hint: '-al → -aux' },
+  { question: 'Pluriel de : travail', correct: 'travaux', hint: '-ail → -aux (irrégulier)' },
+  { question: 'Pluriel de : château', correct: 'châteaux', hint: '-eau → -eaux' },
+  { question: 'Pluriel de : gâteau', correct: 'gâteaux', hint: '-eau → -eaux' },
+  { question: 'Pluriel de : œil', correct: 'yeux', hint: 'Pluriel irrégulier' },
+  // Accords
+  { question: 'Féminin de : naïf', correct: 'naïve', hint: 'Tréma conservé au féminin' },
+  { question: 'Féminin de : doux', correct: 'douce', hint: '-x → -ce au féminin' },
+  { question: 'Féminin de : faux', correct: 'fausse', hint: '-x → -sse au féminin' },
+  { question: 'Féminin de : vieux', correct: 'vieille', hint: 'Forme irrégulière' },
+  { question: 'Féminin de : nouveau', correct: 'nouvelle', hint: 'Forme irrégulière' },
+  { question: 'Féminin de : beau', correct: 'belle', hint: 'Forme irrégulière' },
+  { question: 'Féminin de : blanc', correct: 'blanche', hint: '-c → -che au féminin' },
+  { question: 'Féminin de : sec', correct: 'sèche', hint: '-c → -che + accent au féminin' },
+  // Conjugaison
+  { question: 'Présent : je (appeler)', correct: "j'appelle", hint: 'Double L au présent' },
+  { question: 'Présent : je (jeter)', correct: 'je jette', hint: 'Double T au présent' },
+  { question: 'Présent : j\' (acheter)', correct: "j'achète", hint: 'Accent grave au présent' },
+  { question: 'Participe passé de : acquérir', correct: 'acquis', hint: 'Participe en -is' },
+  { question: 'Participe passé de : naître', correct: 'né', hint: 'Participe court' },
+  { question: 'Participe passé de : connaître', correct: 'connu', hint: 'Participe en -u' },
+  { question: 'Participe passé de : paraître', correct: 'paru', hint: 'Participe en -u' },
+  { question: '80 en lettres', correct: 'quatre-vingts', hint: 'Avec S car vingt est seul' },
+  { question: '70 en lettres', correct: 'soixante-dix', hint: 'Avec trait d\'union' },
+  { question: '90 en lettres', correct: 'quatre-vingt-dix', hint: 'Sans S car suivi d\'un chiffre' },
+];
+
+const Morpho = {
+  queue:   [],
+  current: null,
+  done:    0,
+  correct: 0,
+
+  start() {
+    this.queue   = [...MORPHO_DATA].sort(() => Math.random() - 0.5).slice(0, 15);
+    this.done    = 0;
+    this.correct = 0;
+    this.current = null;
+    this._renderUI();
+    this._next();
+  },
+
+  _next() {
+    if (!this.queue.length) { this._showFinished(); return; }
+    this.current = this.queue.shift();
+    this._renderQuestion();
+  },
+
+  _renderUI() {
+    const c = document.getElementById('spellingContent');
+    if (!c) return;
+    c.innerHTML = `
+      <div class="spelling-card">
+        <div class="spelling-top-bar">
+          <div class="spelling-level-badge">🧩 Morpho</div>
+          <div class="spelling-level-badge" id="morphoScore">0 / 0</div>
+        </div>
+        <div class="spelling-progress-wrap">
+          <div class="spelling-progress-bar" id="morphoProgressBar"></div>
+        </div>
+        <div id="morphoQuestion" style="margin-top:16px"></div>
+        <div class="spelling-actions" style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+
+  _renderQuestion() {
+    const q  = this.current;
+    const el = document.getElementById('morphoQuestion');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="detective-prompt">${escHtml(q.question)}</div>
+      <div class="spelling-input-row" style="margin-top:14px">
+        <input type="text" id="morphoInput" class="spelling-input"
+          placeholder="Ta réponse…"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+        <button class="btn spelling-validate-btn" onclick="Morpho.validate()">✓</button>
+      </div>
+      <div class="spelling-feedback" id="morphoFeedback"></div>`;
+
+    setTimeout(() => {
+      const inp = document.getElementById('morphoInput');
+      if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') Morpho.validate(); });
+      inp?.focus();
+    }, 80);
+
+    this._updateScore();
+  },
+
+  validate() {
+    const inp    = document.getElementById('morphoInput');
+    const answer = (inp?.value || '').trim().toLowerCase().replace(/'/g, "'");
+    const norm   = s => s.toLowerCase().replace(/'/g, "'").trim();
+    const isOk   = norm(answer) === norm(this.current.correct);
+    this.done++;
+    if (isOk) this.correct++;
+
+    const fb = document.getElementById('morphoFeedback');
+    if (fb) fb.innerHTML = isOk
+      ? `<span class="spelling-ok">✓ Correct !</span>`
+      : `<span class="spelling-wrong">✗ Réponse : <strong>${escHtml(this.current.correct)}</strong></span>
+         <div style="font-size:12px;color:var(--text-dim);margin-top:4px">💡 ${escHtml(this.current.hint)}</div>`;
+
+    if (inp) inp.disabled = true;
+    this._updateScore();
+    setTimeout(() => this._next(), isOk ? 900 : 2800);
+  },
+
+  _updateScore() {
+    const bar = document.getElementById('morphoProgressBar');
+    const sc  = document.getElementById('morphoScore');
+    const total = 15;
+    const pct = Math.round(this.done / total * 100);
+    if (bar) bar.style.width = pct + '%';
+    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+  },
+
+  _showFinished() {
+    const c   = document.getElementById('spellingContent');
+    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    if (c) c.innerHTML = `
+      <div class="spelling-finished">
+        <div class="spelling-finished-icon">🧩</div>
+        <div class="spelling-finished-title">Morpho — Terminé !</div>
+        <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
+        <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" onclick="Morpho.start()">Recommencer</button>
+          <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+};
+
+
+// ════════════════════════════════════════════════════════════════
+//  PHRASE — Dictée de phrase entière (TTS)
+// ════════════════════════════════════════════════════════════════
+
+const PHRASE_DATA = [
+  // Débutant
+  { text: "Il fait beau aujourd'hui.", level: 'debutant' },
+  { text: "Ma famille habite dans une grande maison.", level: 'debutant' },
+  { text: "J'ai beaucoup de travail ce soir.", level: 'debutant' },
+  { text: "Mon frère est vraiment gentil.", level: 'debutant' },
+  { text: "Elle parle toujours trop vite.", level: 'debutant' },
+  { text: "Le temps passe très rapidement.", level: 'debutant' },
+  { text: "Je préfère rester chez moi ce soir.", level: 'debutant' },
+  { text: "Nous sommes ensemble depuis longtemps.", level: 'debutant' },
+  { text: "Il faut seulement faire attention.", level: 'debutant' },
+  { text: "Ma mère prépare un bon repas.", level: 'debutant' },
+  // Intermédiaire
+  { text: "Le développement de ce projet prend beaucoup de temps.", level: 'intermediaire' },
+  { text: "Elle habite dans un appartement au quatrième étage.", level: 'intermediaire' },
+  { text: "J'ai eu un cauchemar à cause de l'environnement bruyant.", level: 'intermediaire' },
+  { text: "Le chauffeur a attendu patiemment devant l'entrée.", level: 'intermediaire' },
+  { text: "L'accueil dans cet établissement est vraiment chaleureux.", level: 'intermediaire' },
+  { text: "Il faut faire attention aux fautes d'expression écrite.", level: 'intermediaire' },
+  { text: "La reconnaissance de ses efforts l'a profondément ému.", level: 'intermediaire' },
+  { text: "Ce médicament agit sur le système immunitaire.", level: 'intermediaire' },
+  { text: "Elle s'entraîne soixante-dix minutes chaque matin.", level: 'intermediaire' },
+  { text: "Son sommeil s'est amélioré grâce à ce traitement.", level: 'intermediaire' },
+  // Avancé
+  { text: "L'ecchymose sur son bras témoignait d'une chute violente.", level: 'avance' },
+  { text: "Ce psychiatre est reconnu pour ses travaux sur la psychologie cognitive.", level: 'avance' },
+  { text: "La vraisemblance de ce récit le rendait particulièrement troublant.", level: 'avance' },
+  { text: "Il agissait avec une nonchalance déconcertante face aux événements.", level: 'avance' },
+  { text: "La coïncidence de ces deux événements était tout à fait naïve.", level: 'avance' },
+  { text: "Pour acquérir cette compétence, il faut s'entraîner quotidiennement.", level: 'avance' },
+  { text: "Les chrysanthèmes fleurissent à l'automne dans nos jardins.", level: 'avance' },
+  { text: "Son ambiguïté le rendait irrémédiablement incompréhensible.", level: 'avance' },
+  { text: "Ce rhumatisme irréversible nécessite un traitement permanent.", level: 'avance' },
+  { text: "La mnémotechnique est une technique d'apprentissage très efficace.", level: 'avance' },
+];
+
+const Phrase = {
+  queue:        [],
+  current:      null,
+  done:         0,
+  correct:      0,
+  activeLevel:  'debutant',
+
+  start(level) {
+    this.activeLevel = level || 'debutant';
+    const filtered = PHRASE_DATA.filter(p => p.level === this.activeLevel);
+    this.queue   = [...filtered].sort(() => Math.random() - 0.5).slice(0, 10);
+    this.done    = 0;
+    this.correct = 0;
+    this.current = null;
+    this._renderUI();
+    this._next();
+  },
+
+  _next() {
+    if (!this.queue.length) { this._showFinished(); return; }
+    this.current = this.queue.shift();
+    this._renderQuestion();
+    setTimeout(() => this._speak(this.current.text), 200);
+  },
+
+  _speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const doSpeak = () => {
+      const utt   = new SpeechSynthesisUtterance(text);
+      utt.lang    = 'fr-FR';
+      utt.rate    = 0.78;
+      const btn   = document.getElementById('phraseListenBtn');
+      if (btn) btn.classList.add('speaking');
+      utt.onend   = () => { if (btn) btn.classList.remove('speaking'); };
+      utt.onerror = () => { if (btn) btn.classList.remove('speaking'); };
+      const voices  = window.speechSynthesis.getVoices();
+      const frVoice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
+      if (frVoice) utt.voice = frVoice;
+      window.speechSynthesis.speak(utt);
+    };
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) doSpeak();
+    else {
+      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; doSpeak(); };
+      setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 800);
+    }
+  },
+
+  _renderUI() {
+    const c = document.getElementById('spellingContent');
+    if (!c) return;
+    const levelLabel = { debutant: '🟢 Débutant', intermediaire: '🟡 Intermédiaire', avance: '🔴 Avancé' }[this.activeLevel];
+    c.innerHTML = `
+      <div class="spelling-card">
+        <div class="spelling-top-bar">
+          <div class="spelling-level-badge">📝 Phrase</div>
+          <div class="spelling-level-badge">${levelLabel}</div>
+        </div>
+        <div class="spelling-progress-wrap">
+          <div class="spelling-progress-bar" id="phraseProgressBar"></div>
+        </div>
+        <div class="spelling-stats-row">
+          <span id="phraseScore" class="spelling-stat-good">0 ✓</span>
+          <span id="phraseTotal" class="spelling-stat-total">0 / 10</span>
+        </div>
+        <div id="phraseQuestion" style="margin-top:16px"></div>
+        <div class="spelling-actions" style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+
+  _renderQuestion() {
+    const el = document.getElementById('phraseQuestion');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="phrase-listen-area">
+        <button class="spelling-listen-btn" id="phraseListenBtn" onclick="Phrase._speak(Phrase.current.text)">🔊</button>
+        <div class="spelling-hint">Écoute et écris la phrase complète</div>
+      </div>
+      <textarea id="phraseInput" class="phrase-input"
+        placeholder="Écris la phrase ici…"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        rows="3"></textarea>
+      <button class="btn" style="width:100%;margin-top:8px" onclick="Phrase.validate()">Valider ✓</button>
+      <div class="spelling-feedback" id="phraseFeedback"></div>`;
+
+    setTimeout(() => document.getElementById('phraseInput')?.focus(), 100);
+    this._updateScore();
+  },
+
+  validate() {
+    const inp    = document.getElementById('phraseInput');
+    const answer = (inp?.value || '').trim();
+    const target = this.current.text;
+
+    // Comparer mot par mot et colorer
+    const normWord = w => w.toLowerCase().replace(/[.,!?;:]/g, '').replace(/'/g, "'");
+    const aWords   = answer.split(/\s+/);
+    const tWords   = target.split(/\s+/);
+
+    let correctWords = 0;
+    const highlighted = tWords.map((tw, i) => {
+      const aw   = aWords[i] || '';
+      const isOk = normWord(aw) === normWord(tw);
+      if (isOk) correctWords++;
+      return `<span class="phrase-word ${isOk ? 'pw-ok' : 'pw-wrong'}">${escHtml(tw)}</span>`;
+    }).join(' ');
+
+    const totalWords = tWords.length;
+    const pct        = Math.round(correctWords / totalWords * 100);
+    const isOk       = pct >= 90;
+
+    this.done++;
+    if (isOk) this.correct++;
+
+    const fb = document.getElementById('phraseFeedback');
+    if (fb) fb.innerHTML = `
+      <div style="margin-top:12px">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Correction :</div>
+        <div class="phrase-correction">${highlighted}</div>
+        <div style="margin-top:8px;font-size:13px;color:${isOk ? '#6ec87a' : '#e87050'}">
+          ${correctWords}/${totalWords} mots corrects (${pct}%) — ${isOk ? '✓ Réussi !' : '✗ Raté'}
+        </div>
+      </div>`;
+
+    if (inp) inp.disabled = true;
+    this._updateScore();
+    setTimeout(() => this._next(), isOk ? 1500 : 3500);
+  },
+
+  _updateScore() {
+    const bar = document.getElementById('phraseProgressBar');
+    const sc  = document.getElementById('phraseScore');
+    const tot = document.getElementById('phraseTotal');
+    const total = 10;
+    const pct = Math.round(this.done / total * 100);
+    if (bar) bar.style.width = pct + '%';
+    if (sc)  sc.textContent  = this.correct + ' ✓';
+    if (tot) tot.textContent = this.done + ' / ' + total;
+  },
+
+  _showFinished() {
+    const c   = document.getElementById('spellingContent');
+    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    if (c) c.innerHTML = `
+      <div class="spelling-finished">
+        <div class="spelling-finished-icon">📝</div>
+        <div class="spelling-finished-title">Phrase — Terminé !</div>
+        <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
+        <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" onclick="Phrase.start('${this.activeLevel}')">Recommencer</button>
+          <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
+        </div>
+      </div>`;
+  },
+};
+
+// Sélection du niveau pour Phrase
+function showPhraseLevel() {
+  const c = document.getElementById('spellingContent');
+  if (!c) return;
+  c.innerHTML = `
+    <div class="spelling-start">
+      <div class="spelling-start-icon">📝</div>
+      <div class="spelling-start-title">Phrase — Choisir le niveau</div>
+      <div class="spelling-levels">
+        <button class="spelling-level-btn level-easy" onclick="Phrase.start('debutant')">
+          <span class="level-dot">🟢</span><span class="level-name">Débutant</span>
+          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='debutant').length} phrases</span>
+          <span class="level-desc">Phrases courtes du quotidien</span>
+        </button>
+        <button class="spelling-level-btn level-mid" onclick="Phrase.start('intermediaire')">
+          <span class="level-dot">🟡</span><span class="level-name">Intermédiaire</span>
+          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='intermediaire').length} phrases</span>
+          <span class="level-desc">Phrases avec accords et homophones</span>
+        </button>
+        <button class="spelling-level-btn level-hard" onclick="Phrase.start('avance')">
+          <span class="level-dot">🔴</span><span class="level-name">Avancé</span>
+          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='avance').length} phrases</span>
+          <span class="level-desc">Phrases avec mots pièges</span>
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)" style="margin-top:8px">← Retour</button>
     </div>`;
 }
