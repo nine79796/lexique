@@ -211,14 +211,16 @@ const Timer = {
       if (typeof updateTaskStats === 'function') updateTaskStats();
     }
 
-    // Retirer la tâche de la liste du popup cselect et du timer select
-    // pour qu'elle n'apparaisse plus après avoir été validée par le drapeau
+    // Toujours vider la tâche courante après le drapeau
+    // qu'on passe par cselect (mobile) ou le select natif (PC)
+    const st2 = Timer.load();
+    st2.currentTask = '';
+    Timer.save(st2);
+
+    if (typeof _cselectState !== 'undefined') _cselectState.timer = '';
+    if (typeof updateTimerSelectBtn === 'function') updateTimerSelectBtn('');
     if (typeof renderTimerTaskSelect === 'function') renderTimerTaskSelect();
-    if (typeof _cselectState !== 'undefined' && _cselectState.timer === taskLabel) {
-      _cselectState.timer = '';
-      if (typeof Timer !== 'undefined') Timer.setTask('');
-      if (typeof updateTimerSelectBtn === 'function') updateTimerSelectBtn('');
-    }
+    if (typeof renderTimerUI === 'function') renderTimerUI();
   },
 
   /** Annule le dernier drapeau (missclick) */

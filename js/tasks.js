@@ -399,6 +399,11 @@ function renderTaskCard(item, today) {
   const checkFn    = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
   const checkState = done ? ' checked' : '';
 
+  // Si la tâche s'appelle "Spelling" (insensible casse), griser jusqu'au quota SRS atteint
+  const isSpellingTask = task.title.toLowerCase().includes('spelling');
+  const spellingGate   = isSpellingTask && typeof SpellingSRS !== 'undefined'
+    ? !SpellingSRS.isDailyQuotaMet() : false;
+
   let historyHtml = '';
   if (isRecur) {
     const past = getPastDueDates(task, today).slice(-14);
@@ -420,7 +425,7 @@ function renderTaskCard(item, today) {
 
   return `<div class="task-card${done ? ' task-done' : ''}${isLate && !done ? ' task-late' : ''}${isRecur ? ' task-recur' : ''}">
     <div class="task-card-top">
-      <div class="task-checkbox${checkState}" onclick="${checkFn}"></div>
+      <div class="task-checkbox${checkState}${spellingGate ? ' quota-not-met' : ''}" ${spellingGate ? 'data-spelling-gate="1"' : ''} onclick="${spellingGate ? '' : checkFn}"></div>
       <div class="task-info">
         <div class="task-title">${escHtml(task.title)}</div>
         ${task.desc ? `<div class="task-desc">${escHtml(task.desc)}</div>` : ''}
