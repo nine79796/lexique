@@ -441,14 +441,7 @@ function renderTimerHistory() {
       </div>`;
     });
 
-    // Sessions
-    sessions.forEach(s => {
-      html += `<div class="timer-session-row">
-        <span class="timer-session-task">${escHtml(s.task)}</span>
-        <span class="timer-session-dur">${fmtDuration(s.duration)}</span>
-        <button class="timer-session-del" onclick="Timer.deleteSession(${s.idx})" title="${t('timer.delete_session')}">×</button>
-      </div>`;
-    });
+    // Sessions masquées — les drapeaux suffisent pour le détail
 
     html += `</div>`;
   });
