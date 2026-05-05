@@ -37,8 +37,13 @@ const Timer = {
   },
 
   save(st) {
-    _timerCache = st; // met à jour le cache avant l'écriture
+    // Horodater chaque sauvegarde pour que le pull Firebase sache
+    // si le cloud est plus récent que le local (comparaison timerPushedAt vs updatedAt)
+    st.updatedAt = Date.now();
+    _timerCache = st;
     try { localStorage.setItem(LS_KEY_TIMER, JSON.stringify(st)); } catch { /* quota */ }
+    // Déclencher une sync cloud légère à chaque changement d'état du timer
+    if (typeof CloudSync !== 'undefined') CloudSync.schedule(3000);
   },
 
   // ── Durée courante ───────────────────────────────────────────
