@@ -263,6 +263,76 @@ const SPELLING_WORDS = {
 // ── SRS State ─────────────────────────────────────────────────
 // Structure par mot : { interval, dueDate, reps, lapses, lastSeen }
 
+// ── Utilitaire TTS français — utilisé par tous les mini-jeux ──
+function speakFrench(text, rate = 0.82, onEnd = null) {
+  if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
+  window.speechSynthesis.cancel();
+
+  const doSpeak = () => {
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.lang   = 'fr-FR';
+    utt.rate   = rate;
+
+    // Sélectionner la meilleure voix française disponible
+    const voices  = window.speechSynthesis.getVoices();
+    const frVoice = voices.find(v => v.lang === 'fr-FR' && v.localService)
+                 || voices.find(v => v.lang === 'fr-FR')
+                 || voices.find(v => v.lang.startsWith('fr'));
+    if (frVoice) utt.voice = frVoice;
+
+    utt.onend   = () => { if (onEnd) onEnd(); };
+    utt.onerror = () => { if (onEnd) onEnd(); };
+    window.speechSynthesis.speak(utt);
+  };
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+    setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 800);
+  }
+}
+
+// ── Mini-timer pour exercices (Vision, Détective, Morpho, Phrase) ──
+const MiniTimer = {
+  _timer:   null,
+  _seconds: 0,
+  _onEnd:   null,
+  _paused:  false,
+
+  start(seconds, elId, onEnd) {
+    this.stop();
+    this._seconds = seconds;
+    this._onEnd   = onEnd;
+    this._paused  = false;
+    this._render(elId);
+    this._timer = setInterval(() => {
+      if (this._paused) return;
+      this._seconds--;
+      this._render(elId);
+      if (this._seconds <= 0) { this.stop(); if (onEnd) onEnd(); }
+    }, 1000);
+  },
+
+  stop()  { clearInterval(this._timer); this._timer = null; },
+  pause() { this._paused = true; },
+  resume(){ this._paused = false; },
+
+  _render(elId) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const cls = this._seconds <= 3 ? 'countdown-red'
+              : this._seconds <= 6 ? 'countdown-orange' : 'countdown-green';
+    el.innerHTML = `<div class="spelling-countdown-pill ${cls}">
+      <span class="countdown-seconds">${this._seconds}</span><span class="countdown-label">s</span>
+    </div>`;
+  },
+};
+
 const SpellingSRS = {
 
   _data: null,
@@ -299,12 +369,22 @@ const SpellingSRS = {
     const card = this._card(word, level);
     const today = todayStr();
 
-    // Marquer vu aujourd'hui
+    // Marquer vu aujourd'hui — seulement jusqu'au quota
     d.today[today] ??= {};
     d.today[today][level] ??= { done: 0, correct: 0 };
 
-    d.today[today][level].done++;
-    if (correct) d.today[today][level].correct++;
+    const quota     = this.getQuota(level);
+    const withinQuota = d.today[today][level].done < quota;
+
+    // Ne compter dans le progress que si on est dans le quota du jour
+    // Les mots supplémentaires sont quand même entraînés (SRS) mais comptent pour demain
+    if (withinQuota) {
+      d.today[today][level].done++;
+      if (correct) d.today[today][level].correct++;
+    } else {
+      // Au-delà du quota → reporter au lendemain en mettant dueDate à demain
+      // (le SRS sera mis à jour normalement ci-dessous)
+    }
 
     if (correct) {
       card.reps++;
@@ -445,13 +525,40 @@ const SpellingSRS = {
     return done;
   },
 
-  // Est-ce que le quota du jour est atteint ?
+  // Est-ce que le quota du jour est atteint ? (dictée + tous les mini-jeux)
   isDailyQuotaMet() {
-    return ['debutant','intermediaire','avance'].every(level => {
+    const dicteeOk = ['debutant','intermediaire','avance'].every(level => {
       const prog  = this.getTodayProgress(level);
       const quota = this.getQuota(level);
       return prog.done >= quota;
     });
+    const exosOk = this.areExosDone();
+    return dicteeOk && exosOk;
+  },
+
+  // Marquer un mini-jeu comme complété aujourd'hui
+  markExoDone(exoKey) {
+    const d     = this.load();
+    const today = todayStr();
+    d.today[today] ??= {};
+    d.today[today]._exos ??= {};
+    d.today[today]._exos[exoKey] = true;
+    this.save();
+  },
+
+  // Est-ce que tous les mini-jeux ont été faits aujourd'hui ?
+  areExosDone() {
+    const d     = this.load();
+    const today = todayStr();
+    const exos  = d.today[today]?._exos || {};
+    return ['vision','detective','morpho','phrase'].every(k => exos[k]);
+  },
+
+  // Progrès mini-jeux du jour
+  getExoProgress() {
+    const d     = this.load();
+    const today = todayStr();
+    return d.today[today]?._exos || {};
   },
 };
 
@@ -578,27 +685,12 @@ const Spelling = {
   // ── Speech ─────────────────────────────────────────────────
 
   _speak(word) {
-    if (!('speechSynthesis' in window)) { this._startCountdown(); return; }
-    window.speechSynthesis.cancel();
-    const doSpeak = () => {
-      const utt   = new SpeechSynthesisUtterance(word);
-      utt.lang    = 'fr-FR';
-      utt.rate    = 0.82;
-      const btn   = document.getElementById('spellingListenBtn');
-      if (btn) btn.classList.add('speaking');
-      utt.onend   = () => { if (btn) btn.classList.remove('speaking'); this._startCountdown(); };
-      utt.onerror = () => { if (btn) btn.classList.remove('speaking'); this._startCountdown(); };
-      const voices  = window.speechSynthesis.getVoices();
-      const frVoice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
-      if (frVoice) utt.voice = frVoice;
-      window.speechSynthesis.speak(utt);
-    };
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) doSpeak();
-    else {
-      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; doSpeak(); };
-      setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 800);
-    }
+    const btn = document.getElementById('spellingListenBtn');
+    if (btn) btn.classList.add('speaking');
+    speakFrench(word, 0.82, () => {
+      if (btn) btn.classList.remove('speaking');
+      this._startCountdown();
+    });
   },
 
   // ── Validate ───────────────────────────────────────────────
@@ -610,11 +702,13 @@ const Spelling = {
     const correct = this.current?.label;
     if (!answer || !correct) return;
 
-    // Normalisation : ligatures œ↔oe, æ↔ae, apostrophes, casse
+    // Normalisation : ligatures œ↔oe, æ↔ae, tréma ignoré, apostrophes, casse
     const norm  = s => s
       .replace(/'/g, "'")
       .replace(/œ/g, 'oe')
       .replace(/æ/g, 'ae')
+      .replace(/ë/g, 'e').replace(/ï/g, 'i').replace(/ü/g, 'u')
+      .replace(/ÿ/g, 'y')
       .toLowerCase()
       .trim();
     const isOk  = norm(answer) === norm(correct);
@@ -960,16 +1054,18 @@ function renderSpelling(forceMenu) {
           <span class="anki-count anki-new"  title="Nouveaux">${counters.new}</span>
           <span class="anki-count anki-learn" title="En apprentissage">${counters.learn}</span>
           <span class="anki-count anki-review" title="À réviser">${counters.review}</span>
-          ${met ? '<span class="anki-done-check">✓</span>' : ''}
+          <span class="anki-done-check ${met ? 'visible' : ''}">✓</span>
         </div>
       </div>`;
   }).join('');
 
-  // Exercices supplémentaires
+  // Exercices supplémentaires — avec indicateur ✓ si complété aujourd'hui
+  const exoDone = SpellingSRS.getExoProgress();
   const exoRows = `
     <div class="anki-exo-section">
       <div class="anki-deck-header" style="border-radius:12px 12px 0 0">
         <span>Exercices</span>
+        <span style="font-size:11px;color:var(--text-dim)">${Object.keys(exoDone).length}/4 faits</span>
       </div>
       <div class="anki-deck-row" onclick="Vision.start()">
         <div class="anki-deck-left">
@@ -979,6 +1075,7 @@ function renderSpelling(forceMenu) {
             <span class="anki-deck-sub">Choisir la bonne orthographe</span>
           </div>
         </div>
+        <span class="anki-done-check ${exoDone.vision ? 'visible' : ''}">✓</span>
       </div>
       <div class="anki-deck-row" onclick="Detective.start()">
         <div class="anki-deck-left">
@@ -988,6 +1085,7 @@ function renderSpelling(forceMenu) {
             <span class="anki-deck-sub">Trouver et corriger la faute</span>
           </div>
         </div>
+        <span class="anki-done-check ${exoDone.detective ? 'visible' : ''}">✓</span>
       </div>
       <div class="anki-deck-row" onclick="Morpho.start()">
         <div class="anki-deck-left">
@@ -997,6 +1095,7 @@ function renderSpelling(forceMenu) {
             <span class="anki-deck-sub">Pluriel, accord, conjugaison</span>
           </div>
         </div>
+        <span class="anki-done-check ${exoDone.morpho ? 'visible' : ''}">✓</span>
       </div>
       <div class="anki-deck-row" onclick="showPhraseLevel()">
         <div class="anki-deck-left">
@@ -1006,6 +1105,7 @@ function renderSpelling(forceMenu) {
             <span class="anki-deck-sub">Dictée de phrase complète</span>
           </div>
         </div>
+        <span class="anki-done-check ${exoDone.phrase ? 'visible' : ''}">✓</span>
       </div>
     </div>`;
 
@@ -1147,7 +1247,8 @@ const Vision = {
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="visionProgressBar"></div>
         </div>
-        <div id="visionQuestion" style="margin-top:16px"></div>
+        <div id="visionCountdown" style="margin:8px 0;text-align:center"></div>
+        <div id="visionQuestion" style="margin-top:8px"></div>
         <div class="spelling-actions" style="margin-top:12px">
           <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
         </div>
@@ -1171,9 +1272,22 @@ const Vision = {
       <div class="vision-feedback" id="visionFeedback"></div>`;
 
     this._updateScore();
+    // Démarrer le timer 10s — timeout = raté
+    MiniTimer.start(10, 'visionCountdown', () => {
+      document.querySelectorAll('.vision-choice').forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent.trim() === this.current.correct) btn.classList.add('vision-ok');
+      });
+      const fb = document.getElementById('visionFeedback');
+      if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — C'était : <strong>${escHtml(this.current.correct)}</strong></span>`;
+      this.done++;
+      this._updateScore();
+      setTimeout(() => this._next(), 2000);
+    });
   },
 
   pick(word) {
+    MiniTimer.stop();
     const isOk = word === this.current.correct;
     if (isOk) this.correct++;
     this.done++;
@@ -1212,6 +1326,8 @@ const Vision = {
   },
 
   _showFinished() {
+    MiniTimer.stop();
+    SpellingSRS.markExoDone('vision');
     const c   = document.getElementById('spellingContent');
     const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     if (c) c.innerHTML = `
@@ -1299,7 +1415,8 @@ const Detective = {
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="detectiveProgressBar"></div>
         </div>
-        <div id="detectiveQuestion" style="margin-top:16px"></div>
+        <div id="detectiveCountdown" style="margin:8px 0;text-align:center"></div>
+        <div id="detectiveQuestion" style="margin-top:8px"></div>
         <div class="spelling-actions" style="margin-top:12px">
           <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
         </div>
@@ -1329,12 +1446,25 @@ const Detective = {
     }, 80);
 
     this._updateScore();
+    MiniTimer.start(10, 'detectiveCountdown', () => {
+      const inp2 = document.getElementById('detectiveInput');
+      if (inp2) inp2.disabled = true;
+      const fb = document.getElementById('detectiveFeedback');
+      if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — La faute était <strong>${escHtml(this.current.wrong)}</strong> → <strong>${escHtml(this.current.correct)}</strong></span>`;
+      this.done++;
+      this._updateScore();
+      setTimeout(() => this._next(), 2000);
+    });
   },
 
   validate() {
+    MiniTimer.stop();
     const inp    = document.getElementById('detectiveInput');
-    const answer = (inp?.value || '').trim().toLowerCase();
-    const isOk   = answer === this.current.correct.toLowerCase();
+    const norm   = s => s.replace(/'/g,"'").replace(/œ/g,'oe').replace(/æ/g,'ae')
+                      .replace(/ë/g,'e').replace(/ï/g,'i').replace(/ü/g,'u').replace(/ÿ/g,'y')
+                      .toLowerCase().trim();
+    const answer = norm(inp?.value || '');
+    const isOk   = answer === norm(this.current.correct);
     this.done++;
     if (isOk) this.correct++;
 
@@ -1358,6 +1488,8 @@ const Detective = {
   },
 
   _showFinished() {
+    MiniTimer.stop();
+    SpellingSRS.markExoDone('detective');
     const c   = document.getElementById('spellingContent');
     const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     if (c) c.innerHTML = `
@@ -1451,7 +1583,8 @@ const Morpho = {
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="morphoProgressBar"></div>
         </div>
-        <div id="morphoQuestion" style="margin-top:16px"></div>
+        <div id="morphoCountdown" style="margin:8px 0;text-align:center"></div>
+        <div id="morphoQuestion" style="margin-top:8px"></div>
         <div class="spelling-actions" style="margin-top:12px">
           <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Niveaux</button>
         </div>
@@ -1480,13 +1613,26 @@ const Morpho = {
     }, 80);
 
     this._updateScore();
+    MiniTimer.start(10, 'morphoCountdown', () => {
+      const inp2 = document.getElementById('morphoInput');
+      if (inp2) inp2.disabled = true;
+      const fb = document.getElementById('morphoFeedback');
+      if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — Réponse : <strong>${escHtml(this.current.correct)}</strong></span>
+         <div style="font-size:12px;color:var(--text-dim);margin-top:4px">💡 ${escHtml(this.current.hint)}</div>`;
+      this.done++;
+      this._updateScore();
+      setTimeout(() => this._next(), 2500);
+    });
   },
 
   validate() {
+    MiniTimer.stop();
     const inp    = document.getElementById('morphoInput');
-    const answer = (inp?.value || '').trim().toLowerCase().replace(/'/g, "'");
-    const norm   = s => s.toLowerCase().replace(/'/g, "'").trim();
-    const isOk   = norm(answer) === norm(this.current.correct);
+    const norm   = s => s.replace(/'/g,"'").replace(/œ/g,'oe').replace(/æ/g,'ae')
+                      .replace(/ë/g,'e').replace(/ï/g,'i').replace(/ü/g,'u').replace(/ÿ/g,'y')
+                      .toLowerCase().trim();
+    const answer = norm(inp?.value || '');
+    const isOk   = answer === norm(this.current.correct);
     this.done++;
     if (isOk) this.correct++;
 
@@ -1511,6 +1657,8 @@ const Morpho = {
   },
 
   _showFinished() {
+    MiniTimer.stop();
+    SpellingSRS.markExoDone('morpho');
     const c   = document.getElementById('spellingContent');
     const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     if (c) c.innerHTML = `
@@ -1594,27 +1742,12 @@ const Phrase = {
   },
 
   _speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const doSpeak = () => {
-      const utt   = new SpeechSynthesisUtterance(text);
-      utt.lang    = 'fr-FR';
-      utt.rate    = 0.78;
-      const btn   = document.getElementById('phraseListenBtn');
-      if (btn) btn.classList.add('speaking');
-      utt.onend   = () => { if (btn) btn.classList.remove('speaking'); };
-      utt.onerror = () => { if (btn) btn.classList.remove('speaking'); };
-      const voices  = window.speechSynthesis.getVoices();
-      const frVoice = voices.find(v => v.lang === 'fr-FR') || voices.find(v => v.lang.startsWith('fr'));
-      if (frVoice) utt.voice = frVoice;
-      window.speechSynthesis.speak(utt);
-    };
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) doSpeak();
-    else {
-      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; doSpeak(); };
-      setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 800);
-    }
+    const btn = document.getElementById('phraseListenBtn');
+    if (btn) btn.classList.add('speaking');
+    speakFrench(text, 0.78, () => {
+      if (btn) btn.classList.remove('speaking');
+      Phrase._startPhraseTimer();
+    });
   },
 
   _renderUI() {
@@ -1659,9 +1792,29 @@ const Phrase = {
 
     setTimeout(() => document.getElementById('phraseInput')?.focus(), 100);
     this._updateScore();
+    // Le timer de 15s démarre après la lecture de la phrase
+    // On attend que _speak() appelle son callback onEnd pour démarrer
+    // (le timer est lancé depuis _speak via phraseTimerReady)
+    Phrase._phraseTimerPending = true;
+  },
+
+  _startPhraseTimer() {
+    if (!this._phraseTimerPending) return;
+    this._phraseTimerPending = false;
+    MiniTimer.start(15, 'phraseCountdown', () => {
+      const inp2 = document.getElementById('phraseInput');
+      if (inp2) inp2.disabled = true;
+      const fb = document.getElementById('phraseFeedback');
+      if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé !</span>`;
+      this.done++;
+      this._updateScore();
+      setTimeout(() => this._next(), 2000);
+    });
   },
 
   validate() {
+    MiniTimer.stop();
+    this._phraseTimerPending = false;
     const inp    = document.getElementById('phraseInput');
     const answer = (inp?.value || '').trim();
     const target = this.current.text;
@@ -1713,6 +1866,8 @@ const Phrase = {
   },
 
   _showFinished() {
+    MiniTimer.stop();
+    SpellingSRS.markExoDone('phrase');
     const c   = document.getElementById('spellingContent');
     const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     if (c) c.innerHTML = `

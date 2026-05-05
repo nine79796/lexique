@@ -1197,9 +1197,15 @@ body {
 .anki-learn  { color: #e87050; }
 .anki-review { color: #6ec87a; }
 .anki-done-check {
-  color: #6ec87a;
+  color: transparent; /* invisible par défaut — toujours dans le flux pour ne pas décaler */
   font-size: 14px;
   font-weight: 700;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.anki-done-check.visible {
+  color: #6ec87a; /* visible quand quota atteint */
 }
 .anki-all-done {
   text-align: center;
@@ -1564,4 +1570,81 @@ body {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.6;
+}
+
+/* ── Active Timer Banner ──────────────────────────────────────── */
+.active-timer-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 40px;
+  padding: 10px 16px 10px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  z-index: 9990;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  animation: bannerSlideUp 0.25s ease;
+}
+
+@keyframes bannerSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0);    }
+}
+
+.active-timer-icon {
+  font-size: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.active-timer-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-timer-resume {
+  background: var(--accent);
+  color: #1a1a17;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.active-timer-resume:hover { opacity: 0.85; }
+
+.active-timer-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.active-timer-close:hover { color: var(--text); }
+
+@media (max-width: 480px) {
+  .active-timer-banner {
+    bottom: 12px;
+    padding: 9px 12px 9px 12px;
+    border-radius: 32px;
+  }
+  .active-timer-text { font-size: 12px; }
 }

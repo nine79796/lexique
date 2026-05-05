@@ -37,8 +37,13 @@ const Timer = {
   },
 
   save(st) {
-    _timerCache = st; // met à jour le cache avant l'écriture
+    // Horodater chaque sauvegarde pour que le pull Firebase sache
+    // si le cloud est plus récent que le local (comparaison timerPushedAt vs updatedAt)
+    st.updatedAt = Date.now();
+    _timerCache = st;
     try { localStorage.setItem(LS_KEY_TIMER, JSON.stringify(st)); } catch { /* quota */ }
+    // Déclencher une sync cloud légère à chaque changement d'état du timer
+    if (typeof CloudSync !== 'undefined') CloudSync.schedule(3000);
   },
 
   // ── Durée courante ───────────────────────────────────────────
@@ -409,8 +414,9 @@ function renderTimerHistory() {
 
   sortedDates.forEach(date => {
     const { sessions, milestones } = byDate[date];
-    const total    = sessions.reduce((a, s) => a + s.duration, 0)
-                   + milestones.reduce((a, m) => a + Math.round((m.lapMs || 0) / 1000), 0);
+    // Total = uniquement les sessions terminées (Terminer cliqué)
+    // Les milestones (drapeaux) sont des marqueurs de temps dans la session, pas des durées additionnelles
+    const total = sessions.reduce((a, s) => a + s.duration, 0);
     const dateDisp = new Date(date + 'T12:00:00').toLocaleDateString(locale, {
       weekday: 'long', day: 'numeric', month: 'long',
     });
@@ -467,16 +473,9 @@ function getWorkDataByDay(days = 30) {
     result[fmtDay(d.getTime())] = 0;
   }
 
-  // Sessions terminées (stop)
+  // Sessions terminées uniquement — pas les milestones (double comptage)
   st.sessions.forEach(s => {
     if (result[s.date] !== undefined) result[s.date] += s.duration;
-  });
-
-  // Milestones (drapeaux) — ajoute le lapMs converti en secondes
-  st.milestones.forEach(m => {
-    if (result[m.date] !== undefined && m.lapMs > 0) {
-      result[m.date] += Math.round(m.lapMs / 1000);
-    }
   });
 
   return result;
@@ -529,7 +528,9 @@ function initTimer() {
   renderTimerTaskSelect();
   timerTick();         // gère déjà la reprise du tick si running
   renderTimerHistory();
-  _showActiveTimerBanner(); // affiche le bandeau si timer en cours à l'ouverture
+  // Afficher le bandeau après un court délai pour laisser le DOM se stabiliser
+  // Fonctionne sur mobile ET desktop, peu importe l'onglet actif au démarrage
+  setTimeout(_showActiveTimerBanner, 800);
 }
 
 /**
@@ -538,12 +539,8 @@ function initTimer() {
  */
 function _showActiveTimerBanner() {
   const st = Timer.load();
-  // Timer en cours ET l'onglet actif n'est pas "timer"
-  if (!st.running && st.elapsed === 0) return;
-
-  // Vérifier si on n'est pas déjà sur l'onglet timer
-  const timerTab = document.getElementById('tab-timer');
-  if (timerTab && timerTab.classList.contains('active')) return;
+  // Rien à afficher si aucun temps écoulé
+  if (!st.running && (!st.elapsed || st.elapsed === 0)) return;
 
   const existing = document.getElementById('activeTimerBanner');
   if (existing) return; // déjà affiché
