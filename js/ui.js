@@ -34,8 +34,14 @@ function switchTab(name) {
   if (name === 'stats')    renderCharts();
   if (name === 'revision') renderRevision();
   if (name === 'taches')   { autoReportTasks(); renderTasks(); updateTaskStats(); }
-  if (name === 'timer')    { renderTimerTaskSelect(); renderTimerHistory(); }
+  if (name === 'timer')    { _hideActiveTimerBanner(); renderTimerTaskSelect(); renderTimerHistory(); }
   if (name === 'spelling') renderSpelling();
+
+  // Afficher le bandeau timer si on quitte l'onglet timer et que le chrono tourne
+  if (name !== 'timer') {
+    _hideActiveTimerBanner();
+    setTimeout(_showActiveTimerBanner, 300);
+  }
 }
 
 function toggleSection(bodyId, iconId) {

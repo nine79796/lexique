@@ -144,15 +144,20 @@ const Timer = {
     // où _timerCache est périmé après une mise en veille ou un changement d'onglet
     _timerCache = null;
     const st      = this.load();
-    const totalMs = this.currentMs(st);
+    // Recalculer totalMs directement depuis Date.now() pour être précis
+    const now     = Date.now();
+    const totalMs = st.running && st.startedAt
+      ? st.elapsed + (now - st.startedAt)
+      : st.elapsed;
 
     // Ignorer si aucun temps écoulé (< 1 seconde)
     if (totalMs < 1000) return;
 
-    const now = Date.now();
-
-    // lapMs = temps depuis le dernier drapeau (ou depuis le début)
-    const lastFlagTotalMs = st.milestones.length > 0 ? st.milestones[0].totalMs : 0;
+    // lapMs = temps depuis le dernier drapeau posé AUJOURD'HUI (ou depuis le début)
+    // On filtre sur today pour éviter les calculs faux entre deux jours
+    const today = fmtDay(now);
+    const todayMilestones = st.milestones.filter(m => m.date === today);
+    const lastFlagTotalMs = todayMilestones.length > 0 ? todayMilestones[0].totalMs : 0;
     const lapMs = totalMs - lastFlagTotalMs;
 
     // Ignorer les double-clics (lap < 1 seconde)
@@ -404,7 +409,8 @@ function renderTimerHistory() {
 
   sortedDates.forEach(date => {
     const { sessions, milestones } = byDate[date];
-    const total    = sessions.reduce((a, s) => a + s.duration, 0);
+    const total    = sessions.reduce((a, s) => a + s.duration, 0)
+                   + milestones.reduce((a, m) => a + Math.round((m.lapMs || 0) / 1000), 0);
     const dateDisp = new Date(date + 'T12:00:00').toLocaleDateString(locale, {
       weekday: 'long', day: 'numeric', month: 'long',
     });
@@ -523,4 +529,66 @@ function initTimer() {
   renderTimerTaskSelect();
   timerTick();         // gère déjà la reprise du tick si running
   renderTimerHistory();
+  _showActiveTimerBanner(); // affiche le bandeau si timer en cours à l'ouverture
+}
+
+/**
+ * Affiche un bandeau en haut de l'app si un timer est en cours
+ * quand on rouvre l'app — permet de retrouver facilement le chrono actif.
+ */
+function _showActiveTimerBanner() {
+  const st = Timer.load();
+  // Timer en cours ET l'onglet actif n'est pas "timer"
+  if (!st.running && st.elapsed === 0) return;
+
+  // Vérifier si on n'est pas déjà sur l'onglet timer
+  const timerTab = document.getElementById('tab-timer');
+  if (timerTab && timerTab.classList.contains('active')) return;
+
+  const existing = document.getElementById('activeTimerBanner');
+  if (existing) return; // déjà affiché
+
+  const ms      = Timer.currentMs(st);
+  const banner  = document.createElement('div');
+  banner.id     = 'activeTimerBanner';
+  banner.className = 'active-timer-banner';
+
+  const taskLabel = st.currentTask ? `· ${st.currentTask}` : '';
+  const stateLabel = st.running ? '▶ En cours' : '⏸ En pause';
+
+  banner.innerHTML = `
+    <span class="active-timer-icon">${st.running ? '▶' : '⏸'}</span>
+    <span class="active-timer-text">${stateLabel} ${taskLabel}</span>
+    <button class="active-timer-resume" onclick="switchTab('timer');_hideActiveTimerBanner()">
+      Reprendre →
+    </button>
+    <button class="active-timer-close" onclick="_hideActiveTimerBanner()">×</button>`;
+
+  document.body.appendChild(banner);
+
+  // Met à jour le temps affiché dans le bandeau toutes les secondes
+  const bannerInterval = setInterval(() => {
+    const s2 = Timer.load();
+    if (!s2.running && s2.elapsed === 0) { _hideActiveTimerBanner(); clearInterval(bannerInterval); return; }
+    const textEl = banner.querySelector('.active-timer-text');
+    const curMs  = Timer.currentMs(s2);
+    const stL    = s2.running ? '▶ En cours' : '⏸ En pause';
+    const tL     = s2.currentTask ? `· ${s2.currentTask}` : '';
+    const h = Math.floor(curMs / 3600000);
+    const m = Math.floor((curMs % 3600000) / 60000);
+    const sec = Math.floor((curMs % 60000) / 1000);
+    const timeStr = h > 0
+      ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+      : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    if (textEl) textEl.textContent = `${stL} ${tL} — ${timeStr}`;
+  }, 1000);
+
+  banner._interval = bannerInterval;
+}
+
+function _hideActiveTimerBanner() {
+  const banner = document.getElementById('activeTimerBanner');
+  if (!banner) return;
+  if (banner._interval) clearInterval(banner._interval);
+  banner.remove();
 }

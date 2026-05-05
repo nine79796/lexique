@@ -279,6 +279,13 @@ const CloudSync = {
 
       const uRef = this.userRef();
       if (uRef) {
+        // Spelling SRS data
+        let spellingData = {};
+        try {
+          const rawSpelling = localStorage.getItem('lexique_spelling_srs');
+          if (rawSpelling) spellingData = JSON.parse(rawSpelling);
+        } catch { /* ignore */ }
+
         await uRef.set({
           lastSync:        Date.now(),
           appVersion:      'lexique-v6',
@@ -286,8 +293,10 @@ const CloudSync = {
           sources:         sources,
           timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
           timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
+          spellingCards:   spellingData.cards  || {},
+          spellingToday:   spellingData.today  || {},
         }, { merge: true });
-        console.debug('[Sync↑] Catégories + Timer poussés ✓');
+        console.debug('[Sync↑] Catégories + Timer + Spelling poussés ✓');
       }
 
       this.showStatus('synced');
@@ -418,6 +427,47 @@ const CloudSync = {
             localTimer.milestones = mergedMilestones.slice(0, 200);
             try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
             console.debug('[Sync↓] Timer reçu : ' + mergedSessions.length + ' sessions');
+          }
+
+          // Spelling SRS
+          const cloudSpellingCards = data.spellingCards;
+          const cloudSpellingToday = data.spellingToday;
+          if (cloudSpellingCards || cloudSpellingToday) {
+            let localSpelling = { cards: {}, today: {} };
+            try {
+              const rawSpelling = localStorage.getItem('lexique_spelling_srs');
+              if (rawSpelling) localSpelling = JSON.parse(rawSpelling);
+              localSpelling.cards ??= {};
+              localSpelling.today ??= {};
+            } catch { /* ignore */ }
+
+            // Fusion des cartes SRS : garder la carte avec le plus d'interval (= la plus avancée)
+            if (cloudSpellingCards && typeof cloudSpellingCards === 'object') {
+              Object.entries(cloudSpellingCards).forEach(([key, cloudCard]) => {
+                const localCard = localSpelling.cards[key];
+                if (!localCard || (cloudCard.reps || 0) >= (localCard.reps || 0)) {
+                  localSpelling.cards[key] = cloudCard;
+                }
+              });
+            }
+
+            // Fusion des progrès du jour : additionner les compteurs
+            if (cloudSpellingToday && typeof cloudSpellingToday === 'object') {
+              Object.entries(cloudSpellingToday).forEach(([day, levels]) => {
+                localSpelling.today[day] ??= {};
+                Object.entries(levels || {}).forEach(([level, prog]) => {
+                  const local = localSpelling.today[day][level] || { done: 0, correct: 0 };
+                  // Prendre le max (pas additionner — évite les doublons de sync)
+                  localSpelling.today[day][level] = {
+                    done:    Math.max(local.done,    prog.done    || 0),
+                    correct: Math.max(local.correct, prog.correct || 0),
+                  };
+                });
+              });
+            }
+
+            try { localStorage.setItem('lexique_spelling_srs', JSON.stringify(localSpelling)); } catch { /* quota */ }
+            console.debug('[Sync↓] Spelling SRS reçu ✓');
           }
         }
       }

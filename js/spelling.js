@@ -23,8 +23,14 @@ const SRS_INTERVALS = {
   easy:  7,   // 7 jours
 };
 
-// Quota minimum par jour par niveau (ajusté selon performances)
-const QUOTA_BASE = { debutant: 10, intermediaire: 8, avance: 6 };
+// Quota 100% dynamique selon tes performances des 7 derniers jours
+// Total entre 20 et 120 mots/jour, réparti selon les taux d'échec par niveau
+const QUOTA_TOTAL_MIN     = 20;   // minimum absolu par jour
+const QUOTA_TOTAL_DEFAULT = 60;   // valeur si pas assez de données (premiers jours)
+const QUOTA_TOTAL_MAX     = 120;  // maximum absolu par jour
+const QUOTA_LEVEL_MIN     = 5;    // minimum garanti par niveau même si tu es très fort
+const QUOTA_LEVELS        = ['debutant', 'intermediaire', 'avance'];
+const QUOTA_BASE          = { debutant: 20, intermediaire: 20, avance: 20 }; // fallback
 
 // ── Règles ────────────────────────────────────────────────────
 
@@ -357,26 +363,70 @@ const SpellingSRS = {
     return d.today[today]?.[level] || { done: 0, correct: 0 };
   },
 
-  // Quota du jour pour un niveau (dynamique selon taux de réussite)
+  /**
+   * Calcule le quota dynamique pour un niveau donné.
+   *
+   * Logique :
+   * 1. Calcule le total journalier selon le taux de réussite GLOBAL des 7 derniers jours
+   *    - Taux >= 85% (très bon)  → total réduit (moins de révision nécessaire)
+   *    - Taux <= 55% (difficile) → total augmenté (plus d'entraînement)
+   *    - Entre les deux          → interpolation linéaire
+   * 2. Répartit ce total entre les 3 niveaux selon le taux d'ÉCHEC de chaque niveau
+   *    - Un niveau avec beaucoup d'échecs reçoit une plus grande part du quota
+   *    - Minimum QUOTA_LEVEL_MIN mots garantis par niveau
+   */
   getQuota(level) {
     const d     = this.load();
     const today = todayStr();
-    const base  = QUOTA_BASE[level];
 
-    // Calculer le taux de réussite des 7 derniers jours
-    let totalDone = 0, totalCorrect = 0;
+    // ── Étape 1 : calculer le total dynamique ──────────────────
+    let globalDone = 0, globalCorrect = 0;
     for (let i = 1; i <= 7; i++) {
       const day = addDays(today, -i);
-      const prog = d.today[day]?.[level];
-      if (prog) { totalDone += prog.done; totalCorrect += prog.correct; }
+      QUOTA_LEVELS.forEach(l => {
+        const prog = d.today[day]?.[l];
+        if (prog) { globalDone += prog.done; globalCorrect += prog.correct; }
+      });
     }
 
-    if (totalDone < 5) return base; // pas assez de données
+    let totalQuota;
+    if (globalDone < 10) {
+      // Pas assez de données → valeur par défaut
+      totalQuota = QUOTA_TOTAL_DEFAULT;
+    } else {
+      const rate = globalCorrect / globalDone; // 0.0 → 1.0
+      // Interpolation : rate=1.0 → MIN, rate=0.0 → MAX
+      totalQuota = Math.round(
+        QUOTA_TOTAL_MAX - (QUOTA_TOTAL_MAX - QUOTA_TOTAL_MIN) * rate
+      );
+      totalQuota = Math.max(QUOTA_TOTAL_MIN, Math.min(QUOTA_TOTAL_MAX, totalQuota));
+    }
 
-    const rate = totalCorrect / totalDone;
-    if (rate >= 0.85) return Math.max(5,  base - 2); // très bon → moins de mots
-    if (rate <= 0.60) return Math.min(15, base + 3); // difficile → plus de mots
-    return base;
+    // ── Étape 2 : répartir selon les taux d'échec par niveau ───
+    // Calculer le taux d'échec de chaque niveau sur 7 jours
+    const failRates = {};
+    QUOTA_LEVELS.forEach(l => {
+      let done = 0, failed = 0;
+      for (let i = 1; i <= 7; i++) {
+        const prog = d.today[addDays(today, -i)]?.[l];
+        if (prog) { done += prog.done; failed += (prog.done - prog.correct); }
+      }
+      // Si pas de données → taux d'échec moyen de 40% pour répartir équitablement
+      failRates[l] = done >= 5 ? (failed / done) : 0.4;
+    });
+
+    // Garantir un minimum par niveau puis distribuer le reste proportionnellement
+    const reserved = QUOTA_LEVEL_MIN * QUOTA_LEVELS.length;
+    const pool     = Math.max(0, totalQuota - reserved);
+    const totalFailRate = QUOTA_LEVELS.reduce((s, l) => s + failRates[l], 0);
+
+    const quotas = {};
+    QUOTA_LEVELS.forEach(l => {
+      const share = totalFailRate > 0 ? failRates[l] / totalFailRate : 1 / QUOTA_LEVELS.length;
+      quotas[l]   = QUOTA_LEVEL_MIN + Math.round(pool * share);
+    });
+
+    return quotas[level] || QUOTA_LEVEL_MIN;
   },
 
   // Quota total tous niveaux
@@ -560,7 +610,13 @@ const Spelling = {
     const correct = this.current?.label;
     if (!answer || !correct) return;
 
-    const norm  = s => s.replace(/'/g, "'").toLowerCase().trim();
+    // Normalisation : ligatures œ↔oe, æ↔ae, apostrophes, casse
+    const norm  = s => s
+      .replace(/'/g, "'")
+      .replace(/œ/g, 'oe')
+      .replace(/æ/g, 'ae')
+      .toLowerCase()
+      .trim();
     const isOk  = norm(answer) === norm(correct);
 
     SpellingSRS.answer(correct, this.level, isOk);
@@ -690,7 +746,7 @@ const Spelling = {
 
   showRule(word) {
     this.closeRule();
-    this._pauseCountdown();
+    this._pauseCountdown(); // ← timer mis en pause pendant la lecture
 
     const rule = SPELLING_RULES[word] || SPELLING_RULES[word.toLowerCase()];
     if (!rule) return;
@@ -710,6 +766,9 @@ const Spelling = {
           <span class="wl-def-text">${escHtml(rule.tip)}</span>
         </div>
         <div class="wl-source">Règle orthographique</div>
+        <div style="margin-top:10px;text-align:center">
+          <button class="btn btn-ghost btn-sm" onclick="Spelling.closeRule()">✓ Compris — reprendre</button>
+        </div>
       </div>`;
 
     document.body.appendChild(popup);
@@ -721,7 +780,7 @@ const Spelling = {
       const ov = document.createElement('div');
       ov.id = 'spellingRuleOverlay';
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998';
-      ov.addEventListener('click', () => this.closeRule());
+      // PAS de fermeture au clic sur l'overlay — l'utilisateur doit lire la règle
       document.body.appendChild(ov);
     } else {
       const btn  = document.querySelector('.spelling-rule-btn');
@@ -729,23 +788,22 @@ const Spelling = {
       popup.style.cssText = `position:fixed;top:${rect.bottom+8}px;left:${Math.max(8,rect.left-120)}px;z-index:9999;max-width:340px`;
     }
 
+    // Fermeture uniquement via le bouton "Compris" ou Escape — PAS au clic extérieur
     const close = e => {
-      if (e.key === 'Escape' || (!popup.contains(e.target) && e.target !== document.querySelector('.spelling-rule-btn'))) {
+      if (e.key === 'Escape') {
         this.closeRule();
         document.removeEventListener('keydown', close);
-        document.removeEventListener('mousedown', close);
       }
     };
     setTimeout(() => {
       document.addEventListener('keydown', close);
-      document.addEventListener('mousedown', close);
     }, 0);
   },
 
   closeRule() {
     document.getElementById('spellingRulePopup')?.remove();
     document.getElementById('spellingRuleOverlay')?.remove();
-    this._resumeCountdown();
+    this._resumeCountdown(); // ← reprend le timer après lecture
   },
 
   _replay() {
@@ -1675,27 +1733,49 @@ const Phrase = {
 function showPhraseLevel() {
   const c = document.getElementById('spellingContent');
   if (!c) return;
+
+  const levelColors = { debutant: '#6ec87a', intermediaire: '#c8a96e', avance: '#e87050' };
+  const levelLabels = { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' };
+  const levelDescs  = {
+    debutant:      'Phrases courtes du quotidien',
+    intermediaire: 'Phrases avec accords et homophones',
+    avance:        'Phrases avec mots pièges',
+  };
+
+  const deckRows = ['debutant', 'intermediaire', 'avance'].map(level => {
+    const count = PHRASE_DATA.filter(p => p.level === level).length;
+    const col   = levelColors[level];
+    return `
+      <div class="anki-deck-row" onclick="Phrase.start('${level}')">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:${col}"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">${levelLabels[level]}</span>
+            <span class="anki-deck-sub">${levelDescs[level]}</span>
+          </div>
+        </div>
+        <div class="anki-deck-counts">
+          <span class="anki-count anki-new" title="Phrases disponibles">${count}</span>
+        </div>
+      </div>`;
+  }).join('');
+
   c.innerHTML = `
-    <div class="spelling-start">
-      <div class="spelling-start-icon">📝</div>
-      <div class="spelling-start-title">Phrase — Choisir le niveau</div>
-      <div class="spelling-levels">
-        <button class="spelling-level-btn level-easy" onclick="Phrase.start('debutant')">
-          <span class="level-dot">🟢</span><span class="level-name">Débutant</span>
-          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='debutant').length} phrases</span>
-          <span class="level-desc">Phrases courtes du quotidien</span>
-        </button>
-        <button class="spelling-level-btn level-mid" onclick="Phrase.start('intermediaire')">
-          <span class="level-dot">🟡</span><span class="level-name">Intermédiaire</span>
-          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='intermediaire').length} phrases</span>
-          <span class="level-desc">Phrases avec accords et homophones</span>
-        </button>
-        <button class="spelling-level-btn level-hard" onclick="Phrase.start('avance')">
-          <span class="level-dot">🔴</span><span class="level-name">Avancé</span>
-          <span class="level-count">${PHRASE_DATA.filter(p=>p.level==='avance').length} phrases</span>
-          <span class="level-desc">Phrases avec mots pièges</span>
-        </button>
+    <div class="anki-home">
+      <div class="anki-home-header">
+        <div class="anki-home-title">📝 Phrase</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)" style="margin-top:8px">← Retour</button>
+      <div class="anki-deck-list">
+        <div class="anki-deck-header">
+          <span>Choisir le niveau</span>
+          <div class="anki-count-labels">
+            <span style="color:#6eb4ff">Phrases</span>
+          </div>
+        </div>
+        ${deckRows}
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="renderSpelling(true)">← Retour</button>
+      </div>
     </div>`;
 }
