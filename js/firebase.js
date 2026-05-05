@@ -293,11 +293,6 @@ const CloudSync = {
           sources:         sources,
           timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
           timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
-          timerElapsed:    typeof timerData.elapsed     === 'number'  ? timerData.elapsed     : 0,
-          timerRunning:    typeof timerData.running     === 'boolean' ? timerData.running     : false,
-          timerStartedAt:  timerData.startedAt  || null,
-          timerCurrentTask: timerData.currentTask || '',
-          timerPushedAt:   Date.now(),
           spellingCards:   spellingData.cards  || {},
           spellingToday:   spellingData.today  || {},
         }, { merge: true });
@@ -430,22 +425,6 @@ const CloudSync = {
 
             localTimer.sessions   = mergedSessions.slice(0, 200);
             localTimer.milestones = mergedMilestones.slice(0, 200);
-
-            // Restaurer l'état en cours (elapsed/running/currentTask)
-            // seulement si le cloud est plus récent que le local
-            const cloudPushedAt  = data.timerPushedAt  || 0;
-            const localUpdatedAt = localTimer.updatedAt || 0;
-            if (cloudPushedAt > localUpdatedAt && typeof data.timerElapsed === 'number') {
-              // Le cloud a un timer plus récent — on le restaure
-              // mais on NE reprend PAS automatiquement (running=false)
-              // pour éviter de démarrer le timer sans que l'utilisateur le demande
-              localTimer.elapsed     = data.timerElapsed;
-              localTimer.currentTask = data.timerCurrentTask || '';
-              localTimer.running     = false;   // toujours en pause à la réception
-              localTimer.startedAt   = null;
-              console.debug('[Sync↓] État timer restauré : ' + Math.round(data.timerElapsed/1000) + 's — ' + (data.timerCurrentTask || 'libre'));
-            }
-
             try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
             console.debug('[Sync↓] Timer reçu : ' + mergedSessions.length + ' sessions');
           }
