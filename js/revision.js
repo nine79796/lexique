@@ -111,7 +111,7 @@ function renderRevisionTaskRow(item, today) {
 }
 
 function renderRevisionWordRow(key, w) {
-  const maxed    = isMaxReached(w);
+  const maxed    = w.ankiDone === true;
   const noAnki   = !w.ankiDone && !isAnkiReady(w);
   const col      = w.catKey ? getCatColor(w.catKey) : null;
   const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : '';
