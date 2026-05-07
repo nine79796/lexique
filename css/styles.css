@@ -1648,3 +1648,140 @@ body {
   }
   .active-timer-text { font-size: 12px; }
 }
+
+/* ════════════════════════════════════════════════
+   ANKI DAILY PRIORITY SECTION
+════════════════════════════════════════════════ */
+.anki-daily-section {
+  background: var(--surface);
+  border: 0.5px solid rgba(110,180,200,0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  animation: fadeSlide 0.2s ease;
+}
+.anki-daily-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.anki-daily-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--anki);
+}
+.anki-daily-icon { font-size: 16px; }
+.anki-daily-quota {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 13px;
+}
+.anki-daily-done  { font-size: 18px; font-weight: 600; color: var(--anki); font-family: 'Playfair Display', serif; }
+.anki-daily-sep   { color: var(--text-dim); }
+.anki-daily-total { color: var(--text-muted); }
+
+.anki-daily-progress-wrap {
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.anki-daily-progress-bar {
+  height: 100%;
+  background: var(--anki);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.anki-daily-list { display: flex; flex-direction: column; gap: 6px; }
+
+.anki-daily-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, opacity 0.3s, transform 0.3s;
+  flex-wrap: wrap;
+}
+.anki-daily-row:hover { border-color: rgba(110,180,200,0.35); }
+
+.anki-daily-word-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 120px;
+}
+.anki-daily-word {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+.anki-daily-rank {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--anki-dim);
+  color: var(--anki);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.anki-daily-rank.rare {
+  background: var(--surface3, var(--surface2));
+  color: var(--text-dim);
+}
+.anki-daily-occ {
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.anki-daily-reason {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 120px;
+}
+.anki-daily-reason-icon { font-size: 13px; flex-shrink: 0; }
+.anki-daily-reason-text { font-size: 12px; color: var(--text-muted); }
+
+.anki-daily-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.anki-daily-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border2);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.anki-daily-btn.btn-done {
+  background: var(--anki-dim);
+  color: var(--anki);
+  border-color: rgba(110,180,200,0.3);
+}
+.anki-daily-btn.btn-done:hover { background: rgba(110,180,200,0.28); }
+.anki-daily-btn.btn-skip {
+  background: transparent;
+  color: var(--text-dim);
+}
+.anki-daily-btn.btn-skip:hover { color: var(--text); border-color: var(--border2); }

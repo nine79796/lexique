@@ -22,7 +22,11 @@ function renderRevision() {
   document.getElementById('revStatRecur').textContent = recurItems.length;
   document.getElementById('revStatLate').textContent  = lateItems.length;
 
-  if (!todayWords.length && !todayItems.length) {
+  // ── Section priorité Anki du jour ────────────────────────────
+  const dailyAnki = (typeof PriorityEngine !== 'undefined') ? PriorityEngine.getDailyWords() : [];
+  const quota     = (typeof PriorityEngine !== 'undefined') ? PriorityEngine.getDailyQuota() : 0;
+
+  if (!todayWords.length && !todayItems.length && !dailyAnki.length) {
     container.innerHTML = `<div class="empty"><span class="empty-icon">✦</span>${t('review.nothing')}</div>`;
     return;
   }
@@ -35,6 +39,33 @@ function renderRevision() {
     <span>${t('review.today')}</span>
     <span class="review-date">${dateDisp}</span>
   </div>`;
+
+  if (dailyAnki.length) {
+    const doneToday = Object.values(state.words).filter(w =>
+      w.ankiDone && w.ankiDoneAt && fmtDay(w.ankiDoneAt) === today
+    ).length;
+    const progressPct = quota > 0 ? Math.round(doneToday / quota * 100) : 0;
+
+    html += `<div class="anki-daily-section">
+      <div class="anki-daily-header">
+        <div class="anki-daily-title">
+          <span class="anki-daily-icon">🎯</span>
+          <span>À mettre sur Anki aujourd'hui</span>
+        </div>
+        <div class="anki-daily-quota">
+          <span class="anki-daily-done">${doneToday}</span>
+          <span class="anki-daily-sep">/</span>
+          <span class="anki-daily-total">${quota}</span>
+        </div>
+      </div>
+      <div class="anki-daily-progress-wrap">
+        <div class="anki-daily-progress-bar" style="width:${progressPct}%"></div>
+      </div>
+      <div class="anki-daily-list">
+        ${dailyAnki.map(({ word, score, reason }) => renderAnkiDailyRow(word, reason, score)).join('')}
+      </div>
+    </div>`;
+  }
 
   if (todayItems.length) {
     html += `<div class="section-divider" style="margin-bottom:8px">${t('review.tasks_section')}</div>
@@ -107,3 +138,64 @@ function renderRevisionWordRow(key, w) {
 
 function toggleRevTask(id, dateStr)  { toggleTaskDone(id, dateStr); renderRevision(); }
 function clickWordFromRevision(key)  { clickWord(key); renderRevision(); }
+
+// ── Anki daily row ────────────────────────────────────────────
+
+function renderAnkiDailyRow(word, reason, score) {
+  const key      = word.label.toLowerCase().replace(/\s+/g, '_');
+  const occ      = word.occurrences.length;
+  const label    = (typeof FREQ_EN !== 'undefined' && FREQ_EN[word.label.toLowerCase()])
+    ? FREQ_EN[word.label.toLowerCase()]
+    : null;
+  const rankHtml = label
+    ? `<span class="anki-daily-rank">#${label}</span>`
+    : `<span class="anki-daily-rank rare">rare</span>`;
+
+  return `<div class="anki-daily-row" id="ankirow-${key}">
+    <div class="anki-daily-word-info">
+      <span class="anki-daily-word">${escHtml(word.label)}</span>
+      ${rankHtml}
+      <span class="anki-daily-occ">${occ}×</span>
+    </div>
+    <div class="anki-daily-reason">
+      <span class="anki-daily-reason-icon">${reason.icon}</span>
+      <span class="anki-daily-reason-text">${reason.text}</span>
+    </div>
+    <div class="anki-daily-actions">
+      <button class="anki-daily-btn btn-done" onclick="markAnkiDoneFromRevision('${key}')" title="Ajouté sur Anki">✓ Fait</button>
+      <button class="anki-daily-btn btn-skip" onclick="skipAnkiDaily('${key}')" title="Pas maintenant">↷</button>
+    </div>
+  </div>`;
+}
+
+function markAnkiDoneFromRevision(key) {
+  markAnkiDone(key);
+  // Retire la ligne avec animation
+  const row = document.getElementById('ankirow-' + key);
+  if (row) {
+    row.style.transition = 'opacity 0.3s, transform 0.3s';
+    row.style.opacity    = '0';
+    row.style.transform  = 'translateX(20px)';
+    setTimeout(() => renderRevision(), 350);
+  }
+}
+
+function skipAnkiDaily(key) {
+  // Mémorise le skip pour aujourd'hui (localStorage)
+  try {
+    const today   = fmtDay(Date.now());
+    const LS_SKIP = 'lexique_anki_skip';
+    const skips   = JSON.parse(localStorage.getItem(LS_SKIP) || '{}');
+    if (!skips[today]) skips[today] = [];
+    if (!skips[today].includes(key)) skips[today].push(key);
+    // Purger les jours anciens
+    Object.keys(skips).forEach(d => { if (d < today) delete skips[d]; });
+    localStorage.setItem(LS_SKIP, JSON.stringify(skips));
+  } catch { /* ignore */ }
+  const row = document.getElementById('ankirow-' + key);
+  if (row) {
+    row.style.transition = 'opacity 0.25s';
+    row.style.opacity    = '0.3';
+    row.style.pointerEvents = 'none';
+  }
+}

@@ -5,7 +5,7 @@
 //  ⚠️  Ne jamais intercepter les requêtes Firebase/Firestore
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'lexique-v41';
+const CACHE_VERSION = 'lexique-v42';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DYNAMIC = `${CACHE_VERSION}-dynamic`;
 
@@ -33,6 +33,8 @@ const STATIC_ASSETS = [
   '/js/pwa.js',
   '/js/spelling.js',
   '/js/bootstrap.js',
+  '/js/freq_en.js',
+  '/js/priority.js',
 ];
 
 // ── Patterns à NE JAMAIS intercepter ─────────────────────────
