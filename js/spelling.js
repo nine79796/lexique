@@ -1055,30 +1055,27 @@ function _updateExoCounter() {
   const exos = ['vision','detective','morpho','phrase'];
   const totalDone  = exos.reduce((a, k) => a + SpellingSRS.getExoSessions(k), 0);
   const totalQuota = exos.reduce((a, k) => a + SpellingSRS.getExoQuota(k), 0);
-  // Met à jour le span du header exercices s'il est visible
-  const headers = document.querySelectorAll('.anki-deck-header');
-  headers.forEach(h => {
-    if (h.textContent.includes('Exercices') || h.textContent.includes('EXERCICES')) {
-      const span = h.querySelector('span:last-child');
-      if (span) span.textContent = `${totalDone}/${totalQuota} sessions`;
-    }
-  });
-  // Met à jour chaque ligne exo
+
+  // Header global
+  const header = document.getElementById('exoHeaderCounter');
+  if (header) header.textContent = `${totalDone}/${totalQuota} sessions`;
+
+  // Chaque ligne
   exos.forEach(key => {
     const sessions = SpellingSRS.getExoSessions(key);
     const quota    = SpellingSRS.getExoQuota(key);
     const met      = SpellingSRS.isExoQuotaMet(key);
-    // Trouve la ligne par son onclick
-    const rows = document.querySelectorAll('.anki-deck-row');
-    rows.forEach(row => {
-      const sub = row.querySelector('.anki-deck-sub');
-      if (sub && sub.textContent.includes('sessions') && row.innerHTML.toLowerCase().includes(key === 'detective' ? 'détective' : key)) {
-        sub.textContent = sub.textContent.replace(/\d+\/\d+ session/, `${sessions}/${quota} session`);
-        row.classList.toggle('deck-done', met);
-        const check = row.querySelector('.anki-done-check');
-        if (check) check.classList.toggle('visible', met);
-      }
-    });
+
+    const sub   = document.getElementById(`exoSub-${key}`);
+    const check = document.getElementById(`exoCheck-${key}`);
+    const row   = document.querySelector(`[data-exo-key="${key}"]`);
+
+    if (sub) {
+      // Met à jour uniquement le compteur sessions dans le texte
+      sub.textContent = sub.textContent.replace(/\d+\/\d+ sessions?/, `${sessions}/${quota} session${quota > 1 ? 's' : ''}`);
+    }
+    if (check) check.classList.toggle('visible', met);
+    if (row)   row.classList.toggle('deck-done', met);
   });
 }
 
@@ -1140,15 +1137,15 @@ function renderSpelling(forceMenu) {
     const quota    = SpellingSRS.getExoQuota(key);
     const met      = SpellingSRS.isExoQuotaMet(key);
     return `
-      <div class="anki-deck-row ${met ? 'deck-done' : ''}" onclick="${onclick}">
+      <div class="anki-deck-row ${met ? 'deck-done' : ''}" data-exo-key="${key}" onclick="${onclick}">
         <div class="anki-deck-left">
           <div class="anki-deck-indicator" style="background:${color}"></div>
           <div class="anki-deck-info">
             <span class="anki-deck-name">${icon} ${label}</span>
-            <span class="anki-deck-sub">${sub} · ${sessions}/${quota} session${quota > 1 ? 's' : ''}</span>
+            <span class="anki-deck-sub" id="exoSub-${key}">${sub} · ${sessions}/${quota} session${quota > 1 ? 's' : ''}</span>
           </div>
         </div>
-        <span class="anki-done-check ${met ? 'visible' : ''}">✓</span>
+        <span class="anki-done-check ${met ? 'visible' : ''}" id="exoCheck-${key}">✓</span>
       </div>`;
   };
 
@@ -1156,7 +1153,7 @@ function renderSpelling(forceMenu) {
     <div class="anki-exo-section">
       <div class="anki-deck-header" style="border-radius:12px 12px 0 0">
         <span>Exercices</span>
-        <span style="font-size:11px;color:var(--text-dim)">${exoTotalDone}/${exoTotalQuota} sessions</span>
+        <span id="exoHeaderCounter" style="font-size:11px;color:var(--text-dim)">${exoTotalDone}/${exoTotalQuota} sessions</span>
       </div>
       ${_exoRow('vision',   'Vision.start()',    '#6eb4ff', '👁',  'Vision',    'Choisir la bonne orthographe')}
       ${_exoRow('detective','Detective.start()', '#c8a96e', '🔍', 'Détective', 'Trouver et corriger la faute')}
