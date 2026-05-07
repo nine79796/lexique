@@ -57,6 +57,7 @@ window.addEventListener('offline', updateOnlineStatus);
   updateTaskStats();
   checkNotifBanner();
   if (typeof NotificationService !== 'undefined') NotificationService.scheduleDaily();
+  if (typeof Onboarding !== 'undefined') Onboarding.checkBanner();
   updateOnlineStatus();
   initTimer();
 

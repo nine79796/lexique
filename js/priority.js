@@ -154,9 +154,21 @@ const PriorityEngine = {
     const quota = this.getDailyQuota();
     const words = Object.values(state.words);
 
+    // Récupérer les mots skippés aujourd'hui
+    let skippedToday = [];
+    try {
+      const today = fmtDay(Date.now());
+      const skips = JSON.parse(localStorage.getItem('lexique_anki_skip') || '{}');
+      skippedToday = skips[today] || [];
+    } catch { /* ignore */ }
+
     // Calculer le score pour chaque mot éligible
     const scored = words
       .filter(w => !w.ankiDone && w.occurrences && w.occurrences.length > 0)
+      .filter(w => {
+        const key = w.label.toLowerCase().replace(/\s+/g, '_');
+        return !skippedToday.includes(key);
+      })
       .map(w => ({ word: w, score: this.scoreWord(w) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)

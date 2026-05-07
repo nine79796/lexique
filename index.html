@@ -109,6 +109,18 @@
             onclick="document.getElementById('notifBanner').classList.remove('show')">×</button>
   </div>
 
+  <!-- Onboarding banner -->
+  <div class="onboarding-banner" id="onboardingBanner">
+    <span class="onboarding-banner-icon">🎯</span>
+    <span class="onboarding-banner-text"></span>
+    <button class="btn btn-sm" onclick="Onboarding.start()">Commencer</button>
+    <button style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px"
+            onclick="document.getElementById('onboardingBanner').classList.remove('show')">×</button>
+  </div>
+
+  <!-- Onboarding overlay -->
+  <div class="onboarding-overlay" id="onboardingOverlay"></div>
+
   <!-- Install banner -->
   <div class="install-banner" id="installBanner">
     <div class="install-banner-info">
@@ -480,6 +492,7 @@
 <script src="js/wordlookup.js"></script>
 <script src="js/freq_en.js"></script>
 <script src="js/priority.js"></script>
+<script src="js/onboarding.js"></script>
 <script src="js/cselect.js"></script>
 <script src="js/spelling.js"></script>
 <script src="js/firebase.js"></script>

@@ -66,6 +66,7 @@ function load() {
   state.categories ??= {};
   state.tasks      ??= [];
   state.sources    ??= {};
+  state.knownWords ??= {};
   migrate();
 }
 
