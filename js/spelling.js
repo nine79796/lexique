@@ -877,6 +877,7 @@ const Spelling = {
   showRule(word) {
     this.closeRule();
     this._pauseCountdown(); // ← timer mis en pause pendant la lecture
+    MiniTimer.pause();         // ← pause aussi le timer des mini-jeux
 
     const rule = SPELLING_RULES[word] || SPELLING_RULES[word.toLowerCase()];
     if (!rule) return;
@@ -934,6 +935,7 @@ const Spelling = {
     document.getElementById('spellingRulePopup')?.remove();
     document.getElementById('spellingRuleOverlay')?.remove();
     this._resumeCountdown(); // ← reprend le timer après lecture
+    MiniTimer.resume();        // ← reprend aussi le timer des mini-jeux
   },
 
   _replay() {
@@ -1047,6 +1049,38 @@ function filterSpellingRules(query) {
 }
 
 // ── Écran d'accueil style AnkiDroid ──────────────────────────
+
+// Met à jour le compteur sessions dans l'en-tête exercices sans tout re-rendre
+function _updateExoCounter() {
+  const exos = ['vision','detective','morpho','phrase'];
+  const totalDone  = exos.reduce((a, k) => a + SpellingSRS.getExoSessions(k), 0);
+  const totalQuota = exos.reduce((a, k) => a + SpellingSRS.getExoQuota(k), 0);
+  // Met à jour le span du header exercices s'il est visible
+  const headers = document.querySelectorAll('.anki-deck-header');
+  headers.forEach(h => {
+    if (h.textContent.includes('Exercices') || h.textContent.includes('EXERCICES')) {
+      const span = h.querySelector('span:last-child');
+      if (span) span.textContent = `${totalDone}/${totalQuota} sessions`;
+    }
+  });
+  // Met à jour chaque ligne exo
+  exos.forEach(key => {
+    const sessions = SpellingSRS.getExoSessions(key);
+    const quota    = SpellingSRS.getExoQuota(key);
+    const met      = SpellingSRS.isExoQuotaMet(key);
+    // Trouve la ligne par son onclick
+    const rows = document.querySelectorAll('.anki-deck-row');
+    rows.forEach(row => {
+      const sub = row.querySelector('.anki-deck-sub');
+      if (sub && sub.textContent.includes('sessions') && row.innerHTML.toLowerCase().includes(key === 'detective' ? 'détective' : key)) {
+        sub.textContent = sub.textContent.replace(/\d+\/\d+ session/, `${sessions}/${quota} session`);
+        row.classList.toggle('deck-done', met);
+        const check = row.querySelector('.anki-done-check');
+        if (check) check.classList.toggle('visible', met);
+      }
+    });
+  });
+}
 
 function renderSpelling(forceMenu) {
   const c = document.getElementById('spellingContent');
@@ -1349,6 +1383,8 @@ const Vision = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('vision');
+    // Rafraîchit le compteur de sessions dans la liste
+    _updateExoCounter();
     const c        = document.getElementById('spellingContent');
     const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     const sessions = SpellingSRS.getExoSessions('vision');
@@ -1518,6 +1554,8 @@ const Detective = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('detective');
+    // Rafraîchit le compteur de sessions dans la liste
+    _updateExoCounter();
     const c        = document.getElementById('spellingContent');
     const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     const sessions = SpellingSRS.getExoSessions('detective');
@@ -1694,6 +1732,8 @@ const Morpho = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('morpho');
+    // Rafraîchit le compteur de sessions dans la liste
+    _updateExoCounter();
     const c        = document.getElementById('spellingContent');
     const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     const sessions = SpellingSRS.getExoSessions('morpho');
@@ -1910,6 +1950,8 @@ const Phrase = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('phrase');
+    // Rafraîchit le compteur de sessions dans la liste
+    _updateExoCounter();
     const c        = document.getElementById('spellingContent');
     const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
     const sessions = SpellingSRS.getExoSessions('phrase');

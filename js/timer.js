@@ -547,8 +547,7 @@ function _showActiveTimerBanner() {
   const stateLabel = st.running ? '▶ En cours' : '⏸ En pause';
 
   banner.innerHTML = `
-    <span class="active-timer-icon">${st.running ? '▶' : '⏸'}</span>
-    <span class="active-timer-text">${stateLabel} ${taskLabel}</span>
+    <span class="active-timer-text">${stateLabel}${taskLabel}</span>
     <button class="active-timer-resume" onclick="switchTab('timer');_hideActiveTimerBanner()">
       Reprendre →
     </button>
