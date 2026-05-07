@@ -32,6 +32,11 @@ const QUOTA_LEVEL_MIN     = 5;    // minimum garanti par niveau même si tu es t
 const QUOTA_LEVELS        = ['debutant', 'intermediaire', 'avance'];
 const QUOTA_BASE          = { debutant: 20, intermediaire: 20, avance: 20 }; // fallback
 
+// Quota exercices — nombre de sessions par exo par jour
+// Dynamique : +1 session si taux d'erreur > 50% sur les 3 derniers jours
+const EXO_QUOTA_BASE      = 2;   // sessions par défaut par exo
+const EXO_QUOTA_MAX       = 4;   // maximum absolu
+
 // ── Règles ────────────────────────────────────────────────────
 
 const SPELLING_RULES = {
@@ -542,11 +547,43 @@ const SpellingSRS = {
     const today = todayStr();
     d.today[today] ??= {};
     d.today[today]._exos ??= {};
-    d.today[today]._exos[exoKey] = true;
+    const prev = d.today[today]._exos[exoKey];
+    if (typeof prev === 'number') {
+      d.today[today]._exos[exoKey] = prev + 1;
+    } else {
+      d.today[today]._exos[exoKey] = prev === true ? 2 : 1;
+    }
     this.save();
   },
 
-  // Est-ce que tous les mini-jeux ont été faits aujourd'hui ?
+  getExoQuota(exoKey) {
+    const d     = this.load();
+    const today = todayStr();
+    let totalDone = 0, totalCorrect = 0;
+    for (let i = 1; i <= 3; i++) {
+      const day = addDays(today, -i);
+      ['debutant','intermediaire','avance'].forEach(l => {
+        const prog = d.today[day]?.[l];
+        if (prog) { totalDone += prog.done; totalCorrect += prog.correct; }
+      });
+    }
+    const errorRate = totalDone >= 10 ? 1 - (totalCorrect / totalDone) : 0.5;
+    const bonus = errorRate > 0.65 ? 2 : errorRate > 0.40 ? 1 : 0;
+    return Math.min(EXO_QUOTA_MAX, EXO_QUOTA_BASE + bonus);
+  },
+
+  isExoQuotaMet(exoKey) {
+    const sessions = this.getExoSessions(exoKey);
+    return sessions >= this.getExoQuota(exoKey);
+  },
+
+  getExoSessions(exoKey) {
+    const d     = this.load();
+    const today = todayStr();
+    const val   = d.today[today]?._exos?.[exoKey] || 0;
+    return typeof val === 'number' ? val : val ? 1 : 0;
+  },
+
   areExosDone() {
     const d     = this.load();
     const today = todayStr();
@@ -554,7 +591,6 @@ const SpellingSRS = {
     return ['vision','detective','morpho','phrase'].every(k => exos[k]);
   },
 
-  // Progrès mini-jeux du jour
   getExoProgress() {
     const d     = this.load();
     const today = todayStr();
@@ -1059,54 +1095,39 @@ function renderSpelling(forceMenu) {
       </div>`;
   }).join('');
 
-  // Exercices supplémentaires — avec indicateur ✓ si complété aujourd'hui
+  // Exercices supplémentaires — avec quota sessions
   const exoDone = SpellingSRS.getExoProgress();
+  const exos = ['vision','detective','morpho','phrase'];
+  const exoTotalDone = exos.reduce((a, k) => a + SpellingSRS.getExoSessions(k), 0);
+  const exoTotalQuota = exos.reduce((a, k) => a + SpellingSRS.getExoQuota(k), 0);
+
+  const _exoRow = (key, onclick, color, icon, label, sub) => {
+    const sessions = SpellingSRS.getExoSessions(key);
+    const quota    = SpellingSRS.getExoQuota(key);
+    const met      = SpellingSRS.isExoQuotaMet(key);
+    return `
+      <div class="anki-deck-row ${met ? 'deck-done' : ''}" onclick="${onclick}">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:${color}"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">${icon} ${label}</span>
+            <span class="anki-deck-sub">${sub} · ${sessions}/${quota} session${quota > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <span class="anki-done-check ${met ? 'visible' : ''}">✓</span>
+      </div>`;
+  };
+
   const exoRows = `
     <div class="anki-exo-section">
       <div class="anki-deck-header" style="border-radius:12px 12px 0 0">
         <span>Exercices</span>
-        <span style="font-size:11px;color:var(--text-dim)">${Object.keys(exoDone).length}/4 faits</span>
+        <span style="font-size:11px;color:var(--text-dim)">${exoTotalDone}/${exoTotalQuota} sessions</span>
       </div>
-      <div class="anki-deck-row" onclick="Vision.start()">
-        <div class="anki-deck-left">
-          <div class="anki-deck-indicator" style="background:#6eb4ff"></div>
-          <div class="anki-deck-info">
-            <span class="anki-deck-name">👁 Vision</span>
-            <span class="anki-deck-sub">Choisir la bonne orthographe</span>
-          </div>
-        </div>
-        <span class="anki-done-check ${exoDone.vision ? 'visible' : ''}">✓</span>
-      </div>
-      <div class="anki-deck-row" onclick="Detective.start()">
-        <div class="anki-deck-left">
-          <div class="anki-deck-indicator" style="background:#c8a96e"></div>
-          <div class="anki-deck-info">
-            <span class="anki-deck-name">🔍 Détective</span>
-            <span class="anki-deck-sub">Trouver et corriger la faute</span>
-          </div>
-        </div>
-        <span class="anki-done-check ${exoDone.detective ? 'visible' : ''}">✓</span>
-      </div>
-      <div class="anki-deck-row" onclick="Morpho.start()">
-        <div class="anki-deck-left">
-          <div class="anki-deck-indicator" style="background:#b46ec8"></div>
-          <div class="anki-deck-info">
-            <span class="anki-deck-name">🧩 Morpho</span>
-            <span class="anki-deck-sub">Pluriel, accord, conjugaison</span>
-          </div>
-        </div>
-        <span class="anki-done-check ${exoDone.morpho ? 'visible' : ''}">✓</span>
-      </div>
-      <div class="anki-deck-row" onclick="showPhraseLevel()">
-        <div class="anki-deck-left">
-          <div class="anki-deck-indicator" style="background:#6ec87a"></div>
-          <div class="anki-deck-info">
-            <span class="anki-deck-name">📝 Phrase</span>
-            <span class="anki-deck-sub">Dictée de phrase complète</span>
-          </div>
-        </div>
-        <span class="anki-done-check ${exoDone.phrase ? 'visible' : ''}">✓</span>
-      </div>
+      ${_exoRow('vision',   'Vision.start()',    '#6eb4ff', '👁',  'Vision',    'Choisir la bonne orthographe')}
+      ${_exoRow('detective','Detective.start()', '#c8a96e', '🔍', 'Détective', 'Trouver et corriger la faute')}
+      ${_exoRow('morpho',   'Morpho.start()',    '#b46ec8', '🧩', 'Morpho',    'Pluriel, accord, conjugaison')}
+      ${_exoRow('phrase',   'showPhraseLevel()', '#6ec87a', '📝', 'Phrase',    'Dictée de phrase complète')}
     </div>`;
 
   // Barre de progrès globale du jour
@@ -1328,14 +1349,21 @@ const Vision = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('vision');
-    const c   = document.getElementById('spellingContent');
-    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const c        = document.getElementById('spellingContent');
+    const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const sessions = SpellingSRS.getExoSessions('vision');
+    const quota    = SpellingSRS.getExoQuota('vision');
+    const quotaMet = SpellingSRS.isExoQuotaMet('vision');
+    const quotaHtml = quotaMet
+      ? `<div class="exo-quota-met">✅ Quota atteint — ${sessions}/${quota} sessions aujourd'hui</div>`
+      : `<div class="exo-quota-progress">Session ${sessions}/${quota} — encore ${quota - sessions} pour aujourd'hui</div>`;
     if (c) c.innerHTML = `
       <div class="spelling-finished">
         <div class="spelling-finished-icon">👁</div>
         <div class="spelling-finished-title">Vision — Terminé !</div>
         <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
         <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        ${quotaHtml}
         <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
           <button class="btn" onclick="Vision.start()">Recommencer</button>
           <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
@@ -1490,14 +1518,21 @@ const Detective = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('detective');
-    const c   = document.getElementById('spellingContent');
-    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const c        = document.getElementById('spellingContent');
+    const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const sessions = SpellingSRS.getExoSessions('detective');
+    const quota    = SpellingSRS.getExoQuota('detective');
+    const quotaMet = SpellingSRS.isExoQuotaMet('detective');
+    const quotaHtml = quotaMet
+      ? `<div class="exo-quota-met">✅ Quota atteint — ${sessions}/${quota} sessions aujourd'hui</div>`
+      : `<div class="exo-quota-progress">Session ${sessions}/${quota} — encore ${quota - sessions} pour aujourd'hui</div>`;
     if (c) c.innerHTML = `
       <div class="spelling-finished">
         <div class="spelling-finished-icon">🔍</div>
         <div class="spelling-finished-title">Détective — Terminé !</div>
         <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
         <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        ${quotaHtml}
         <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
           <button class="btn" onclick="Detective.start()">Recommencer</button>
           <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
@@ -1659,14 +1694,21 @@ const Morpho = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('morpho');
-    const c   = document.getElementById('spellingContent');
-    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const c        = document.getElementById('spellingContent');
+    const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const sessions = SpellingSRS.getExoSessions('morpho');
+    const quota    = SpellingSRS.getExoQuota('morpho');
+    const quotaMet = SpellingSRS.isExoQuotaMet('morpho');
+    const quotaHtml = quotaMet
+      ? `<div class="exo-quota-met">✅ Quota atteint — ${sessions}/${quota} sessions aujourd'hui</div>`
+      : `<div class="exo-quota-progress">Session ${sessions}/${quota} — encore ${quota - sessions} pour aujourd'hui</div>`;
     if (c) c.innerHTML = `
       <div class="spelling-finished">
         <div class="spelling-finished-icon">🧩</div>
         <div class="spelling-finished-title">Morpho — Terminé !</div>
         <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
         <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        ${quotaHtml}
         <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
           <button class="btn" onclick="Morpho.start()">Recommencer</button>
           <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
@@ -1868,14 +1910,21 @@ const Phrase = {
   _showFinished() {
     MiniTimer.stop();
     SpellingSRS.markExoDone('phrase');
-    const c   = document.getElementById('spellingContent');
-    const pct = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const c        = document.getElementById('spellingContent');
+    const pct      = this.done > 0 ? Math.round(this.correct / this.done * 100) : 0;
+    const sessions = SpellingSRS.getExoSessions('phrase');
+    const quota    = SpellingSRS.getExoQuota('phrase');
+    const quotaMet = SpellingSRS.isExoQuotaMet('phrase');
+    const quotaHtml = quotaMet
+      ? `<div class="exo-quota-met">✅ Quota atteint — ${sessions}/${quota} sessions aujourd'hui</div>`
+      : `<div class="exo-quota-progress">Session ${sessions}/${quota} — encore ${quota - sessions} pour aujourd'hui</div>`;
     if (c) c.innerHTML = `
       <div class="spelling-finished">
         <div class="spelling-finished-icon">📝</div>
         <div class="spelling-finished-title">Phrase — Terminé !</div>
         <div class="spelling-finished-score">${this.correct} / ${this.done} — ${pct}%</div>
         <div class="spelling-finished-msg">${pct >= 80 ? '🔥 Excellent !' : pct >= 60 ? '👍 Bien !' : '💪 Continue !'}</div>
+        ${quotaHtml}
         <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">
           <button class="btn" onclick="Phrase.start('${this.activeLevel}')">Recommencer</button>
           <button class="btn btn-ghost" onclick="renderSpelling(true)">← Niveaux</button>
