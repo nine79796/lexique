@@ -279,11 +279,20 @@ function speakFrench(text, rate = 0.82, onEnd = null) {
     utt.rate   = rate;
 
     // Sélectionner la meilleure voix française disponible
+    // Priorité : voix locale fr-FR > voix fr-FR > fr-CA > fr-* > défaut avec lang forcée
     const voices  = window.speechSynthesis.getVoices();
     const frVoice = voices.find(v => v.lang === 'fr-FR' && v.localService)
                  || voices.find(v => v.lang === 'fr-FR')
+                 || voices.find(v => v.lang === 'fr-CA')
                  || voices.find(v => v.lang.startsWith('fr'));
-    if (frVoice) utt.voice = frVoice;
+    // Toujours assigner la voix si trouvée, sinon forcer lang sans voix
+    // (le navigateur utilisera sa voix fr-FR par défaut si lang est set)
+    if (frVoice) {
+      utt.voice = frVoice;
+    }
+    // Lang toujours forcée — même sans voix française trouvée,
+    // certains navigateurs mobiles respectent utt.lang pour choisir la voix
+    utt.lang = 'fr-FR';
 
     utt.onend   = () => { if (onEnd) onEnd(); };
     utt.onerror = () => { if (onEnd) onEnd(); };
@@ -294,11 +303,13 @@ function speakFrench(text, rate = 0.82, onEnd = null) {
   if (voices.length) {
     doSpeak();
   } else {
+    // Sur mobile les voix peuvent être chargées en async
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.onvoiceschanged = null;
       doSpeak();
     };
-    setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 800);
+    // Fallback si onvoiceschanged ne se déclenche pas (Safari iOS)
+    setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 500);
   }
 }
 
@@ -1185,8 +1196,17 @@ function renderSpelling(forceMenu) {
   // Exercices supplémentaires — avec quota sessions
   const exoDone = SpellingSRS.getExoProgress();
   const exos = ['vision','detective','morpho','phrase'];
-  const exoTotalDone = exos.reduce((a, k) => a + SpellingSRS.getExoSessions(k), 0);
-  const exoTotalQuota = exos.reduce((a, k) => a + SpellingSRS.getExoQuota(k), 0);
+  const _phraseQ  = SpellingSRS.getExoQuota('phrase');
+  const _pL       = Math.floor(_phraseQ / 3);
+  const _pR       = _phraseQ % 3;
+  const phraseDone = SpellingSRS.getExoDone('phrase_debutant')
+    + SpellingSRS.getExoDone('phrase_intermediaire')
+    + SpellingSRS.getExoDone('phrase_avance');
+  const phraseAllMet = SpellingSRS.getExoDone('phrase_debutant') >= _pL
+    && SpellingSRS.getExoDone('phrase_intermediaire') >= _pL
+    && SpellingSRS.getExoDone('phrase_avance') >= (_pL + _pR);
+  const exoTotalDone  = ['vision','detective','morpho'].reduce((a, k) => a + SpellingSRS.getExoSessions(k), 0) + phraseDone;
+  const exoTotalQuota = ['vision','detective','morpho'].reduce((a, k) => a + SpellingSRS.getExoQuota(k), 0) + _phraseQ;
 
   const _exoRow = (key, onclick, color, icon, label, sub) => {
     const sessions = SpellingSRS.getExoSessions(key);
@@ -1214,7 +1234,16 @@ function renderSpelling(forceMenu) {
       ${_exoRow('vision',   'Vision.start()',    '#6eb4ff', '👁',  'Vision',    'Choisir la bonne orthographe')}
       ${_exoRow('detective','Detective.start()', '#c8a96e', '🔍', 'Détective', 'Trouver et corriger la faute')}
       ${_exoRow('morpho',   'Morpho.start()',    '#b46ec8', '🧩', 'Morpho',    'Pluriel, accord, conjugaison')}
-      ${_exoRow('phrase',   'showPhraseLevel()', '#6ec87a', '📝', 'Phrase',    'Dictée de phrase complète')}
+      <div class="anki-deck-row ${phraseAllMet ? 'deck-done' : ''}" data-exo-key="phrase" onclick="showPhraseLevel()">
+        <div class="anki-deck-left">
+          <div class="anki-deck-indicator" style="background:#6ec87a"></div>
+          <div class="anki-deck-info">
+            <span class="anki-deck-name">📝 Phrase</span>
+            <span class="anki-deck-sub" id="exoSub-phrase">Dictée de phrase complète · ${phraseDone}/${_phraseQ} questions</span>
+          </div>
+        </div>
+        <span class="anki-done-check ${phraseAllMet ? 'visible' : ''}" id="exoCheck-phrase">✓</span>
+      </div>
     </div>`;
 
   // Barre de progrès globale du jour
@@ -1870,10 +1899,13 @@ const Phrase = {
 
   start(level) {
     this.activeLevel = level || 'debutant';
-    const quota  = SpellingSRS.getExoQuota('phrase');
-    this.quota   = quota;
+    const totalQuota = SpellingSRS.getExoQuota('phrase');
+    const perLevel   = Math.floor(totalQuota / 3);
+    const remainder  = totalQuota % 3;
+    const levelQuotas = { debutant: perLevel, intermediaire: perLevel, avance: perLevel + remainder };
+    this.quota   = levelQuotas[this.activeLevel] || perLevel;
     const filtered = PHRASE_DATA.filter(p => p.level === this.activeLevel);
-    this.queue   = [...filtered].sort(() => Math.random() - 0.5).slice(0, quota * 3);
+    this.queue   = [...filtered].sort(() => Math.random() - 0.5).slice(0, this.quota * 3);
     this.done    = 0;
     this.correct = 0;
     this.current = null;
@@ -1954,7 +1986,7 @@ const Phrase = {
       const fb = document.getElementById('phraseFeedback');
       if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé !</span>`;
       this.done++;
-      SpellingSRS.recordExoAnswer('phrase', false);
+      SpellingSRS.recordExoAnswer('phrase_' + this.activeLevel, false);
       this._updateScore();
       setTimeout(() => this._next(), 2000);
     });
@@ -1986,7 +2018,7 @@ const Phrase = {
 
     this.done++;
     if (isOk) this.correct++;
-    SpellingSRS.recordExoAnswer('phrase', isOk);
+    SpellingSRS.recordExoAnswer('phrase_' + this.activeLevel, isOk);
 
     const fb = document.getElementById('phraseFeedback');
     if (fb) fb.innerHTML = `
@@ -2054,21 +2086,32 @@ function showPhraseLevel() {
     avance:        'Phrases avec mots pièges',
   };
 
+  // Quota total réparti équitablement sur les 3 niveaux
+  const totalQuota   = SpellingSRS.getExoQuota('phrase');
+  const perLevel     = Math.floor(totalQuota / 3);
+  const remainder    = totalQuota % 3;
+  // Le niveau avancé prend le reste si quota pas divisible par 3
+  const levelQuotas  = {
+    debutant:      perLevel,
+    intermediaire: perLevel,
+    avance:        perLevel + remainder,
+  };
+
   const deckRows = ['debutant', 'intermediaire', 'avance'].map(level => {
-    const count = PHRASE_DATA.filter(p => p.level === level).length;
-    const col   = levelColors[level];
+    const col      = levelColors[level];
+    const levelQ   = levelQuotas[level];
+    const done     = SpellingSRS.getExoDone('phrase_' + level);
+    const met      = done >= levelQ;
     return `
-      <div class="anki-deck-row" onclick="Phrase.start('${level}')">
+      <div class="anki-deck-row ${met ? 'deck-done' : ''}" onclick="Phrase.start('${level}')">
         <div class="anki-deck-left">
           <div class="anki-deck-indicator" style="background:${col}"></div>
           <div class="anki-deck-info">
             <span class="anki-deck-name">${levelLabels[level]}</span>
-            <span class="anki-deck-sub">${levelDescs[level]}</span>
+            <span class="anki-deck-sub">${levelDescs[level]} · ${done}/${levelQ} questions</span>
           </div>
         </div>
-        <div class="anki-deck-counts">
-          <span class="anki-count anki-new" title="Phrases disponibles">${count}</span>
-        </div>
+        <span class="anki-done-check ${met ? 'visible' : ''}">✓</span>
       </div>`;
   }).join('');
 

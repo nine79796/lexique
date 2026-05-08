@@ -543,17 +543,37 @@ function _showActiveTimerBanner() {
   banner.id     = 'activeTimerBanner';
   banner.className = 'active-timer-banner';
 
-  const taskLabel = st.currentTask ? `· ${st.currentTask}` : '';
+  const taskLabel  = st.currentTask ? `· ${st.currentTask}` : '';
   const stateLabel = st.running ? '▶ En cours' : '⏸ En pause';
+  const initMs     = Timer.currentMs(st);
+  const initH      = Math.floor(initMs / 3600000);
+  const initM      = Math.floor((initMs % 3600000) / 60000);
+  const initS      = Math.floor((initMs % 60000) / 1000);
+  const initTime   = initH > 0
+    ? `${initH}:${String(initM).padStart(2,'0')}:${String(initS).padStart(2,'0')}`
+    : `${String(initM).padStart(2,'0')}:${String(initS).padStart(2,'0')}`;
 
   banner.innerHTML = `
-    <span class="active-timer-text">${stateLabel}${taskLabel}</span>
-    <button class="active-timer-resume" onclick="switchTab('timer');_hideActiveTimerBanner()">
+    <span class="active-timer-text">${stateLabel}${taskLabel ? ' ' + taskLabel : ''} — ${initTime}</span>
+    <button class="active-timer-resume" id="activeTimerResumeBtn">
       Reprendre →
     </button>
     <button class="active-timer-close" onclick="_hideActiveTimerBanner()">×</button>`;
 
   document.body.appendChild(banner);
+
+  // Bouton reprendre — compatible mobile (touchend + click)
+  const resumeBtn = document.getElementById('activeTimerResumeBtn');
+  if (resumeBtn) {
+    const onResume = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      switchTab('timer');
+      _hideActiveTimerBanner();
+    };
+    resumeBtn.addEventListener('touchend', onResume, { passive: false });
+    resumeBtn.addEventListener('click', onResume);
+  }
 
   // Met à jour le temps affiché dans le bandeau toutes les secondes
   const bannerInterval = setInterval(() => {
