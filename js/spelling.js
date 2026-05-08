@@ -34,8 +34,8 @@ const QUOTA_BASE          = { debutant: 20, intermediaire: 20, avance: 20 }; // 
 
 // Quota exercices — nombre de sessions par exo par jour
 // Dynamique : +1 session si taux d'erreur > 50% sur les 3 derniers jours
-const EXO_QUOTA_BASE      = 2;   // sessions par défaut par exo
-const EXO_QUOTA_MAX       = 4;   // maximum absolu
+const EXO_QUOTA_BASE      = 10;  // questions par exo par jour (défaut)
+const EXO_QUOTA_MAX       = 30;  // maximum absolu
 
 // ── Règles ────────────────────────────────────────────────────
 
@@ -556,6 +556,7 @@ const SpellingSRS = {
     this.save();
   },
 
+  // Quota de QUESTIONS par exo par jour — dynamique selon taux d'erreur des 3 derniers jours
   getExoQuota(exoKey) {
     const d     = this.load();
     const today = todayStr();
@@ -566,23 +567,45 @@ const SpellingSRS = {
         const prog = d.today[day]?.[l];
         if (prog) { totalDone += prog.done; totalCorrect += prog.correct; }
       });
+      // Aussi compter les questions de cet exo les jours passés
+      const exoProg = d.today[day]?._exos_progress?.[exoKey];
+      if (exoProg) { totalDone += exoProg.done; totalCorrect += exoProg.correct; }
     }
     const errorRate = totalDone >= 10 ? 1 - (totalCorrect / totalDone) : 0.5;
-    const bonus = errorRate > 0.65 ? 2 : errorRate > 0.40 ? 1 : 0;
-    return Math.min(EXO_QUOTA_MAX, EXO_QUOTA_BASE + bonus);
+    // Plus d'erreurs = plus de pratique nécessaire
+    let quota = EXO_QUOTA_BASE;
+    if (errorRate > 0.65)      quota = 20;
+    else if (errorRate > 0.50) quota = 15;
+    else if (errorRate > 0.35) quota = 12;
+    else                       quota = 8;  // bon niveau → moins de questions
+    return Math.min(EXO_QUOTA_MAX, quota);
+  },
+
+  // Enregistre le progrès questions d'un exo
+  recordExoAnswer(exoKey, correct) {
+    const d     = this.load();
+    const today = todayStr();
+    d.today[today] ??= {};
+    d.today[today]._exos_progress ??= {};
+    d.today[today]._exos_progress[exoKey] ??= { done: 0, correct: 0 };
+    d.today[today]._exos_progress[exoKey].done++;
+    if (correct) d.today[today]._exos_progress[exoKey].correct++;
+    this.save();
+  },
+
+  // Nombre de questions faites aujourd'hui pour un exo
+  getExoDone(exoKey) {
+    const d     = this.load();
+    const today = todayStr();
+    return d.today[today]?._exos_progress?.[exoKey]?.done || 0;
   },
 
   isExoQuotaMet(exoKey) {
-    const sessions = this.getExoSessions(exoKey);
-    return sessions >= this.getExoQuota(exoKey);
+    return this.getExoDone(exoKey) >= this.getExoQuota(exoKey);
   },
 
-  getExoSessions(exoKey) {
-    const d     = this.load();
-    const today = todayStr();
-    const val   = d.today[today]?._exos?.[exoKey] || 0;
-    return typeof val === 'number' ? val : val ? 1 : 0;
-  },
+  // Rétrocompat — alias
+  getExoSessions(exoKey) { return this.getExoDone(exoKey); },
 
   areExosDone() {
     const d     = this.load();
@@ -877,10 +900,43 @@ const Spelling = {
   showRule(word) {
     this.closeRule();
     this._pauseCountdown(); // ← timer mis en pause pendant la lecture
-    MiniTimer.pause();         // ← pause aussi le timer des mini-jeux
+    MiniTimer.pause();      // ← pause aussi le timer des mini-jeux
 
     const rule = SPELLING_RULES[word] || SPELLING_RULES[word.toLowerCase()];
-    if (!rule) return;
+    if (!rule) {
+      // Pas de règle spécifique — affiche quand même un popup basique
+      const popup = document.createElement('div');
+      popup.id        = 'spellingRulePopup';
+      popup.className = 'wl-popup spelling-rule-popup-v2';
+      popup.innerHTML = `
+        <div class="wl-header">
+          <span class="wl-word">${escHtml(word)}</span>
+          <button class="wl-close" onclick="Spelling.closeRule()">×</button>
+        </div>
+        <div class="wl-body">
+          <div class="wl-def-text" style="color:var(--text-muted);font-size:13px">
+            Aucune règle spécifique disponible pour ce mot.<br>
+            Retiens simplement l'orthographe correcte : <strong>${escHtml(word)}</strong>
+          </div>
+          <div style="margin-top:10px;text-align:center">
+            <button class="btn btn-ghost btn-sm" onclick="Spelling.closeRule()">✓ Compris — reprendre</button>
+          </div>
+        </div>`;
+      document.body.appendChild(popup);
+      const vw = window.innerWidth;
+      if (vw < 600) {
+        popup.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:${vw-32}px;max-width:400px;z-index:9999`;
+        const ov = document.createElement('div');
+        ov.id = 'spellingRuleOverlay';
+        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998';
+        document.body.appendChild(ov);
+      } else {
+        const btn  = document.querySelector('.spelling-rule-btn');
+        const rect = btn ? btn.getBoundingClientRect() : { bottom: 200, left: 100 };
+        popup.style.cssText = `position:fixed;top:${rect.bottom+8}px;left:${Math.max(8,rect.left-120)}px;z-index:9999;max-width:340px`;
+      }
+      return;
+    }
 
     const popup = document.createElement('div');
     popup.id        = 'spellingRulePopup';
@@ -1273,7 +1329,9 @@ const Vision = {
   correct: 0,
 
   start() {
-    this.queue   = [...VISION_DATA].sort(() => Math.random() - 0.5).slice(0, 20);
+    const quota  = SpellingSRS.getExoQuota('vision');
+    this.quota   = quota;
+    this.queue   = [...VISION_DATA].sort(() => Math.random() - 0.5).slice(0, quota * 3); // pool large
     this.done    = 0;
     this.correct = 0;
     this.current = null;
@@ -1282,7 +1340,7 @@ const Vision = {
   },
 
   _next() {
-    if (!this.queue.length) { this._showFinished(); return; }
+    if (this.done >= this.quota || !this.queue.length) { this._showFinished(); return; }
     this.current = this.queue.shift();
     this._renderQuestion();
   },
@@ -1290,11 +1348,12 @@ const Vision = {
   _renderUI() {
     const c = document.getElementById('spellingContent');
     if (!c) return;
+    const quota = SpellingSRS.getExoQuota('vision');
     c.innerHTML = `
       <div class="spelling-card">
         <div class="spelling-top-bar">
           <div class="spelling-level-badge">👁 Vision</div>
-          <div class="spelling-level-badge" id="visionScore">0 / 0</div>
+          <div class="spelling-level-badge" id="visionScore">0 / ${quota}</div>
         </div>
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="visionProgressBar"></div>
@@ -1333,6 +1392,7 @@ const Vision = {
       const fb = document.getElementById('visionFeedback');
       if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — C'était : <strong>${escHtml(this.current.correct)}</strong></span>`;
       this.done++;
+      SpellingSRS.recordExoAnswer('vision', false);
       this._updateScore();
       setTimeout(() => this._next(), 2000);
     });
@@ -1343,6 +1403,7 @@ const Vision = {
     const isOk = word === this.current.correct;
     if (isOk) this.correct++;
     this.done++;
+    SpellingSRS.recordExoAnswer('vision', isOk);
 
     // Colorer les boutons
     document.querySelectorAll('.vision-choice').forEach(btn => {
@@ -1371,10 +1432,9 @@ const Vision = {
   _updateScore() {
     const bar = document.getElementById('visionProgressBar');
     const sc  = document.getElementById('visionScore');
-    const total = 20;
-    const pct = Math.round(this.done / total * 100);
+    const pct = this.quota > 0 ? Math.round(this.done / this.quota * 100) : 0;
     if (bar) bar.style.width = pct + '%';
-    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+    if (sc)  sc.textContent  = this.done + ' / ' + this.quota;
   },
 
   _showFinished() {
@@ -1450,7 +1510,9 @@ const Detective = {
   correct: 0,
 
   start() {
-    this.queue   = [...DETECTIVE_DATA].sort(() => Math.random() - 0.5).slice(0, 15);
+    const quota  = SpellingSRS.getExoQuota('detective');
+    this.quota   = quota;
+    this.queue   = [...DETECTIVE_DATA].sort(() => Math.random() - 0.5).slice(0, quota * 3);
     this.done    = 0;
     this.correct = 0;
     this.current = null;
@@ -1459,7 +1521,7 @@ const Detective = {
   },
 
   _next() {
-    if (!this.queue.length) { this._showFinished(); return; }
+    if (this.done >= this.quota || !this.queue.length) { this._showFinished(); return; }
     this.current = this.queue.shift();
     this._renderQuestion();
   },
@@ -1471,7 +1533,7 @@ const Detective = {
       <div class="spelling-card">
         <div class="spelling-top-bar">
           <div class="spelling-level-badge">🔍 Détective</div>
-          <div class="spelling-level-badge" id="detectiveScore">0 / 0</div>
+          <div class="spelling-level-badge" id="detectiveScore">0 / ${SpellingSRS.getExoQuota('detective')}</div>
         </div>
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="detectiveProgressBar"></div>
@@ -1513,6 +1575,7 @@ const Detective = {
       const fb = document.getElementById('detectiveFeedback');
       if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — La faute était <strong>${escHtml(this.current.wrong)}</strong> → <strong>${escHtml(this.current.correct)}</strong></span>`;
       this.done++;
+      SpellingSRS.recordExoAnswer('detective', false);
       this._updateScore();
       setTimeout(() => this._next(), 2000);
     });
@@ -1528,6 +1591,7 @@ const Detective = {
     const isOk   = answer === norm(this.current.correct);
     this.done++;
     if (isOk) this.correct++;
+    SpellingSRS.recordExoAnswer('detective', isOk);
 
     const fb = document.getElementById('detectiveFeedback');
     if (fb) fb.innerHTML = isOk
@@ -1542,10 +1606,9 @@ const Detective = {
   _updateScore() {
     const bar = document.getElementById('detectiveProgressBar');
     const sc  = document.getElementById('detectiveScore');
-    const total = 15;
-    const pct = Math.round(this.done / total * 100);
+    const pct = this.quota > 0 ? Math.round(this.done / this.quota * 100) : 0;
     if (bar) bar.style.width = pct + '%';
-    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+    if (sc)  sc.textContent  = this.done + ' / ' + this.quota;
   },
 
   _showFinished() {
@@ -1627,7 +1690,9 @@ const Morpho = {
   correct: 0,
 
   start() {
-    this.queue   = [...MORPHO_DATA].sort(() => Math.random() - 0.5).slice(0, 15);
+    const quota  = SpellingSRS.getExoQuota('morpho');
+    this.quota   = quota;
+    this.queue   = [...MORPHO_DATA].sort(() => Math.random() - 0.5).slice(0, quota * 3);
     this.done    = 0;
     this.correct = 0;
     this.current = null;
@@ -1636,7 +1701,7 @@ const Morpho = {
   },
 
   _next() {
-    if (!this.queue.length) { this._showFinished(); return; }
+    if (this.done >= this.quota || !this.queue.length) { this._showFinished(); return; }
     this.current = this.queue.shift();
     this._renderQuestion();
   },
@@ -1648,7 +1713,7 @@ const Morpho = {
       <div class="spelling-card">
         <div class="spelling-top-bar">
           <div class="spelling-level-badge">🧩 Morpho</div>
-          <div class="spelling-level-badge" id="morphoScore">0 / 0</div>
+          <div class="spelling-level-badge" id="morphoScore">0 / ${SpellingSRS.getExoQuota('morpho')}</div>
         </div>
         <div class="spelling-progress-wrap">
           <div class="spelling-progress-bar" id="morphoProgressBar"></div>
@@ -1690,6 +1755,7 @@ const Morpho = {
       if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé — Réponse : <strong>${escHtml(this.current.correct)}</strong></span>
          <div style="font-size:12px;color:var(--text-dim);margin-top:4px">💡 ${escHtml(this.current.hint)}</div>`;
       this.done++;
+      SpellingSRS.recordExoAnswer('morpho', false);
       this._updateScore();
       setTimeout(() => this._next(), 2500);
     });
@@ -1705,6 +1771,7 @@ const Morpho = {
     const isOk   = answer === norm(this.current.correct);
     this.done++;
     if (isOk) this.correct++;
+    SpellingSRS.recordExoAnswer('morpho', isOk);
 
     const fb = document.getElementById('morphoFeedback');
     if (fb) fb.innerHTML = isOk
@@ -1720,10 +1787,9 @@ const Morpho = {
   _updateScore() {
     const bar = document.getElementById('morphoProgressBar');
     const sc  = document.getElementById('morphoScore');
-    const total = 15;
-    const pct = Math.round(this.done / total * 100);
+    const pct = this.quota > 0 ? Math.round(this.done / this.quota * 100) : 0;
     if (bar) bar.style.width = pct + '%';
-    if (sc)  sc.textContent  = this.correct + ' / ' + this.done;
+    if (sc)  sc.textContent  = this.done + ' / ' + this.quota;
   },
 
   _showFinished() {
@@ -1804,8 +1870,10 @@ const Phrase = {
 
   start(level) {
     this.activeLevel = level || 'debutant';
+    const quota  = SpellingSRS.getExoQuota('phrase');
+    this.quota   = quota;
     const filtered = PHRASE_DATA.filter(p => p.level === this.activeLevel);
-    this.queue   = [...filtered].sort(() => Math.random() - 0.5).slice(0, 10);
+    this.queue   = [...filtered].sort(() => Math.random() - 0.5).slice(0, quota * 3);
     this.done    = 0;
     this.correct = 0;
     this.current = null;
@@ -1814,7 +1882,7 @@ const Phrase = {
   },
 
   _next() {
-    if (!this.queue.length) { this._showFinished(); return; }
+    if (this.done >= this.quota || !this.queue.length) { this._showFinished(); return; }
     this.current = this.queue.shift();
     this._renderQuestion();
     setTimeout(() => this._speak(this.current.text), 200);
@@ -1844,7 +1912,7 @@ const Phrase = {
         </div>
         <div class="spelling-stats-row">
           <span id="phraseScore" class="spelling-stat-good">0 ✓</span>
-          <span id="phraseTotal" class="spelling-stat-total">0 / 10</span>
+          <span id="phraseTotal" class="spelling-stat-total">0 / ${this.quota}</span>
         </div>
         <div id="phraseQuestion" style="margin-top:16px"></div>
         <div class="spelling-actions" style="margin-top:12px">
@@ -1886,6 +1954,7 @@ const Phrase = {
       const fb = document.getElementById('phraseFeedback');
       if (fb) fb.innerHTML = `<span class="spelling-wrong">⏱ Temps écoulé !</span>`;
       this.done++;
+      SpellingSRS.recordExoAnswer('phrase', false);
       this._updateScore();
       setTimeout(() => this._next(), 2000);
     });
@@ -1917,6 +1986,7 @@ const Phrase = {
 
     this.done++;
     if (isOk) this.correct++;
+    SpellingSRS.recordExoAnswer('phrase', isOk);
 
     const fb = document.getElementById('phraseFeedback');
     if (fb) fb.innerHTML = `
@@ -1937,11 +2007,10 @@ const Phrase = {
     const bar = document.getElementById('phraseProgressBar');
     const sc  = document.getElementById('phraseScore');
     const tot = document.getElementById('phraseTotal');
-    const total = 10;
-    const pct = Math.round(this.done / total * 100);
+    const pct = this.quota > 0 ? Math.round(this.done / this.quota * 100) : 0;
     if (bar) bar.style.width = pct + '%';
     if (sc)  sc.textContent  = this.correct + ' ✓';
-    if (tot) tot.textContent = this.done + ' / ' + total;
+    if (tot) tot.textContent = this.done + ' / ' + this.quota;
   },
 
   _showFinished() {
