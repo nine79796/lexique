@@ -594,10 +594,22 @@ setInterval(() => {
             setTimeout(() => CloudSync.pullFromCloud().then(afterPull).catch(() => {}), 5000);
           });
       } else {
-        console.debug('[Firebase] Pas de session — connexion anonyme…');
-        firebase.auth().signInAnonymously().catch(err => {
-          console.error('[Firebase] signInAnonymously failed :', err);
-        });
+        // Attendre 2s avant de créer un user anonyme —
+        // Google auth peut prendre quelques ms à se rétablir (persistence locale).
+        // Si Google auth arrive dans ce délai, onAuthStateChanged se re-déclenche
+        // et on n'aura pas créé un user anonyme inutile.
+        console.debug('[Firebase] Pas de session — attente 2s avant connexion anonyme…');
+        setTimeout(() => {
+          // Vérifier qu'on n'est toujours pas connecté
+          if (!firebase.auth().currentUser) {
+            console.debug('[Firebase] Toujours pas de session — connexion anonyme');
+            firebase.auth().signInAnonymously().catch(err => {
+              console.error('[Firebase] signInAnonymously failed :', err);
+            });
+          } else {
+            console.debug('[Firebase] Session Google rétablie — pas de user anonyme créé');
+          }
+        }, 2000);
       }
     });
   } catch (err) {
