@@ -878,7 +878,7 @@ const Spelling = {
           ${ruleBtn}
         </div>`;
       if (inp) inp.disabled = true;
-      setTimeout(() => { if (Spelling.current) Spelling._next(); }, 3000);
+      Spelling._nextTimer = setTimeout(() => { if (Spelling.current) Spelling._next(); }, 4500);
     }
   },
 
@@ -912,6 +912,11 @@ const Spelling = {
     this.closeRule();
     this._pauseCountdown(); // ← timer mis en pause pendant la lecture
     MiniTimer.pause();      // ← pause aussi le timer des mini-jeux
+    // Annuler le passage à la question suivante pendant la lecture
+    clearTimeout(this._nextTimer);
+    clearTimeout(Vision?._nextTimer);
+    clearTimeout(Detective?._nextTimer);
+    clearTimeout(Morpho?._nextTimer);
 
     const rule = SPELLING_RULES[word] || SPELLING_RULES[word.toLowerCase()];
     if (!rule) {
@@ -1002,7 +1007,14 @@ const Spelling = {
     document.getElementById('spellingRulePopup')?.remove();
     document.getElementById('spellingRuleOverlay')?.remove();
     this._resumeCountdown(); // ← reprend le timer après lecture
-    MiniTimer.resume();        // ← reprend aussi le timer des mini-jeux
+    MiniTimer.resume();      // ← reprend aussi le timer des mini-jeux
+    // Reprendre le passage à la question suivante après 1.5s
+    const activeGame = typeof Vision !== 'undefined' && Vision._nextTimer === null ? Vision
+                     : typeof Detective !== 'undefined' && Detective._nextTimer === null ? Detective
+                     : typeof Morpho !== 'undefined' && Morpho._nextTimer === null ? Morpho
+                     : null;
+    if (activeGame) activeGame._nextTimer = setTimeout(() => activeGame._next(), 1500);
+    else this._nextTimer = setTimeout(() => { if (this.current) this._next(); }, 1500);
   },
 
   _replay() {
@@ -1450,13 +1462,15 @@ const Vision = {
 
     const rule = SPELLING_RULES[this.current.correct];
     if (!isOk && rule) {
-      setTimeout(() => {
-        if (fb) fb.innerHTML += ` <button class="spelling-rule-btn" onclick="Spelling.showRule('${this.current.correct.replace(/'/g,"\\'")}')">? règle</button>`;
-      }, 300);
+      // Bouton règle immédiat — pas de délai
+      const ruleWord = this.current.correct.replace(/'/g, "\\'");
+      if (fb) fb.innerHTML += ` <button class="spelling-rule-btn" onclick="Vision._cancelNext();Spelling.showRule('${ruleWord}')">? règle</button>`;
     }
-
-    setTimeout(() => this._next(), isOk ? 900 : 2500);
+    // Délai plus long (4s) pour laisser le temps de lire et cliquer sur règle
+    this._nextTimer = setTimeout(() => this._next(), isOk ? 900 : 4000);
   },
+
+  _cancelNext() { clearTimeout(this._nextTimer); this._nextTimer = null; },
 
   _updateScore() {
     const bar = document.getElementById('visionProgressBar');
@@ -1629,8 +1643,10 @@ const Detective = {
 
     if (inp) inp.disabled = true;
     this._updateScore();
-    setTimeout(() => this._next(), isOk ? 900 : 2500);
+    this._nextTimer = setTimeout(() => this._next(), isOk ? 900 : 4000);
   },
+
+  _cancelNext() { clearTimeout(this._nextTimer); this._nextTimer = null; },
 
   _updateScore() {
     const bar = document.getElementById('detectiveProgressBar');
@@ -1810,8 +1826,10 @@ const Morpho = {
 
     if (inp) inp.disabled = true;
     this._updateScore();
-    setTimeout(() => this._next(), isOk ? 900 : 2800);
+    this._nextTimer = setTimeout(() => this._next(), isOk ? 900 : 4000);
   },
+
+  _cancelNext() { clearTimeout(this._nextTimer); this._nextTimer = null; },
 
   _updateScore() {
     const bar = document.getElementById('morphoProgressBar');
