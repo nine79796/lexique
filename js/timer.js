@@ -165,8 +165,8 @@ const Timer = {
     const lastFlagTotalMs = todayMilestones.length > 0 ? todayMilestones[0].totalMs : 0;
     const lapMs = totalMs - lastFlagTotalMs;
 
-    // Ignorer les double-clics (lap < 1 seconde)
-    if (lapMs < 1000) return;
+    // Ignorer les double-clics stricts (même milliseconde)
+    if (lapMs < 0) return;
 
     const milestone = {
       date:    fmtDay(now),
@@ -178,12 +178,6 @@ const Timer = {
 
     st.milestones.unshift(milestone);
     if (st.milestones.length > 200) st.milestones = st.milestones.slice(0, 200);
-
-    // Remettre le compteur à zéro après le drapeau
-    // Le temps total est conservé dans le milestone — le timer repart de 0
-    st.elapsed    = 0;
-    st.running    = false;
-    st.startedAt  = null;
 
     this.save(st);
 
