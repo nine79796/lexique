@@ -293,6 +293,13 @@ const CloudSync = {
           sources:         sources,
           timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
           timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
+          timerState: {
+            running:     timerData.running     || false,
+            elapsed:     timerData.elapsed     || 0,
+            startedAt:   timerData.startedAt   || null,
+            currentTask: timerData.currentTask || '',
+            pushedAt:    Date.now(),
+          },
           spellingCards:   spellingData.cards  || {},
           spellingToday:   spellingData.today  || {},
         }, { merge: true });
@@ -425,6 +432,31 @@ const CloudSync = {
 
             localTimer.sessions   = mergedSessions.slice(0, 200);
             localTimer.milestones = mergedMilestones.slice(0, 200);
+
+            // Restaurer l'état courant du timer depuis le cloud
+            // seulement si le cloud est plus récent que l'état local
+            const cloudState = data.timerState;
+            if (cloudState && cloudState.pushedAt) {
+              const localElapsed  = localTimer.elapsed  || 0;
+              const localRunning  = localTimer.running  || false;
+              const localPushedAt = localTimer.pushedAt || 0;
+              // On prend le cloud si : timer cloud actif ET plus récent que local
+              if (cloudState.pushedAt > localPushedAt) {
+                // Si le timer tournait côté cloud, calculer le temps écoulé depuis
+                if (cloudState.running && cloudState.startedAt) {
+                  localTimer.elapsed     = cloudState.elapsed + (Date.now() - cloudState.startedAt);
+                  localTimer.running     = false; // Sur mobile on ne reprend pas auto
+                  localTimer.startedAt   = null;
+                } else {
+                  localTimer.elapsed     = cloudState.elapsed || 0;
+                  localTimer.running     = false;
+                  localTimer.startedAt   = null;
+                }
+                localTimer.currentTask = cloudState.currentTask || '';
+                localTimer.pushedAt    = cloudState.pushedAt;
+              }
+            }
+
             try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
             console.debug('[Sync↓] Timer reçu : ' + mergedSessions.length + ' sessions');
           }
