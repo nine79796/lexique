@@ -179,12 +179,19 @@ const Timer = {
     st.milestones.unshift(milestone);
     if (st.milestones.length > 200) st.milestones = st.milestones.slice(0, 200);
 
+    // Remettre le compteur à zéro après le drapeau
+    // Le temps total est conservé dans le milestone — le timer repart de 0
+    st.elapsed    = 0;
+    st.running    = false;
+    st.startedAt  = null;
+
     this.save(st);
 
     // ── Marquer la tâche courante comme done dans Tasks ──────
     this._markTaskDone(st.currentTask);
 
     renderTimerHistory();
+    if (typeof timerTick === 'function') timerTick();
   },
 
   /** Cherche la tâche du timer dans state.tasks et la marque done */
