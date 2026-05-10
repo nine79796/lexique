@@ -550,8 +550,8 @@ function _showActiveTimerBanner() {
   banner.id     = 'activeTimerBanner';
   banner.className = 'active-timer-banner';
 
-  const taskLabel  = st.currentTask ? `· ${st.currentTask}` : '';
-  const stateLabel = st.running ? '▶ En cours' : '⏸ En pause';
+  const stateIcon  = st.running ? '▶' : '⏸';
+  const taskLabel  = st.currentTask ? st.currentTask : '';
   const initMs     = Timer.currentMs(st);
   const initH      = Math.floor(initMs / 3600000);
   const initM      = Math.floor((initMs % 3600000) / 60000);
@@ -560,8 +560,13 @@ function _showActiveTimerBanner() {
     ? `${initH}:${String(initM).padStart(2,'0')}:${String(initS).padStart(2,'0')}`
     : `${String(initM).padStart(2,'0')}:${String(initS).padStart(2,'0')}`;
 
+  // Format compact : "⏸ 46:35" ou "⏸ Spelling 46:35"
+  const shortText  = taskLabel
+    ? `${stateIcon} ${taskLabel} ${initTime}`
+    : `${stateIcon} ${initTime}`;
+
   banner.innerHTML = `
-    <span class="active-timer-text">${stateLabel}${taskLabel ? ' ' + taskLabel : ''} — ${initTime}</span>
+    <span class="active-timer-text">${shortText}</span>
     <button class="active-timer-resume" id="activeTimerResumeBtn">
       Reprendre →
     </button>
@@ -588,15 +593,15 @@ function _showActiveTimerBanner() {
     if (!s2.running && s2.elapsed === 0) { _hideActiveTimerBanner(); clearInterval(bannerInterval); return; }
     const textEl = banner.querySelector('.active-timer-text');
     const curMs  = Timer.currentMs(s2);
-    const stL    = s2.running ? '▶ En cours' : '⏸ En pause';
-    const tL     = s2.currentTask ? `· ${s2.currentTask}` : '';
+    const stI2   = s2.running ? '▶' : '⏸';
+    const tL     = s2.currentTask || '';
     const h = Math.floor(curMs / 3600000);
     const m = Math.floor((curMs % 3600000) / 60000);
     const sec = Math.floor((curMs % 60000) / 1000);
     const timeStr = h > 0
       ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
       : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    if (textEl) textEl.textContent = `${stL} ${tL} — ${timeStr}`;
+    if (textEl) textEl.textContent = tL ? `${stI2} ${tL} ${timeStr}` : `${stI2} ${timeStr}`;
   }, 1000);
 
   banner._interval = bannerInterval;
