@@ -488,12 +488,33 @@ const CloudSync = {
               Object.entries(cloudSpellingToday).forEach(([day, levels]) => {
                 localSpelling.today[day] ??= {};
                 Object.entries(levels || {}).forEach(([level, prog]) => {
-                  const local = localSpelling.today[day][level] || { done: 0, correct: 0 };
-                  // Prendre le max (pas additionner — évite les doublons de sync)
-                  localSpelling.today[day][level] = {
-                    done:    Math.max(local.done,    prog.done    || 0),
-                    correct: Math.max(local.correct, prog.correct || 0),
-                  };
+                  if (level === '_exos') {
+                    // Fusion sessions exos (Vision, Detective, Morpho, Phrase)
+                    localSpelling.today[day]._exos ??= {};
+                    Object.entries(prog || {}).forEach(([exoKey, val]) => {
+                      const localVal = localSpelling.today[day]._exos[exoKey] || 0;
+                      const cloudVal = typeof val === 'number' ? val : val ? 1 : 0;
+                      localSpelling.today[day]._exos[exoKey] = Math.max(localVal, cloudVal);
+                    });
+                  } else if (level === '_exos_progress') {
+                    // Fusion questions par exo (done/correct)
+                    localSpelling.today[day]._exos_progress ??= {};
+                    Object.entries(prog || {}).forEach(([exoKey, exoProg]) => {
+                      const local = localSpelling.today[day]._exos_progress[exoKey] || { done: 0, correct: 0 };
+                      localSpelling.today[day]._exos_progress[exoKey] = {
+                        done:    Math.max(local.done,    exoProg.done    || 0),
+                        correct: Math.max(local.correct, exoProg.correct || 0),
+                      };
+                    });
+                  } else {
+                    // Niveaux dictée (debutant, intermediaire, avance)
+                    const local = localSpelling.today[day][level] || { done: 0, correct: 0 };
+                    // Prendre le max (pas additionner — évite les doublons de sync)
+                    localSpelling.today[day][level] = {
+                      done:    Math.max(local.done,    prog.done    || 0),
+                      correct: Math.max(local.correct, prog.correct || 0),
+                    };
+                  }
                 });
               });
             }
