@@ -1008,13 +1008,13 @@ const Spelling = {
     document.getElementById('spellingRuleOverlay')?.remove();
     this._resumeCountdown(); // ← reprend le timer après lecture
     MiniTimer.resume();      // ← reprend aussi le timer des mini-jeux
-    // Reprendre le passage à la question suivante après 1.5s
-    const activeGame = typeof Vision !== 'undefined' && Vision._nextTimer === null ? Vision
-                     : typeof Detective !== 'undefined' && Detective._nextTimer === null ? Detective
-                     : typeof Morpho !== 'undefined' && Morpho._nextTimer === null ? Morpho
-                     : null;
-    if (activeGame) activeGame._nextTimer = setTimeout(() => activeGame._next(), 1500);
-    else this._nextTimer = setTimeout(() => { if (this.current) this._next(); }, 1500);
+    // Reprendre le jeu actif après 1.5s
+    if (window._activeSpellingGame) {
+      const game = window._activeSpellingGame;
+      game._nextTimer = setTimeout(() => game._next(), 1500);
+    } else {
+      this._nextTimer = setTimeout(() => { if (this.current) this._next(); }, 1500);
+    }
   },
 
   _replay() {
@@ -1376,6 +1376,7 @@ const Vision = {
     this.done    = 0;
     this.correct = 0;
     this.current = null;
+    window._activeSpellingGame = this; // tracker le jeu actif pour closeRule
     this._renderUI();
     this._next();
   },
@@ -1482,6 +1483,7 @@ const Vision = {
 
   _showFinished() {
     MiniTimer.stop();
+    window._activeSpellingGame = null;
     SpellingSRS.markExoDone('vision');
     // Rafraîchit le compteur de sessions dans la liste
     _updateExoCounter();
@@ -1559,6 +1561,7 @@ const Detective = {
     this.done    = 0;
     this.correct = 0;
     this.current = null;
+    window._activeSpellingGame = this; // tracker le jeu actif pour closeRule
     this._renderUI();
     this._next();
   },
@@ -1658,6 +1661,7 @@ const Detective = {
 
   _showFinished() {
     MiniTimer.stop();
+    window._activeSpellingGame = null;
     SpellingSRS.markExoDone('detective');
     // Rafraîchit le compteur de sessions dans la liste
     _updateExoCounter();
@@ -1741,6 +1745,7 @@ const Morpho = {
     this.done    = 0;
     this.correct = 0;
     this.current = null;
+    window._activeSpellingGame = this; // tracker le jeu actif pour closeRule
     this._renderUI();
     this._next();
   },
@@ -1841,6 +1846,7 @@ const Morpho = {
 
   _showFinished() {
     MiniTimer.stop();
+    window._activeSpellingGame = null;
     SpellingSRS.markExoDone('morpho');
     // Rafraîchit le compteur de sessions dans la liste
     _updateExoCounter();
@@ -1927,6 +1933,7 @@ const Phrase = {
     this.done    = 0;
     this.correct = 0;
     this.current = null;
+    window._activeSpellingGame = this; // tracker le jeu actif pour closeRule
     this._renderUI();
     this._next();
   },
@@ -2065,6 +2072,7 @@ const Phrase = {
 
   _showFinished() {
     MiniTimer.stop();
+    window._activeSpellingGame = null;
     SpellingSRS.markExoDone('phrase');
     // Rafraîchit le compteur de sessions dans la liste
     _updateExoCounter();
