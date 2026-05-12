@@ -2047,3 +2047,15 @@ body {
     max-width: calc(100vw - 20px);
   }
 }
+
+/* ── Word card inline edit badges ── */
+.word-edit-btn {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.word-edit-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}

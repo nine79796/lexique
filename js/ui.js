@@ -148,13 +148,17 @@ function renderWordCard(key) {
   const col      = w.catKey ? getCatColor(w.catKey) : null;
   const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : null;
 
-  const badge     = catLabel && col
-    ? `<span class="cat-badge" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}">${escHtml(catLabel)}</span>` : '';
+  // Badge catégorie — cliquable pour modifier
+  const badge = catLabel && col
+    ? `<button class="cat-badge word-edit-btn" style="background:${col.bg};color:${col.color};border:0.5px solid ${col.border}" onclick="editWordCat('${key}')">${escHtml(catLabel)}</button>`
+    : `<button class="cat-badge word-edit-btn" style="background:var(--surface2);color:var(--text-dim);border:0.5px solid var(--border)" onclick="editWordCat('${key}')">+ cat</button>`;
   const ankiBadge = anki ? `<span class="anki-badge">Anki</span>` : '';
   const ankiBtn   = anki ? `<button class="anki-check-btn" onclick="markAnkiDone('${key}')">${t('words.add_to_anki')}</button>` : '';
 
-  // Badge source
-  const srcBadge  = w.source ? renderSourceBadge(w.source) : '';
+  // Badge source — cliquable pour modifier
+  const srcBadge = w.source
+    ? `<button class="source-badge word-edit-btn" onclick="editWordSource('${key}')" title="Changer la source">${renderSourceBadgeInner(w.source)}</button>`
+    : `<button class="source-badge word-edit-btn" onclick="editWordSource('${key}')" title="Ajouter une source">+src</button>`;
 
   const validBadge = w.validity === 'valid'
     ? `<span class="word-valid-badge valid">✓</span>`
@@ -194,6 +198,61 @@ function renderWordCard(key) {
     </div>
     ${datesHtml}
   </div>`;
+}
+
+// ── Inline edit cat & source ─────────────────────────────────
+
+function editWordCat(key) {
+  // Ouvre le cselect catégorie et applique le choix au mot
+  _cselectState.cat = state.words[key]?.catKey || '';
+  openCselect('cat');
+  // Monkey-patch temporaire : quand le cselect ferme, applique au mot
+  window._pendingWordCatEdit = key;
+}
+
+function editWordSource(key) {
+  _cselectState.source = state.words[key]?.source || '';
+  openCselect('source');
+  window._pendingWordSourceEdit = key;
+}
+
+// Override pickCselect pour intercepter les edits inline
+const _origPickCselect = pickCselect;
+window.pickCselect = function(value) {
+  if (window._pendingWordCatEdit && arguments.length > 0) {
+    const key = window._pendingWordCatEdit;
+    window._pendingWordCatEdit = null;
+    if (state.words[key]) {
+      state.words[key].catKey    = value || null;
+      state.words[key].updatedAt = Date.now();
+      save();
+      refreshWordCard(key);
+    }
+    closeCselect();
+    return;
+  }
+  if (window._pendingWordSourceEdit && arguments.length > 0) {
+    const key = window._pendingWordSourceEdit;
+    window._pendingWordSourceEdit = null;
+    if (state.words[key]) {
+      state.words[key].source    = value || null;
+      state.words[key].updatedAt = Date.now();
+      save();
+      refreshWordCard(key);
+    }
+    closeCselect();
+    return;
+  }
+  _origPickCselect(value);
+};
+
+/** Retourne le contenu intérieur du badge source (emoji + label) */
+function renderSourceBadgeInner(sourceKey) {
+  const def = DEFAULT_SOURCES.find(s => s.key === sourceKey);
+  if (def) return def.emoji;
+  const custom = state.sources[sourceKey];
+  if (custom) return custom.emoji || '🔖';
+  return '?';
 }
 
 /** Affiche le badge de la source d'un mot */
