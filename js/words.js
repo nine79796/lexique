@@ -47,8 +47,9 @@ async function addWord() {
   console.debug('[addWord] Ajout :', label);
 
   const key    = label.toLowerCase().replace(/\s+/g, '_');
-  const catKey = sel.value || null;
-  const source = srcSel ? srcSel.value || null : null;
+  // Lire depuis _cselectState si catSelect.value est vide (cselect custom)
+  const catKey = sel.value || (typeof _cselectState !== 'undefined' ? _cselectState.cat || null : null);
+  const source = (srcSel && srcSel.value) ? srcSel.value : (typeof _cselectState !== 'undefined' ? _cselectState.source || null : null);
   const now    = ts();
 
   if (!state.words[key]) {
