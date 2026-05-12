@@ -112,6 +112,12 @@ function openCselect(type) {
 function pickCselect(value) {
   try {
     var type = _cselectType;
+
+    // Callback word edit (défini dans ui.js)
+    if (window._onCselectPick && window._onCselectPick(type, value)) {
+      closeCselect();
+      return;
+    }
     var list = document.getElementById('cselectList');
 
     if (type === 'timer' && value === '__custom__') {

@@ -81,6 +81,7 @@ function renderFilters() {
   parts.push(
     `<button class="filter-btn ${activeFilter === 'none' ? 'active' : ''}" onclick="setFilter('none')">${t('words.cat_none')}</button>`,
     `<button class="filter-btn anki-filter ${activeFilter === 'anki' ? 'active' : ''}" onclick="setFilter('anki')">${t('words.anki_ready_filter')}</button>`,
+    `<button class="filter-btn ${activeFilter === 'done' ? 'active' : ''}" onclick="setFilter('done')">✓ Anki done</button>`,
   );
 
   row.innerHTML = parts.join('');
@@ -102,6 +103,8 @@ function render() {
   let keys = Object.keys(state.words).filter(key => {
     const w = state.words[key];
     if (search && !w.label.toLowerCase().includes(search)) return false;
+    if (activeFilter === 'done') return w.ankiDone; // filtre dédié
+    if (w.ankiDone) return false; // cacher les mots déjà sur Anki par défaut
     if (activeFilter === 'all')  return true;
     if (activeFilter === 'none') return !w.catKey;
     if (activeFilter === 'anki') return isAnkiReady(w);
@@ -203,23 +206,20 @@ function renderWordCard(key) {
 // ── Inline edit cat & source ─────────────────────────────────
 
 function editWordCat(key) {
-  // Ouvre le cselect catégorie et applique le choix au mot
   _cselectState.cat = state.words[key]?.catKey || '';
-  openCselect('cat');
-  // Monkey-patch temporaire : quand le cselect ferme, applique au mot
   window._pendingWordCatEdit = key;
+  openCselect('cat');
 }
 
 function editWordSource(key) {
   _cselectState.source = state.words[key]?.source || '';
-  openCselect('source');
   window._pendingWordSourceEdit = key;
+  openCselect('source');
 }
 
-// Override pickCselect pour intercepter les edits inline
-const _origPickCselect = pickCselect;
-window.pickCselect = function(value) {
-  if (window._pendingWordCatEdit && arguments.length > 0) {
+// Callback appelé par cselect.js après un choix — défini ici, appelé là-bas
+window._onCselectPick = function(type, value) {
+  if (type === 'cat' && window._pendingWordCatEdit) {
     const key = window._pendingWordCatEdit;
     window._pendingWordCatEdit = null;
     if (state.words[key]) {
@@ -228,10 +228,9 @@ window.pickCselect = function(value) {
       save();
       refreshWordCard(key);
     }
-    closeCselect();
-    return;
+    return true; // intercepté
   }
-  if (window._pendingWordSourceEdit && arguments.length > 0) {
+  if (type === 'source' && window._pendingWordSourceEdit) {
     const key = window._pendingWordSourceEdit;
     window._pendingWordSourceEdit = null;
     if (state.words[key]) {
@@ -240,10 +239,9 @@ window.pickCselect = function(value) {
       save();
       refreshWordCard(key);
     }
-    closeCselect();
-    return;
+    return true; // intercepté
   }
-  _origPickCselect(value);
+  return false; // pas intercepté, comportement normal
 };
 
 /** Retourne le contenu intérieur du badge source (emoji + label) */
