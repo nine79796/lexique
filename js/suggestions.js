@@ -265,7 +265,7 @@ function recordSuggUsage(word) {
  */
 function attachSuggestions() {
   const selector = 'input[type="text"], input:not([type]), textarea';
-  const excluded = ['#searchInput'];
+  const excluded = ['#searchInput', '.spelling-input', '#detectiveInput', '#morphoInput', '#phraseInput', '[data-no-sugg]'];
 
   document.querySelectorAll(selector).forEach(el => {
     if (excluded.some(s => el.matches(s))) return;
