@@ -2059,3 +2059,40 @@ body {
   opacity: 0.8;
   transform: scale(1.05);
 }
+
+/* ── Fix word edit badge size ── */
+.source-badge.word-edit-btn,
+.cat-badge.word-edit-btn {
+  padding: 2px 7px;
+  font-size: 11px;
+  border-radius: 20px;
+  line-height: 1.4;
+}
+
+/* ── Fix +src and +cat button colors ── */
+button.source-badge.word-edit-btn {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 0.5px solid var(--border2);
+}
+button.cat-badge.word-edit-btn {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 0.5px solid var(--border2);
+}
+
+/* ── Fix cat badge size when used as button ── */
+button.cat-badge.word-edit-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+button.source-badge.word-edit-btn {
+  font-size: 10px;
+  padding: 2px 5px;
+  opacity: 0.5;
+}
+button.source-badge.word-edit-btn:hover {
+  opacity: 1;
+}
