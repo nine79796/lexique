@@ -67,6 +67,21 @@ function autoReportTasks() {
         const taskUpdatedAt = task.updatedAt || 0;
         const dayEnd = new Date(d + 'T23:59:59').getTime();
         if (taskUpdatedAt > dayEnd) return;
+        // Vérifier si un milestone timer existe pour cette tâche ce jour-là
+        // (évite de marquer missed quand le drapeau a été posé)
+        try {
+          const timerData = JSON.parse(localStorage.getItem('lexique_timer') || '{}');
+          const hasMilestone = (timerData.milestones || []).some(m =>
+            m.date === d && m.task && task.title &&
+            m.task.toLowerCase() === task.title.toLowerCase()
+          );
+          if (hasMilestone) {
+            task.history[d] = 'done';
+            task.updatedAt  = ts();
+            changed = true;
+            return;
+          }
+        } catch { /* ignore */ }
         // Marquer missed pour les stats, mais sans impact sur le compteur late
         task.history[d]  = 'missed';
         task.reportCount = (task.reportCount || 0) + 1;
