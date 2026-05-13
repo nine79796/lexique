@@ -4,6 +4,21 @@
 //  REVISION TAB
 // ════════════════════════════════════════════════════════════════
 
+// Cache des mots Anki du jour — calculé une fois, pas à chaque renderRevision()
+let _dailyAnkiCache = null;
+let _dailyAnkiCacheDate = null;
+
+function getDailyAnkiWords() {
+  const today = fmtDay(Date.now());
+  // Recalculer si nouveau jour ou cache vide
+  if (!_dailyAnkiCache || _dailyAnkiCacheDate !== today) {
+    _dailyAnkiCache = (typeof PriorityEngine !== 'undefined') ? PriorityEngine.getDailyWords() : [];
+    _dailyAnkiCacheDate = today;
+  }
+  // Filtrer les mots déjà marqués ankiDone depuis le chargement du cache
+  return _dailyAnkiCache.filter(({ word }) => !word.ankiDone);
+}
+
 function renderRevision() {
   autoReportTasks();
   const today     = todayStr();
@@ -23,7 +38,7 @@ function renderRevision() {
   document.getElementById('revStatLate').textContent  = lateItems.length;
 
   // ── Section priorité Anki du jour ────────────────────────────
-  const dailyAnki = (typeof PriorityEngine !== 'undefined') ? PriorityEngine.getDailyWords() : [];
+  const dailyAnki = getDailyAnkiWords();
   const quota     = (typeof PriorityEngine !== 'undefined') ? PriorityEngine.getDailyQuota() : 0;
 
   if (!todayWords.length && !todayItems.length && !dailyAnki.length) {
@@ -111,7 +126,7 @@ function renderRevisionTaskRow(item, today) {
 }
 
 function renderRevisionWordRow(key, w) {
-  const maxed    = w.ankiDone === true;
+  const maxed    = isMaxReached(w);
   const noAnki   = !w.ankiDone && !isAnkiReady(w);
   const col      = w.catKey ? getCatColor(w.catKey) : null;
   const catLabel = w.catKey && state.categories[w.catKey] ? state.categories[w.catKey].label : '';
