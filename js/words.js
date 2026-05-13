@@ -105,7 +105,7 @@ function clickWord(key) {
   // 2. Sauvegarde + sync différées pour ne pas bloquer le thread UI
   setTimeout(() => {
     save();
-    if (navigator.onLine) CloudSync.schedule(500);
+    if (navigator.onLine) CloudSync.schedule(60000); // 1 min
   }, 50);
 }
 
@@ -124,7 +124,7 @@ function undoLastClick(key) {
   updateStats();
   hideUndoBtn();
 
-  if (navigator.onLine) CloudSync.schedule(300);
+  if (navigator.onLine) CloudSync.schedule(60000); // 1 min
 
   // Forcer render() complet si on repasse sous le seuil Anki
   if (w.occurrences.length < ANKI_THRESHOLD) {

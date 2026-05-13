@@ -28,7 +28,7 @@ const Storage = {
     const native = localStorage.setItem.bind(localStorage);
     localStorage.setItem = (key, value) => {
       native(key, value);
-      if (LS_SYNC_KEYS.includes(key)) CloudSync.schedule();
+      if (LS_SYNC_KEYS.includes(key)) CloudSync.schedule(60000); // 1 min min
     };
   },
 };
@@ -72,7 +72,7 @@ function load() {
 
 function save() {
   Storage.writeState(state);
-  if (typeof CloudSync !== 'undefined') CloudSync.schedule();
+  if (typeof CloudSync !== 'undefined') CloudSync.schedule(60000); // 1 min min
 }
 
 // ── Migration ─────────────────────────────────────────────────

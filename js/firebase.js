@@ -167,12 +167,13 @@ const CloudSync = {
     badge.title       = c.title;
   },
 
-  schedule(delayMs = 2000) {
+  schedule(delayMs = 30000) {
+    // Minimum 30 secondes entre deux push
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
       if (navigator.onLine) this.pushToCloud();
       else this.showStatus('offline');
-    }, delayMs);
+    }, Math.max(delayMs, 30000));
   },
 
   // ── PUSH ────────────────────────────────────────────────────
