@@ -61,6 +61,10 @@ const Timer = {
     if (st.running) return;
     st.running   = true;
     st.startedAt = Date.now();
+    // Mémoriser la date de début de la session dès le premier start.
+    // Conservée à travers les pauses/reprises pour que commitSession()
+    // attribue la session à la bonne date même si on termine le lendemain.
+    if (!st.sessionStartedAt) st.sessionStartedAt = Date.now();
     this.save(st);
     timerTick();
   },
@@ -68,9 +72,10 @@ const Timer = {
   pause() {
     const st = this.load();
     if (!st.running) return;
-    st.elapsed  = this.currentMs(st);
-    st.running  = false;
+    st.elapsed   = this.currentMs(st);
+    st.running   = false;
     st.startedAt = null;
+    // sessionStartedAt intentionnellement conservé — il sera effacé par stop()
     this.save(st);
     timerTick();
   },
@@ -85,6 +90,7 @@ const Timer = {
     // Conserver l'historique sessions ET milestones
     fresh.sessions   = st.sessions;
     fresh.milestones = st.milestones;
+    // sessionStartedAt effacé — reset complet
     this.save(fresh);
     timerTick();
     renderTimerHistory();
@@ -92,11 +98,15 @@ const Timer = {
 
   /** Enregistre la session courante dans l'historique */
   commitSession(st, duration) {
+    // FIX: utiliser sessionStartedAt (date du premier Start, conservée à travers
+    // les pauses) pour attribuer la session au bon jour.
+    // startedAt est null quand le timer est en pause → on ne peut pas s'y fier.
+    const sessionStart = st.sessionStartedAt || st.startedAt || Date.now();
     const session = {
-      date:      fmtDay(Date.now()),
+      date:      fmtDay(sessionStart),
       task:      st.currentTask || '—',
       duration:  Math.round(duration / 1000), // en secondes
-      startedAt: st.startedAt || Date.now(),
+      startedAt: sessionStart,
     };
     st.sessions.unshift(session);
     // Garder max 200 sessions
@@ -111,8 +121,9 @@ const Timer = {
       const duration = this.currentMs(st);
       if (duration > 5000) this.commitSession(st, duration);
       // Redémarre le compteur pour la nouvelle tâche
-      st.elapsed   = 0;
-      st.startedAt = Date.now();
+      st.elapsed          = 0;
+      st.startedAt        = Date.now();
+      st.sessionStartedAt = Date.now(); // nouvelle tâche = nouvelle session
     }
 
     st.currentTask = label;
