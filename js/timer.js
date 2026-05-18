@@ -131,14 +131,36 @@ const Timer = {
     renderTimerHistory();
   },
 
-  /** Vérifie l'auto-stop à 3h */
+  /** Vérifie l'auto-stop à 3h et à minuit */
   checkAutoStop() {
     const st = this.load();
     if (!st.running) return;
+
+    // Auto-stop à 3h
     if (this.currentMs(st) >= MAX_SESSION_MS) {
       console.debug('[Timer] Auto-stop à 3h');
       this.stop();
       renderTimerUI();
+      return;
+    }
+
+    // Auto-stop à minuit — si la session a démarré un jour différent d'aujourd'hui,
+    // on commit la session sur le bon jour et on repart de zéro pour aujourd'hui.
+    const sessionStart = st.sessionStartedAt || st.startedAt;
+    if (sessionStart) {
+      const startDay = fmtDay(sessionStart);
+      const today    = fmtDay(Date.now());
+      if (startDay !== today) {
+        console.debug('[Timer] Auto-stop minuit — session du', startDay, 'commitée');
+        this.commitSession(st, this.currentMs(st));
+        // Repart à zéro pour aujourd'hui
+        st.elapsed          = 0;
+        st.startedAt        = Date.now();
+        st.sessionStartedAt = Date.now();
+        this.save(st);
+        renderTimerUI();
+        renderTimerHistory();
+      }
     }
   },
 
