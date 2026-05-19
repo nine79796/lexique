@@ -2,6 +2,9 @@
 
 // ════════════════════════════════════════════════════════════════
 //  TASKS — CRUD, modal & rendering
+//
+//  v2 : toutes les mutations écrivent directement dans Firestore
+//  via FireStore.saveTask() avec optimistic update en mémoire.
 // ════════════════════════════════════════════════════════════════
 
 // ── CRUD ──────────────────────────────────────────────────────
@@ -20,36 +23,34 @@ function toggleTaskDone(id, dateStr) {
     if (task.history[d] === null) delete task.history[d];
   }
   task.updatedAt = ts();
-  save(); renderTasks(); updateTaskStats();
-}
 
-function deleteTask(id) {
-  state.tasks = state.tasks.filter(t => t.id !== id);
-  save();
+  // Optimistic UI
   renderTasks();
   updateTaskStats();
 
-  // Supprime aussi dans Firestore pour éviter la résurrection au pull
-  try {
-    const tRef = CloudSync.tasksRef();
-    if (tRef) {
-      tRef.doc(String(id)).delete().catch(err =>
-        console.error('[deleteTask] Firestore delete error:', err)
-      );
-    }
-  } catch (err) {
-    console.error('[deleteTask] Firestore error:', err);
-  }
+  // Écriture Firestore
+  FireStore.saveTask(task);
+}
+
+function deleteTask(id) {
+  // Optimistic : retire de l'état mémoire immédiatement
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  renderTasks();
+  updateTaskStats();
+
+  // Suppression Firestore
+  FireStore.deleteTask(id);
 }
 
 /**
- * Auto-advance past-due once-tasks to today and mark recurring tasks as missed.
- * Runs AFTER the cloud pull so that tasks already done on another device
- * are not incorrectly marked as missed.
+ * Auto-marque les tâches passées comme missed.
+ * Appelé après chaque pull Firestore pour ne pas écraser
+ * les actions faites sur un autre appareil.
  */
 function autoReportTasks() {
   const today   = todayStr();
   let   changed = false;
+  const tasksToSave = [];
 
   state.tasks.forEach(task => {
     if (task.recurType === 'once') {
@@ -60,15 +61,16 @@ function autoReportTasks() {
         task.dueDate       = today;
         task.updatedAt     = ts();
         changed = true;
+        tasksToSave.push(task);
       }
     } else {
       getPastDueDates(task, addDays(today, -1)).forEach(d => {
-        if (task.history[d]) return; // déjà un état (done ou missed)
+        if (task.history[d]) return;
         const taskUpdatedAt = task.updatedAt || 0;
         const dayEnd = new Date(d + 'T23:59:59').getTime();
         if (taskUpdatedAt > dayEnd) return;
-        // Vérifier si un milestone timer existe pour cette tâche ce jour-là
-        // (évite de marquer missed quand le drapeau a été posé)
+
+        // Vérifier milestone timer pour ce jour
         try {
           const timerData = JSON.parse(localStorage.getItem('lexique_timer') || '{}');
           const hasMilestone = (timerData.milestones || []).some(m =>
@@ -79,19 +81,30 @@ function autoReportTasks() {
             task.history[d] = 'done';
             task.updatedAt  = ts();
             changed = true;
+            tasksToSave.push(task);
             return;
           }
         } catch { /* ignore */ }
-        // Marquer missed pour les stats, mais sans impact sur le compteur late
+
         task.history[d]  = 'missed';
         task.reportCount = (task.reportCount || 0) + 1;
         task.updatedAt   = ts();
         changed = true;
+        tasksToSave.push(task);
       });
     }
   });
 
-  if (changed) save();
+  if (changed) {
+    // Dédupliquer et écrire dans Firestore
+    const seen = new Set();
+    tasksToSave.forEach(task => {
+      if (!seen.has(task.id)) {
+        seen.add(task.id);
+        FireStore.saveTask(task);
+      }
+    });
+  }
 }
 
 // ── Task modal ────────────────────────────────────────────────
@@ -173,23 +186,19 @@ function saveTaskFromModal() {
   const title = document.getElementById('mTaskTitle').value.trim();
   if (!title) { document.getElementById('mTaskTitle').focus(); return; }
 
-  // Guard: weekly tasks require at least one day selected
   if (modalRecurType === 'weekly' && selectedDays.size === 0) {
     const picker = document.querySelector('.day-picker');
     if (picker) {
       picker.classList.add('day-picker--error');
       let errMsg = picker.nextElementSibling;
       if (!errMsg || !errMsg.classList.contains('day-picker-error-msg')) {
-        errMsg = document.createElement('div');
+        errMsg           = document.createElement('div');
         errMsg.className = 'day-picker-error-msg';
         errMsg.style.cssText = 'color:var(--danger,#e05);font-size:12px;margin-top:4px';
         picker.insertAdjacentElement('afterend', errMsg);
       }
       errMsg.textContent = t('modal.weekly_no_days');
-      setTimeout(() => {
-        picker.classList.remove('day-picker--error');
-        errMsg.textContent = '';
-      }, 2000);
+      setTimeout(() => { picker.classList.remove('day-picker--error'); errMsg.textContent = ''; }, 2000);
     }
     return;
   }
@@ -213,12 +222,12 @@ function saveTaskFromModal() {
     state.tasks.push(task);
   }
 
-  task.title      = title;
-  task.desc       = document.getElementById('mTaskDesc').value.trim();
-  task.cat        = document.getElementById('mTaskCat').value;
-  task.deadline   = document.getElementById('mDeadline').value || null;
-  task.recurType  = modalRecurType;
-  task.updatedAt  = ts();
+  task.title     = title;
+  task.desc      = document.getElementById('mTaskDesc').value.trim();
+  task.cat       = document.getElementById('mTaskCat').value;
+  task.deadline  = document.getElementById('mDeadline').value || null;
+  task.recurType = modalRecurType;
+  task.updatedAt = ts();
 
   switch (modalRecurType) {
     case 'once':
@@ -251,11 +260,14 @@ function saveTaskFromModal() {
       break;
   }
 
-  save();
+  // Optimistic UI
   closeTaskModal();
   autoReportTasks();
   renderTasks();
   updateTaskStats();
+
+  // Écriture Firestore
+  FireStore.saveTask(task);
 }
 
 // ── Task stats ────────────────────────────────────────────────
@@ -268,11 +280,6 @@ function updateTaskStats() {
     return task.history[today] === 'done';
   }).length;
 
-  // FIX: the previous logic counted recurring tasks that were active-today-but-not-yet-done
-  // as "late", which was wrong — those are simply pending for the current day.
-  // "Late" for a once task = past due date and not done.
-  // "Late" for a recurring task = has missed entries in history (i.e. past days marked missed).
-  // Les récurrentes ne comptent plus dans late — elles reviennent d'elles-mêmes.
   const lateCount = state.tasks.filter(task => {
     if (task.recurType !== 'once') return false;
     return !task.done && task.dueDate < today;
@@ -280,8 +287,8 @@ function updateTaskStats() {
 
   const recurActive = state.tasks.filter(task =>
     task.recurType !== 'once'
-    && (!task.recurEnd  || task.recurEnd  >= today)
-    && (!task.deadline  || task.deadline  >= today)
+    && (!task.recurEnd || task.recurEnd >= today)
+    && (!task.deadline || task.deadline >= today)
   ).length;
 
   const allDue  = state.tasks.reduce((a, task) => a + getPastDueDates(task).length, 0);
@@ -330,16 +337,9 @@ function renderTasks() {
 
   let items = buildTaskItems(today).filter(item => {
     const { task } = item;
-
-    // Filtre "done" explicite : montrer tout ce qui est fait
     if (activeTaskFilter === 'done') return item.done;
-
-    // Vue par défaut : masquer les tâches "once" déjà cochées
     if (task.recurType === 'once' && item.done) return false;
-
-    // Vue par défaut : masquer les occurrences récurrentes passées déjà cochées
     if (task.recurType !== 'once' && item.done && item.date < today) return false;
-
     if (activeTaskFilter === 'all')   return true;
     if (activeTaskFilter === 'today') return item.date === today && !item.done;
     if (activeTaskFilter === 'recur') return task.recurType !== 'once';
@@ -362,7 +362,7 @@ function renderTasks() {
 
 function buildTaskItems(today) {
   const items    = [];
-  const lookback = 30; // aligne avec la fenêtre "en retard" de updateTaskStats
+  const lookback = 30;
 
   state.tasks.forEach(task => {
     if (task.recurType === 'once') {
@@ -376,13 +376,11 @@ function buildTaskItems(today) {
         if (!isTaskActiveOnDate(task, d)) continue;
         const occ  = task.history[d] || null;
         const done = occ === 'done';
-        // Pour les récurrentes : n'afficher que aujourd'hui et les done récents (7j)
-        // Les jours passés non faits (missed) sont dans les stats mais pas dans la liste
         if (i < 0 && !done) continue;
         if (i < -7 && done) continue;
         items.push({
           task, id: task.id + '_' + d, date: d,
-          done, isLate: false, occurrence: occ, // récurrentes : jamais late
+          done, isLate: false, occurrence: occ,
         });
       }
     }
@@ -397,24 +395,23 @@ function renderTaskCard(item, today) {
   const col      = TASK_CAT_COLORS[task.cat] || TASK_CAT_COLORS['autre'];
   const catLabel = getTaskCatLabel(task.cat);
 
-  const catBadge     = task.cat
+  const catBadge      = task.cat
     ? `<span class="task-badge cat-b" style="background:${col.bg};color:${col.color};border-color:${col.border}">${escHtml(catLabel)}</span>` : '';
-  const lateText     = isToday && isLate ? t('tasks.late_badge')
+  const lateText      = isToday && isLate ? t('tasks.late_badge')
     : isLate  ? `⚠ ${date}`
     : isToday ? t('tasks.today')
     : `📅 ${date}`;
-  const dateBadge    = `<span class="task-badge ${isLate ? 'late-b' : 'date-b'}">${lateText}</span>`;
-  const recurBadge   = isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : '';
-  const reportBadge  = (task.reportCount || 0) > 0
+  const dateBadge     = `<span class="task-badge ${isLate ? 'late-b' : 'date-b'}">${lateText}</span>`;
+  const recurBadge    = isRecur ? `<span class="task-badge recur-b">${recurTypeLabel(task)}</span>` : '';
+  const reportBadge   = (task.reportCount || 0) > 0
     ? `<span class="task-badge report-b">↩ ${task.reportCount}</span>` : '';
   const deadlineBadge = task.deadline && !done
     ? `<span class="task-badge deadline-b">${t('tasks.deadline')} ${task.deadline}</span>` : '';
-  const doneBadge    = done ? `<span class="task-badge done-b">✓</span>` : '';
+  const doneBadge     = done ? `<span class="task-badge done-b">✓</span>` : '';
 
   const checkFn    = isRecur ? `toggleTaskDone('${task.id}','${date}')` : `toggleTaskDone('${task.id}')`;
   const checkState = done ? ' checked' : '';
 
-  // Si la tâche s'appelle "Spelling" (insensible casse), griser jusqu'au quota SRS atteint
   const isSpellingTask = task.title.toLowerCase().includes('spelling');
   const spellingGate   = isSpellingTask && typeof SpellingSRS !== 'undefined'
     ? !SpellingSRS.isDailyQuotaMet() : false;
@@ -463,15 +460,9 @@ function toggleTaskHistory(id) {
 // ── Label helpers ─────────────────────────────────────────────
 
 function recurTypeLabel(task) {
-  if (task.recurType === 'daily') {
-    return '↻ ' + t('recur.daily_label');
-  }
-  if (task.recurType === 'weekly') {
-    return '↻ ' + (task.recurDays || []).sort().map(d => t('day.' + d)).join('/');
-  }
-  if (task.recurType === 'interval') {
-    return `↻ /${task.recurInterval}${t('modal.days').slice(0, 1)}`;
-  }
+  if (task.recurType === 'daily')    return '↻ ' + t('recur.daily_label');
+  if (task.recurType === 'weekly')   return '↻ ' + (task.recurDays || []).sort().map(d => t('day.' + d)).join('/');
+  if (task.recurType === 'interval') return `↻ /${task.recurInterval}${t('modal.days').slice(0, 1)}`;
   return '';
 }
 
@@ -482,16 +473,11 @@ function getTaskCatLabel(cat) {
 
 // ── Midnight scheduler ────────────────────────────────────────
 
-/**
- * Planifie un auto-report à minuit pile, sans rechargement.
- * Si l'app reste ouverte pendant la nuit, les tâches de la veille
- * passent automatiquement à "missed" dès le changement de jour.
- */
 (function scheduleMidnightAutoReport() {
   function msUntilMidnight() {
-    const now   = new Date();
-    const next  = new Date(now);
-    next.setHours(24, 0, 0, 0); // minuit suivant
+    const now  = new Date();
+    const next = new Date(now);
+    next.setHours(24, 0, 0, 0);
     return next.getTime() - now.getTime();
   }
 
@@ -499,7 +485,6 @@ function getTaskCatLabel(cat) {
     autoReportTasks();
     renderTasks();
     updateTaskStats();
-    // Re-planifie pour le prochain minuit
     setTimeout(tick, msUntilMidnight());
   }
 

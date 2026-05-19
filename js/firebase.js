@@ -224,28 +224,26 @@ const CloudSync = {
           // Ignorer si c'est nous qui venons d'écrire (hasPendingWrites)
           if (snap.metadata.hasPendingWrites) return;
 
-          const appState  = Storage.readState();
-          const localWords = appState.words || {};
-          const remoteIds  = new Set();
+          const remoteIds = new Set();
 
           snap.forEach(doc => {
             const cloud = doc.data();
             if (!cloud.label) return;
             remoteIds.add(doc.id);
-            const local = localWords[doc.id];
+            const local = state.words[doc.id];
             // last-write-wins sur updatedAt
             if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
-              localWords[doc.id] = { ...local, ...cloud, id: doc.id };
+              state.words[doc.id] = { ...local, ...cloud, id: doc.id };
             }
           });
 
-          // Supprimer localement les mots effacés sur un autre appareil
-          Object.keys(localWords).forEach(id => {
-            if (!remoteIds.has(id)) delete localWords[id];
+          // Supprimer les mots effacés sur un autre appareil
+          Object.keys(state.words).forEach(id => {
+            if (!remoteIds.has(id)) delete state.words[id];
           });
 
-          appState.words = localWords;
-          Storage.writeState(appState);
+          // Mettre à jour le cache localStorage
+          Storage.updateCache(state);
           console.debug('[onSnapshot] Mots mis à jour :', snap.size);
           reRenderAll();
         },
@@ -258,9 +256,8 @@ const CloudSync = {
         snap => {
           if (snap.metadata.hasPendingWrites) return;
 
-          const appState  = Storage.readState();
           const localTasks = {};
-          (Array.isArray(appState.tasks) ? appState.tasks : [])
+          (Array.isArray(state.tasks) ? state.tasks : [])
             .forEach(t => { if (t.id) localTasks[t.id] = t; });
           const remoteIds = new Set();
 
@@ -278,8 +275,8 @@ const CloudSync = {
             if (!remoteIds.has(id)) delete localTasks[id];
           });
 
-          appState.tasks = Object.values(localTasks);
-          Storage.writeState(appState);
+          state.tasks = Object.values(localTasks);
+          Storage.updateCache(state);
           console.debug('[onSnapshot] Tâches mises à jour :', snap.size);
           reRenderAll();
         },
@@ -297,12 +294,11 @@ const CloudSync = {
 
           // Catégories
           if (data.categories && typeof data.categories === 'object') {
-            const appState = Storage.readState();
-            appState.categories = data.categories;
+            state.categories = data.categories;
             if (data.sources && typeof data.sources === 'object') {
-              appState.sources = data.sources;
+              state.sources = data.sources;
             }
-            Storage.writeState(appState);
+            Storage.updateCache(state);
           }
 
           // Timer — fusion sessions + milestones
