@@ -1,13 +1,19 @@
 'use strict';
 
 // ════════════════════════════════════════════════════════════════
-//  FIREBASE CLOUD SYNC
-//  ⚠️  Ne pas modifier sans tester la synchronisation complète.
+//  FIREBASE CLOUD SYNC — v2 (temps réel)
+//
+//  Architecture :
+//  ┌─────────────────────────────────────────────────────────────┐
+//  │  onSnapshot  →  pull temps réel (mots, tâches)             │
+//  │  pushToCloud →  push différé 30s après chaque write local  │
+//  │  Conflict    →  last-write-wins sur updatedAt              │
+//  │  Timer       →  champ dédié, fusion par startedAt unique   │
+//  └─────────────────────────────────────────────────────────────┘
 //
 //  SÉCURITÉ : La clé API Firebase ci-dessous est publique par nature
-//  (elle identifie le projet côté client) mais les règles Firestore
-//  doivent impérativement restreindre l'accès par UID.
-//  Ne pas commettre de clé de service (Admin SDK) dans ce fichier.
+//  (elle identifie le projet côté client). Les règles Firestore
+//  restreignent l'accès par UID — ne jamais commettre de clé Admin SDK.
 // ════════════════════════════════════════════════════════════════
 
 const FIREBASE_CONFIG = {
@@ -19,49 +25,80 @@ const FIREBASE_CONFIG = {
   appId:             '1:32359120766:web:91b8b664b4bbf67a717d2f',
 };
 
-let db         = null;
-let currentUid = null;
-let isSyncing  = false;
-let fbReady    = false;
-let syncTimer  = null;
-let firstPull  = true;
+// ── Runtime state ─────────────────────────────────────────────
+
+let db          = null;
+let currentUid  = null;
+let fbReady     = false;
+let isSyncing   = false;
+let syncTimer   = null;
+let firstPull   = true;
+
+// Listeners onSnapshot actifs — stockés pour pouvoir les unsubscribe
+const _listeners = { words: null, tasks: null };
+
+// ── Helpers ────────────────────────────────────────────────────
+
+/** Fusionne deux tableaux sur une clé unique — last-write-wins sur updatedAt/ts */
+function mergeById(local, cloud, key) {
+  const map = new Map();
+  local.forEach(item => { if (item[key] != null) map.set(item[key], item); });
+  // Cloud écrase local si pas de updatedAt, sinon last-write-wins
+  cloud.forEach(item => {
+    if (item[key] == null) return;
+    const existing = map.get(item[key]);
+    if (!existing || (item.updatedAt ?? item.ts ?? 0) >= (existing.updatedAt ?? existing.ts ?? 0)) {
+      map.set(item[key], item);
+    }
+  });
+  return [...map.values()].sort((a, b) => (b[key] || 0) - (a[key] || 0));
+}
+
+function reRenderAll() {
+  try {
+    load();
+    autoReportTasks();
+    rebuildNgrams();
+    render(); renderTasks(); updateStats(); updateTaskStats();
+    renderCatManager(); renderCatSelect(); renderFilters();
+    renderTimerHistory(); timerTick();
+  } catch (e) {
+    console.warn('[Sync] reRenderAll error:', e);
+  }
+}
 
 // ── Auth UI ───────────────────────────────────────────────────
 
 const AuthUI = {
-  /** Met à jour le bouton login dans le header selon l'état auth */
   update(user) {
     const btn = document.getElementById('authBtn');
     if (!btn) return;
 
     if (user && !user.isAnonymous) {
-      // Connecté avec Google
       const name  = user.displayName || user.email || 'Compte';
       const photo = user.photoURL;
-      btn.title   = name;
+      btn.title     = name;
       btn.innerHTML = photo
         ? `<img src="${photo}" alt="" class="auth-avatar"> <span class="auth-name">${escHtml(name.split(' ')[0])}</span>`
         : `<span class="auth-avatar-initials">${escHtml(name[0].toUpperCase())}</span> <span class="auth-name">${escHtml(name.split(' ')[0])}</span>`;
       btn.classList.add('signed-in');
       btn.onclick = () => AuthUI.showMenu(user);
     } else {
-      // Anonyme ou déconnecté
       btn.innerHTML = `<span class="auth-icon">👤</span> <span data-i18n="auth.sign_in">${t('auth.sign_in')}</span>`;
       btn.title     = t('auth.sign_in_title');
       btn.classList.remove('signed-in');
-      btn.onclick = () => AuthService.signInWithGoogle();
+      btn.onclick   = () => AuthService.signInWithGoogle();
     }
   },
 
   showMenu(user) {
-    // Petit menu contextuel : nom + déconnexion
     let menu = document.getElementById('authMenu');
-    if (menu) { menu.remove(); return; } // toggle
+    if (menu) { menu.remove(); return; }
 
-    menu = document.createElement('div');
-    menu.id        = 'authMenu';
-    menu.className = 'auth-menu';
-    menu.innerHTML = `
+    menu             = document.createElement('div');
+    menu.id          = 'authMenu';
+    menu.className   = 'auth-menu';
+    menu.innerHTML   = `
       <div class="auth-menu-name">${escHtml(user.displayName || user.email || 'Compte')}</div>
       <div class="auth-menu-email">${escHtml(user.email || '')}</div>
       <hr class="auth-menu-divider">
@@ -75,7 +112,6 @@ const AuthUI = {
     menu.style.right = (window.innerWidth - rect.right)   + 'px';
     document.body.appendChild(menu);
 
-    // Fermer au clic extérieur
     setTimeout(() => {
       document.addEventListener('click', function close(e) {
         if (!menu.contains(e.target) && e.target !== btn) {
@@ -92,31 +128,22 @@ const AuthUI = {
 const AuthService = {
   async signInWithGoogle() {
     if (typeof firebase === 'undefined') return;
-    const provider  = new firebase.auth.GoogleAuthProvider();
-    const anonUser  = firebase.auth().currentUser;
-
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const anonUser = firebase.auth().currentUser;
     try {
-      // Si l'utilisateur est anonyme, on tente de lier son compte Google
-      // pour migrer ses données → linkWithPopup conserve le même UID
       if (anonUser && anonUser.isAnonymous) {
         try {
           await anonUser.linkWithPopup(provider);
           console.debug('[Auth] ✅ Compte anonyme lié à Google — UID conservé :', anonUser.uid);
-          // onAuthStateChanged se re-déclenche avec le même UID et isAnonymous=false
           return;
         } catch (linkErr) {
-          // credential-already-in-use → ce compte Google existe déjà
-          // On signe directement avec Google (ses données cloud seront récupérées)
           if (linkErr.code === 'auth/credential-already-in-use') {
-            console.debug('[Auth] Compte Google déjà existant — connexion directe');
             await firebase.auth().signInWithPopup(provider);
             return;
           }
           throw linkErr;
         }
       }
-
-      // Pas de session anonyme — connexion directe
       await firebase.auth().signInWithPopup(provider);
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -128,6 +155,8 @@ const AuthService = {
   async signOut() {
     const menu = document.getElementById('authMenu');
     if (menu) menu.remove();
+    // Arrêter les listeners temps réel avant de déconnecter
+    CloudSync.stopListeners();
     try {
       await firebase.auth().signOut();
       console.debug('[Auth] Déconnecté');
@@ -137,20 +166,17 @@ const AuthService = {
   },
 };
 
-// ── CloudSync ────────────────────────────────────────────────
-
-/** Fusionne deux tableaux sur une clé unique, le cloud l'emporte en cas de doublon */
-function mergeById(local, cloud, key) {
-  const map = new Map();
-  local.forEach(item => { if (item[key] != null) map.set(item[key], item); });
-  cloud.forEach(item => { if (item[key] != null) map.set(item[key], item); }); // cloud wins
-  return [...map.values()].sort((a, b) => (b[key] || 0) - (a[key] || 0));
-}
+// ── CloudSync ─────────────────────────────────────────────────
 
 const CloudSync = {
+
+  // ── Refs ──────────────────────────────────────────────────
+
   userRef()  { return db && currentUid ? db.collection('users').doc(currentUid) : null; },
   wordsRef() { const u = this.userRef(); return u ? u.collection('words') : null; },
   tasksRef() { const u = this.userRef(); return u ? u.collection('tasks') : null; },
+
+  // ── Status badge ──────────────────────────────────────────
 
   showStatus(status) {
     const badge = document.getElementById('syncBadge');
@@ -167,8 +193,12 @@ const CloudSync = {
     badge.title       = c.title;
   },
 
+  // ── Push différé ──────────────────────────────────────────
+  //
+  //  Chaque write local déclenche schedule(). Si plusieurs writes
+  //  arrivent en rafale, un seul push part (debounce 30s min).
+
   schedule(delayMs = 30000) {
-    // Minimum 30 secondes entre deux push
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
       if (navigator.onLine) this.pushToCloud();
@@ -176,16 +206,187 @@ const CloudSync = {
     }, Math.max(delayMs, 30000));
   },
 
-  // ── PUSH ────────────────────────────────────────────────────
+  // ── Listeners temps réel (onSnapshot) ────────────────────
+  //
+  //  onSnapshot écoute Firestore en permanence. Dès qu'un autre
+  //  appareil fait un push, les données arrivent ici en <1s
+  //  sans pull périodique. C'est la clé d'une sync pro.
+
+  startListeners() {
+    this.stopListeners(); // éviter les doublons
+
+    const wRef = this.wordsRef();
+    const tRef = this.tasksRef();
+
+    if (wRef) {
+      _listeners.words = wRef.onSnapshot(
+        snap => {
+          // Ignorer si c'est nous qui venons d'écrire (hasPendingWrites)
+          if (snap.metadata.hasPendingWrites) return;
+
+          const appState  = Storage.readState();
+          const localWords = appState.words || {};
+          const remoteIds  = new Set();
+
+          snap.forEach(doc => {
+            const cloud = doc.data();
+            if (!cloud.label) return;
+            remoteIds.add(doc.id);
+            const local = localWords[doc.id];
+            // last-write-wins sur updatedAt
+            if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+              localWords[doc.id] = { ...local, ...cloud, id: doc.id };
+            }
+          });
+
+          // Supprimer localement les mots effacés sur un autre appareil
+          Object.keys(localWords).forEach(id => {
+            if (!remoteIds.has(id)) delete localWords[id];
+          });
+
+          appState.words = localWords;
+          Storage.writeState(appState);
+          console.debug('[onSnapshot] Mots mis à jour :', snap.size);
+          reRenderAll();
+        },
+        err => console.warn('[onSnapshot] words error:', err)
+      );
+    }
+
+    if (tRef) {
+      _listeners.tasks = tRef.onSnapshot(
+        snap => {
+          if (snap.metadata.hasPendingWrites) return;
+
+          const appState  = Storage.readState();
+          const localTasks = {};
+          (Array.isArray(appState.tasks) ? appState.tasks : [])
+            .forEach(t => { if (t.id) localTasks[t.id] = t; });
+          const remoteIds = new Set();
+
+          snap.forEach(doc => {
+            const cloud = doc.data();
+            if (!cloud.id) return;
+            remoteIds.add(String(cloud.id));
+            const local = localTasks[String(cloud.id)];
+            if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
+              localTasks[String(cloud.id)] = { ...local, ...cloud };
+            }
+          });
+
+          Object.keys(localTasks).forEach(id => {
+            if (!remoteIds.has(id)) delete localTasks[id];
+          });
+
+          appState.tasks = Object.values(localTasks);
+          Storage.writeState(appState);
+          console.debug('[onSnapshot] Tâches mises à jour :', snap.size);
+          reRenderAll();
+        },
+        err => console.warn('[onSnapshot] tasks error:', err)
+      );
+    }
+
+    // Timer & catégories : onSnapshot sur le doc user
+    const uRef = this.userRef();
+    if (uRef) {
+      _listeners.user = uRef.onSnapshot(
+        snap => {
+          if (!snap.exists || snap.metadata.hasPendingWrites) return;
+          const data = snap.data();
+
+          // Catégories
+          if (data.categories && typeof data.categories === 'object') {
+            const appState = Storage.readState();
+            appState.categories = data.categories;
+            if (data.sources && typeof data.sources === 'object') {
+              appState.sources = data.sources;
+            }
+            Storage.writeState(appState);
+          }
+
+          // Timer — fusion sessions + milestones
+          this._mergeTimerFromCloud(data);
+
+          console.debug('[onSnapshot] Doc user mis à jour');
+          reRenderAll();
+        },
+        err => console.warn('[onSnapshot] user error:', err)
+      );
+    }
+
+    console.debug('[Sync] ✅ Listeners temps réel démarrés');
+  },
+
+  stopListeners() {
+    Object.values(_listeners).forEach(unsub => { if (typeof unsub === 'function') unsub(); });
+    _listeners.words = null;
+    _listeners.tasks = null;
+    _listeners.user  = null;
+    console.debug('[Sync] Listeners arrêtés');
+  },
+
+  // ── Fusion timer depuis le cloud ──────────────────────────
+
+  _mergeTimerFromCloud(data) {
+    const cloudSessions   = data.timerSessions;
+    const cloudMilestones = data.timerMilestones;
+    const cloudState      = data.timerState;
+
+    if (!cloudSessions && !cloudMilestones && !cloudState) return;
+
+    let localTimer = {};
+    try {
+      const raw = localStorage.getItem('lexique_timer');
+      if (raw) localTimer = JSON.parse(raw);
+    } catch { /* ignore */ }
+
+    const localSessions   = Array.isArray(localTimer.sessions)   ? localTimer.sessions   : [];
+    const localMilestones = Array.isArray(localTimer.milestones) ? localTimer.milestones : [];
+
+    // Fusion par startedAt unique — last-write-wins
+    const mergedSessions   = mergeById(localSessions,   cloudSessions   || [], 'startedAt').slice(0, 200);
+    const mergedMilestones = mergeById(localMilestones, cloudMilestones || [], 'ts').slice(0, 200);
+
+    localTimer.sessions   = mergedSessions;
+    localTimer.milestones = mergedMilestones;
+
+    // État courant du timer : prendre le cloud si plus récent
+    if (cloudState && cloudState.pushedAt) {
+      const localPushedAt = localTimer.pushedAt || 0;
+      if (cloudState.pushedAt > localPushedAt) {
+        if (cloudState.running && cloudState.startedAt) {
+          // Timer tournait côté cloud — calculer le temps écoulé
+          localTimer.elapsed     = (cloudState.elapsed || 0) + (Date.now() - cloudState.startedAt);
+          localTimer.running     = false; // on ne reprend pas auto sur un autre appareil
+          localTimer.startedAt   = null;
+        } else {
+          localTimer.elapsed   = cloudState.elapsed || 0;
+          localTimer.running   = false;
+          localTimer.startedAt = null;
+        }
+        localTimer.currentTask      = cloudState.currentTask || '';
+        localTimer.pushedAt         = cloudState.pushedAt;
+        localTimer.sessionStartedAt = cloudState.sessionStartedAt || null;
+      }
+    }
+
+    try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
+  },
+
+  // ── PUSH ─────────────────────────────────────────────────
+  //
+  //  Push complet vers Firestore. Déclenché par schedule().
+  //  Les onSnapshot des autres appareils reçoivent le changement
+  //  automatiquement — pas besoin de pull côté pair.
 
   async pushToCloud() {
-    if (!fbReady || !db || !currentUid || isSyncing) {
-      console.debug('[Sync↑] Push ignoré —', { fbReady, db: !!db, currentUid, isSyncing });
-      return;
-    }
+    if (!fbReady || !db || !currentUid || isSyncing) return;
+    if (!navigator.onLine) { this.showStatus('offline'); return; }
+
     isSyncing = true;
     this.showStatus('syncing');
-    console.debug('[Sync↑] Début push vers Firestore…');
+    console.debug('[Sync↑] Push vers Firestore…');
 
     try {
       const st    = Storage.readState();
@@ -194,24 +395,24 @@ const CloudSync = {
       const now   = Date.now();
       const BATCH = 400;
 
-      // ── Mots ──────────────────────────────────────────────
+      // ── Mots ────────────────────────────────────────────
+
       const wRef = this.wordsRef();
       if (wRef) {
         const entries = Object.entries(words);
-        console.debug(`[Sync↑] ${entries.length} mot(s) à pousser`);
 
-        const remoteSnap = await wRef.get();
-        const remoteDeletions = [];
-        remoteSnap.forEach(doc => {
-          if (!words[doc.id]) remoteDeletions.push(doc.id);
-        });
-        if (remoteDeletions.length) {
+        // Supprimer de Firestore les mots effacés localement
+        const remoteSnap    = await wRef.get();
+        const remoteDels    = [];
+        remoteSnap.forEach(doc => { if (!words[doc.id]) remoteDels.push(doc.id); });
+        if (remoteDels.length) {
           const delBatch = db.batch();
-          remoteDeletions.forEach(id => delBatch.delete(wRef.doc(id)));
+          remoteDels.forEach(id => delBatch.delete(wRef.doc(id)));
           await delBatch.commit();
-          console.debug(`[Sync↑] ${remoteDeletions.length} mot(s) supprimé(s) de Firestore ✓`);
+          console.debug(`[Sync↑] ${remoteDels.length} mot(s) supprimé(s) de Firestore`);
         }
 
+        // Push par batch de 400
         for (let i = 0; i < entries.length; i += BATCH) {
           const batch = db.batch();
           entries.slice(i, i + BATCH).forEach(([id, w]) => {
@@ -229,14 +430,14 @@ const CloudSync = {
             }, { merge: true });
           });
           await batch.commit();
-          console.debug(`[Sync↑] Batch mots ${i}–${i + BATCH} commité ✓`);
         }
+        console.debug(`[Sync↑] ${entries.length} mot(s) poussés`);
       }
 
-      // ── Tâches ────────────────────────────────────────────
+      // ── Tâches ──────────────────────────────────────────
+
       const tRef = this.tasksRef();
       if (tRef && tasks.length > 0) {
-        console.debug(`[Sync↑] ${tasks.length} tâche(s) à pousser`);
         for (let i = 0; i < tasks.length; i += BATCH) {
           const batch = db.batch();
           tasks.slice(i, i + BATCH).forEach(task => {
@@ -263,48 +464,48 @@ const CloudSync = {
             }, { merge: true });
           });
           await batch.commit();
-          console.debug(`[Sync↑] Batch tâches ${i}–${i + BATCH} commité ✓`);
         }
+        console.debug(`[Sync↑] ${tasks.length} tâche(s) poussées`);
       }
 
-      // ── Catégories + Timer + métadonnées ─────────────────
+      // ── Catégories + Sources + Timer + Spelling ──────────
+
       const cats    = st.categories || {};
       const sources = st.sources    || {};
 
-      // Timer : sessions et milestones (drapeaux)
       let timerData = {};
       try {
         const rawTimer = localStorage.getItem('lexique_timer');
         if (rawTimer) timerData = JSON.parse(rawTimer);
       } catch { /* ignore */ }
 
+      let spellingData = {};
+      try {
+        const rawSpelling = localStorage.getItem('lexique_spelling_srs');
+        if (rawSpelling) spellingData = JSON.parse(rawSpelling);
+      } catch { /* ignore */ }
+
       const uRef = this.userRef();
       if (uRef) {
-        // Spelling SRS data
-        let spellingData = {};
-        try {
-          const rawSpelling = localStorage.getItem('lexique_spelling_srs');
-          if (rawSpelling) spellingData = JSON.parse(rawSpelling);
-        } catch { /* ignore */ }
-
         await uRef.set({
-          lastSync:        Date.now(),
+          lastSync:        now,
           appVersion:      'lexique-v6',
           categories:      cats,
           sources:         sources,
           timerSessions:   Array.isArray(timerData.sessions)   ? timerData.sessions   : [],
           timerMilestones: Array.isArray(timerData.milestones) ? timerData.milestones : [],
           timerState: {
-            running:     timerData.running     || false,
-            elapsed:     timerData.elapsed     || 0,
-            startedAt:   timerData.startedAt   || null,
-            currentTask: timerData.currentTask || '',
-            pushedAt:    Date.now(),
+            running:            timerData.running            || false,
+            elapsed:            timerData.elapsed            || 0,
+            startedAt:          timerData.startedAt          || null,
+            sessionStartedAt:   timerData.sessionStartedAt   || null,
+            currentTask:        timerData.currentTask        || '',
+            pushedAt:           now,
           },
           spellingCards:   spellingData.cards  || {},
           spellingToday:   spellingData.today  || {},
         }, { merge: true });
-        console.debug('[Sync↑] Catégories + Timer + Spelling poussés ✓');
+        console.debug('[Sync↑] Catégories + Timer + Spelling poussés');
       }
 
       this.showStatus('synced');
@@ -317,166 +518,89 @@ const CloudSync = {
     }
   },
 
-  // ── PULL ────────────────────────────────────────────────────
+  // ── Pull initial ─────────────────────────────────────────
+  //
+  //  Utilisé une seule fois au démarrage pour avoir les données
+  //  avant d'activer les listeners temps réel.
 
   async pullFromCloud() {
-    if (!fbReady || !db || !currentUid) {
-      console.debug('[Sync↓] Pull ignoré —', { fbReady, db: !!db, currentUid });
-      return;
-    }
+    if (!fbReady || !db || !currentUid) return;
     this.showStatus('syncing');
-    console.debug('[Sync↓] Début pull depuis Firestore…');
+    console.debug('[Sync↓] Pull initial depuis Firestore…');
 
     try {
       const appState   = Storage.readState();
       const localWords = appState.words || {};
       const localTasks = {};
-      (Array.isArray(appState.tasks) ? appState.tasks : []).forEach(task => {
-        if (task.id) localTasks[String(task.id)] = task;
-      });
+      (Array.isArray(appState.tasks) ? appState.tasks : [])
+        .forEach(task => { if (task.id) localTasks[String(task.id)] = task; });
 
-      // ── Mots ──────────────────────────────────────────────
+      // Mots
       const wRef = this.wordsRef();
       if (wRef) {
-        const snap = await wRef.get();
-        console.debug(`[Sync↓] ${snap.size} mot(s) reçus depuis Firestore`);
-
-        // Construire l'index des mots présents dans Firestore
-        const remoteWordIds = new Set();
+        const snap      = await wRef.get();
+        const remoteIds = new Set();
         snap.forEach(doc => {
           const cloud = doc.data();
-          if (!cloud.label) {
-            console.warn('[Sync↓] Doc ignoré — label manquant :', doc.id);
-            return;
-          }
-          remoteWordIds.add(doc.id);
+          if (!cloud.label) return;
+          remoteIds.add(doc.id);
           const local = localWords[doc.id];
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localWords[doc.id] = { ...local, ...cloud, id: doc.id };
           }
         });
-
-        // Supprimer les mots locaux absents de Firestore
-        const deletedWords = Object.keys(localWords).filter(id => !remoteWordIds.has(id));
-        deletedWords.forEach(id => {
-          console.debug('[Sync↓] Suppression locale du mot absent de Firestore :', id);
-          delete localWords[id];
+        Object.keys(localWords).forEach(id => {
+          if (!remoteIds.has(id)) delete localWords[id];
         });
-        if (deletedWords.length) {
-          console.debug(`[Sync↓] ${deletedWords.length} mot(s) supprimé(s) localement`);
-        }
+        console.debug(`[Sync↓] ${snap.size} mot(s) reçus`);
       }
 
-      // ── Tâches ────────────────────────────────────────────
+      // Tâches
       const tRef = this.tasksRef();
       if (tRef) {
-        const snap = await tRef.get();
-        console.debug(`[Sync↓] ${snap.size} tâche(s) reçues depuis Firestore`);
-
-        // Construire l'index des tâches présentes dans Firestore
-        const remoteTaskIds = new Set();
+        const snap      = await tRef.get();
+        const remoteIds = new Set();
         snap.forEach(doc => {
           const cloud = doc.data();
-          if (cloud.id) remoteTaskIds.add(String(cloud.id));
+          if (!cloud.id) return;
+          remoteIds.add(String(cloud.id));
           const local = localTasks[String(cloud.id)];
           if (!local || (cloud.updatedAt ?? 0) >= (local.updatedAt ?? 0)) {
             localTasks[String(cloud.id)] = { ...local, ...cloud };
           }
         });
-
-        // Supprimer les tâches locales absentes de Firestore
         Object.keys(localTasks).forEach(id => {
-          if (!remoteTaskIds.has(id)) {
-            console.debug('[Sync↓] Suppression locale de la tâche absente de Firestore :', id);
-            delete localTasks[id];
-          }
+          if (!remoteIds.has(id)) delete localTasks[id];
         });
+        console.debug(`[Sync↓] ${snap.size} tâche(s) reçues`);
       }
 
-      // ── Catégories ────────────────────────────────────────
-      const uRef2 = this.userRef();
-      if (uRef2) {
-        const uDoc = await uRef2.get();
+      // Doc user (catégories, timer, spelling)
+      const uRef = this.userRef();
+      if (uRef) {
+        const uDoc = await uRef.get();
         if (uDoc.exists) {
           const data = uDoc.data();
-
-          // Catégories — remplacement complet (le cloud fait foi)
-          const cloudCats = data.categories;
-          if (cloudCats && typeof cloudCats === 'object') {
-            appState.categories = cloudCats;
-            console.debug('[Sync↓] Catégories reçues :', Object.keys(cloudCats).length);
+          if (data.categories && typeof data.categories === 'object') {
+            appState.categories = data.categories;
           }
-
-          // Sources personnalisées
-          const cloudSources = data.sources;
-          if (cloudSources && typeof cloudSources === 'object') {
-            appState.sources = cloudSources;
-            console.debug('[Sync↓] Sources reçues :', Object.keys(cloudSources).length);
+          if (data.sources && typeof data.sources === 'object') {
+            appState.sources = data.sources;
           }
-
-          // Timer
-          const cloudSessions   = data.timerSessions;
-          const cloudMilestones = data.timerMilestones;
-          if (cloudSessions || cloudMilestones) {
-            let localTimer = {};
-            try {
-              const rawTimer = localStorage.getItem('lexique_timer');
-              if (rawTimer) localTimer = JSON.parse(rawTimer);
-            } catch { /* ignore */ }
-
-            // Fusion : on prend le plus grand ensemble (pas de suppression pour le timer)
-            const localSessions   = Array.isArray(localTimer.sessions)   ? localTimer.sessions   : [];
-            const localMilestones = Array.isArray(localTimer.milestones) ? localTimer.milestones : [];
-
-            const mergedSessions = mergeById(localSessions, cloudSessions || [], 'startedAt');
-            const mergedMilestones = mergeById(localMilestones, cloudMilestones || [], 'ts');
-
-            localTimer.sessions   = mergedSessions.slice(0, 200);
-            localTimer.milestones = mergedMilestones.slice(0, 200);
-
-            // Restaurer l'état courant du timer depuis le cloud
-            // seulement si le cloud est plus récent que l'état local
-            const cloudState = data.timerState;
-            if (cloudState && cloudState.pushedAt) {
-              const localElapsed  = localTimer.elapsed  || 0;
-              const localRunning  = localTimer.running  || false;
-              const localPushedAt = localTimer.pushedAt || 0;
-              // On prend le cloud si : timer cloud actif ET plus récent que local
-              if (cloudState.pushedAt > localPushedAt) {
-                // Si le timer tournait côté cloud, calculer le temps écoulé depuis
-                if (cloudState.running && cloudState.startedAt) {
-                  localTimer.elapsed     = cloudState.elapsed + (Date.now() - cloudState.startedAt);
-                  localTimer.running     = false; // Sur mobile on ne reprend pas auto
-                  localTimer.startedAt   = null;
-                } else {
-                  localTimer.elapsed     = cloudState.elapsed || 0;
-                  localTimer.running     = false;
-                  localTimer.startedAt   = null;
-                }
-                localTimer.currentTask = cloudState.currentTask || '';
-                localTimer.pushedAt    = cloudState.pushedAt;
-              }
-            }
-
-            try { localStorage.setItem('lexique_timer', JSON.stringify(localTimer)); } catch { /* quota */ }
-            console.debug('[Sync↓] Timer reçu : ' + mergedSessions.length + ' sessions');
-          }
+          this._mergeTimerFromCloud(data);
 
           // Spelling SRS
-          const cloudSpellingCards = data.spellingCards;
-          const cloudSpellingToday = data.spellingToday;
-          if (cloudSpellingCards || cloudSpellingToday) {
+          if (data.spellingCards || data.spellingToday) {
             let localSpelling = { cards: {}, today: {} };
             try {
-              const rawSpelling = localStorage.getItem('lexique_spelling_srs');
-              if (rawSpelling) localSpelling = JSON.parse(rawSpelling);
+              const raw = localStorage.getItem('lexique_spelling_srs');
+              if (raw) localSpelling = JSON.parse(raw);
               localSpelling.cards ??= {};
               localSpelling.today ??= {};
             } catch { /* ignore */ }
 
-            // Fusion des cartes SRS : garder la carte avec le plus d'interval (= la plus avancée)
-            if (cloudSpellingCards && typeof cloudSpellingCards === 'object') {
-              Object.entries(cloudSpellingCards).forEach(([key, cloudCard]) => {
+            if (data.spellingCards) {
+              Object.entries(data.spellingCards).forEach(([key, cloudCard]) => {
                 const localCard = localSpelling.cards[key];
                 if (!localCard || (cloudCard.reps || 0) >= (localCard.reps || 0)) {
                   localSpelling.cards[key] = cloudCard;
@@ -484,21 +608,17 @@ const CloudSync = {
               });
             }
 
-            // Fusion des progrès du jour : additionner les compteurs
-            if (cloudSpellingToday && typeof cloudSpellingToday === 'object') {
-              Object.entries(cloudSpellingToday).forEach(([day, levels]) => {
+            if (data.spellingToday) {
+              Object.entries(data.spellingToday).forEach(([day, levels]) => {
                 localSpelling.today[day] ??= {};
                 Object.entries(levels || {}).forEach(([level, prog]) => {
                   if (level === '_exos') {
-                    // Fusion sessions exos (Vision, Detective, Morpho, Phrase)
                     localSpelling.today[day]._exos ??= {};
                     Object.entries(prog || {}).forEach(([exoKey, val]) => {
                       const localVal = localSpelling.today[day]._exos[exoKey] || 0;
-                      const cloudVal = typeof val === 'number' ? val : val ? 1 : 0;
-                      localSpelling.today[day]._exos[exoKey] = Math.max(localVal, cloudVal);
+                      localSpelling.today[day]._exos[exoKey] = Math.max(localVal, typeof val === 'number' ? val : val ? 1 : 0);
                     });
                   } else if (level === '_exos_progress') {
-                    // Fusion questions par exo (done/correct)
                     localSpelling.today[day]._exos_progress ??= {};
                     Object.entries(prog || {}).forEach(([exoKey, exoProg]) => {
                       const local = localSpelling.today[day]._exos_progress[exoKey] || { done: 0, correct: 0 };
@@ -508,9 +628,7 @@ const CloudSync = {
                       };
                     });
                   } else {
-                    // Niveaux dictée (debutant, intermediaire, avance)
                     const local = localSpelling.today[day][level] || { done: 0, correct: 0 };
-                    // Prendre le max (pas additionner — évite les doublons de sync)
                     localSpelling.today[day][level] = {
                       done:    Math.max(local.done,    prog.done    || 0),
                       correct: Math.max(local.correct, prog.correct || 0),
@@ -521,7 +639,6 @@ const CloudSync = {
             }
 
             try { localStorage.setItem('lexique_spelling_srs', JSON.stringify(localSpelling)); } catch { /* quota */ }
-            console.debug('[Sync↓] Spelling SRS reçu ✓');
           }
         }
       }
@@ -531,7 +648,7 @@ const CloudSync = {
       Storage.writeState(appState);
 
       this.showStatus('synced');
-      console.debug('[Sync↓] ✅ Pull terminé');
+      console.debug('[Sync↓] ✅ Pull initial terminé');
     } catch (err) {
       if (err.code === 'unavailable') this.showStatus('offline');
       else { console.error('[Sync↓] ❌ Erreur pull :', err); this.showStatus('error'); }
@@ -539,37 +656,25 @@ const CloudSync = {
   },
 };
 
-// Trigger sync on connectivity changes
-window.addEventListener('online',  () => CloudSync.pushToCloud());
-window.addEventListener('offline', () => CloudSync.showStatus('offline'));
+// ── Événements réseau & visibilité ────────────────────────────
 
-// Pull quand la fenêtre reprend le focus (ex : retour sur l'onglet PC après avoir modifié sur mobile)
-window.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && fbReady && navigator.onLine) {
-    CloudSync.pullFromCloud().then(() => {
-      load();
-      autoReportTasks(); // après pull pour ne pas écraser les actions d'autres appareils
-      rebuildNgrams();
-      render(); renderTasks(); updateStats(); updateTaskStats();
-      renderCatManager(); renderCatSelect(); renderFilters();
-      renderTimerHistory(); timerTick();
-    }).catch(() => {});
-  }
+window.addEventListener('online', () => {
+  console.debug('[Sync] Reconnecté — push immédiat');
+  CloudSync.pushToCloud();
 });
 
-// Pull périodique toutes les 60 secondes si la page est visible
-setInterval(() => {
-  if (document.visibilityState === 'visible' && fbReady && navigator.onLine && !isSyncing) {
-    CloudSync.pullFromCloud().then(() => {
-      load();
-      autoReportTasks(); // après pull
-      rebuildNgrams();
-      render(); renderTasks(); updateStats(); updateTaskStats();
-      renderCatManager(); renderCatSelect(); renderFilters();
-      renderTimerHistory(); timerTick();
-    }).catch(() => {});
+window.addEventListener('offline', () => {
+  CloudSync.showStatus('offline');
+});
+
+// Retour sur l'onglet : les onSnapshot auront déjà mis à jour,
+// mais on force un push au cas où des writes locaux sont en attente.
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && fbReady && navigator.onLine) {
+    // Push différé 2s pour laisser les onSnapshot se déclencher en premier
+    setTimeout(() => CloudSync.schedule(2000), 2000);
   }
-}, 60_000);
+});
 
 // ── Firebase initialisation ───────────────────────────────────
 
@@ -581,55 +686,60 @@ setInterval(() => {
     }
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
+
+    // Activer la persistance offline Firestore — les writes sont mis en queue
+    // quand hors ligne et envoyés automatiquement à la reconnexion.
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => console.debug('[Firebase] ✅ Persistance offline activée'))
+      .catch(err => {
+        if (err.code === 'failed-precondition') {
+          // Plusieurs onglets ouverts — persistance désactivée sur cet onglet
+          console.warn('[Firebase] Persistance désactivée (plusieurs onglets)');
+        } else if (err.code === 'unimplemented') {
+          console.warn('[Firebase] Persistance non supportée sur ce navigateur');
+        }
+      });
+
     console.debug('[Firebase] ✅ Firestore initialisé');
 
     firebase.auth().onAuthStateChanged(user => {
-      // Met à jour le bouton header dans tous les cas
       AuthUI.update(user);
 
       if (user) {
         currentUid = user.uid;
         fbReady    = true;
-        const type = user.isAnonymous ? 'anonyme' : 'Google';
-        console.debug(`[Firebase] ✅ Auth ${type} — uid :`, currentUid);
+        console.debug(`[Firebase] ✅ Auth ${user.isAnonymous ? 'anonyme' : 'Google'} — uid :`, currentUid);
 
-        // Guard: onAuthStateChanged re-fires on every token refresh.
+        // Guard : onAuthStateChanged re-fire à chaque refresh de token (~1h)
         if (!firstPull) {
-          console.debug('[Firebase] Re-auth ignoré — pas de pull (firstPull=false)');
+          console.debug('[Firebase] Re-auth — listeners déjà actifs, pas de re-pull');
           return;
         }
         firstPull = false;
 
-        const afterPull = () => {
-          load();
-          autoReportTasks(); // après le pull — les tâches cochées sur d'autres appareils sont déjà dans state
-          rebuildNgrams();
-          render(); renderTasks(); updateStats(); updateTaskStats();
-          renderCatManager(); renderCatSelect(); renderFilters();
-          renderTimerHistory(); timerTick();
-        };
-
+        // 1. Pull initial pour hydrater l'app avant les listeners
         CloudSync.pullFromCloud()
-          .then(afterPull)
+          .then(() => {
+            reRenderAll();
+            // 2. Activer les listeners temps réel APRÈS le pull initial
+            //    pour éviter les doubles renders au démarrage
+            CloudSync.startListeners();
+          })
           .catch(err => {
             console.warn('[Firebase] Premier pull échoué, retry dans 5s…', err);
-            setTimeout(() => CloudSync.pullFromCloud().then(afterPull).catch(() => {}), 5000);
+            setTimeout(() => {
+              CloudSync.pullFromCloud()
+                .then(() => { reRenderAll(); CloudSync.startListeners(); })
+                .catch(() => CloudSync.startListeners()); // listeners quand même
+            }, 5000);
           });
       } else {
-        // Attendre 2s avant de créer un user anonyme —
-        // Google auth peut prendre quelques ms à se rétablir (persistence locale).
-        // Si Google auth arrive dans ce délai, onAuthStateChanged se re-déclenche
-        // et on n'aura pas créé un user anonyme inutile.
-        console.debug('[Firebase] Pas de session — attente 2s avant connexion anonyme…');
+        // Pas de session — attendre 2s avant user anonyme
+        console.debug('[Firebase] Pas de session — attente 2s…');
         setTimeout(() => {
-          // Vérifier qu'on n'est toujours pas connecté
           if (!firebase.auth().currentUser) {
-            console.debug('[Firebase] Toujours pas de session — connexion anonyme');
-            firebase.auth().signInAnonymously().catch(err => {
-              console.error('[Firebase] signInAnonymously failed :', err);
-            });
-          } else {
-            console.debug('[Firebase] Session Google rétablie — pas de user anonyme créé');
+            firebase.auth().signInAnonymously()
+              .catch(err => console.error('[Firebase] signInAnonymously failed :', err));
           }
         }, 2000);
       }
@@ -638,4 +748,3 @@ setInterval(() => {
     console.warn('[Firebase] Init error:', err);
   }
 })();
-
